@@ -1,0 +1,28 @@
+Build Guidance
+==============
+
+
+Quick start:
+------------
+
+[Install dependencies]
+sudo apt-get install build-essential libglib2.0-dev libncurses-dev uuid-dev libjson-c-dev
+
+[Build]
+make
+
+[Install]
+sudo make install
+
+
+Build deb packages:
+-------------------
+
+[Install dependencies]
+sudo apt-get install build-essential libglib2.0-dev libncurses-dev uuid-dev libjson-c-dev dev devscripts build-essential lintian debhelper
+
+[Build]
+debuild -b #vm-manager_x.x.x_amd64.deb will be generated at parent directory
+
+[Install]
+dpkg -i vm-manager_x.x.x_amd64.deb

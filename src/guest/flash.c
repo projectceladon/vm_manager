@@ -1,0 +1,203 @@
+/*
+ * Copyright (c) 2020 Intel Corporation.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <glib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <libgen.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include "vm_manager.h"
+#include "guest.h"
+
+extern keyfile_group_t g_group[];
+
+#define VUSB_FLASH_DISK "/tmp/flash.vfat"
+
+static char flashing_arg[] =
+	" -name civ_flashing"
+	" -M q35"
+	" -m 2048M"
+	" -smp 1"
+	" -enable-kvm"
+	" -k en-us"
+	" -device qemu-xhci,id=xhci,addr=0x5"
+	" -drive file="VUSB_FLASH_DISK",id=udisk1,format=raw,if=none"
+	" -device usb-storage,drive=udisk1,bus=xhci.0"
+	" -no-reboot"
+	" -nographic -display none -serial mon:stdio -vnc :0"
+	" -boot menu=on,splash-time=5000,strict=on ";
+
+static int create_vusb(GKeyFile *gkf)
+{
+	char *p = NULL;
+	char cmd[MAX_CMDLINE_LEN] = { 0 };
+	char *fname = NULL;
+	keyfile_group_t *g = NULL;
+	g_autofree gchar *file = NULL;
+
+	g = &g_group[GROUP_GLOB];
+	file = g_key_file_get_string(gkf, g->name, g->key[GLOB_FLASHFILES], NULL);
+	if (file == NULL) {
+		g_warning("cannot find key flashfiles from group global\n");
+		return -1;
+	}
+
+	fname = basename(strdup(file));
+	p = strstr(fname, ".zip");
+	if (p) {
+		memset(p, '\0', 4);
+	} else {
+		fprintf(stderr, "Invalid flashfiles: %s\n", file);
+		return -1;
+	}
+
+	snprintf(cmd, MAX_CMDLINE_LEN, "unzip -o %s -d /tmp/%s", file, fname);
+	printf("%s\n", cmd);
+	if (system(cmd))
+		return -1;
+
+	snprintf(cmd, MAX_CMDLINE_LEN, "dd if=/dev/zero of="VUSB_FLASH_DISK" bs=63M count=160");
+	printf("%s\n", cmd);
+	if (system(cmd))
+		return -1;
+
+	snprintf(cmd, MAX_CMDLINE_LEN, "mkfs.vfat /tmp/flash.vfat");
+	printf("%s\n", cmd);
+	if (system(cmd))
+		return -1;
+
+	snprintf(cmd, MAX_CMDLINE_LEN, "mcopy -o -n -i /tmp/flash.vfat /tmp/%s/* ::", fname);
+	printf("%s\n", cmd);
+	if (system(cmd))
+		return -1;
+
+	return 0;
+}
+
+int create_vdisk(GKeyFile *gkf)
+{
+	keyfile_group_t *g = NULL;
+	g_autofree gchar *path = NULL, *size = NULL;
+	char cmd[MAX_CMDLINE_LEN] = { 0 };
+
+	g = &g_group[GROUP_DISK];
+
+	size = g_key_file_get_string(gkf, g->name, g->key[DISK_SIZE], NULL);
+	if (size == NULL) {
+		g_warning("cannot find key disk size from group disk\n");
+		return -1;
+	}
+
+	path = g_key_file_get_string(gkf, g->name, g->key[DISK_PATH], NULL);
+	if (path == NULL) {
+		g_warning("cannot find key disk path from group disk\n");
+		return -1;
+	}
+
+	snprintf(cmd, 1024, "qemu-img create -f qcow2 %s %s", path, size);
+
+	printf("%s\n", cmd);
+	return system(cmd);
+}
+
+int flash_guest(char *name)
+{
+	int cx;
+	int ret = -1;
+	GKeyFile *gkf;
+	g_autofree gchar *val = NULL;
+	char cfg_file[1024] = {0};
+	char cmd[MAX_CMDLINE_LEN] = {0};
+	char *p = &cmd[0];
+	keyfile_group_t *g = NULL;
+
+	if (!name) {
+		fprintf(stderr, "%s: Invalid input param\n", __func__);
+		return -1;
+	}
+
+	snprintf(cfg_file, 1024, "%s/%s.ini", civ_config_path, name);
+
+	gkf = g_key_file_new();
+
+	if (!g_key_file_load_from_file(gkf, cfg_file, G_KEY_FILE_NONE, NULL)) {
+		g_warning("Error loading ini file :%s", cfg_file);
+		goto exit;
+	}
+
+	if (create_vusb(gkf)) {
+		fprintf(stderr, "Failed to create virtual USB");
+		goto exit;
+	}
+
+	if (create_vdisk(gkf)) {
+		fprintf(stderr, "Failed to create virtual Disk");
+		goto exit;
+	}
+
+	g = &g_group[GROUP_EMUL];
+	val = g_key_file_get_string(gkf, g->name, g->key[EMUL_PATH], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key emu_path from group general\n");
+		goto exit;
+	}
+	cx = snprintf(p, 100, "%s", val);
+	p += cx;
+
+	g = &g_group[GROUP_FIRM];
+	val = g_key_file_get_string(gkf, g->name, g->key[FIRM_TYPE], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key name from group firmware\n");
+		goto exit;
+	}
+	if (strcmp(val, FIRM_OPTS_UNIFIED_STR) == 0) {
+		val = g_key_file_get_string(gkf, g->name, g->key[FIRM_PATH], NULL);
+		cx = snprintf(p, 100, " -drive if=pflash,format=raw,file=%s", val);
+		p += cx;;
+	} else if (strcmp(val, FIRM_OPTS_SPLITED_STR) == 0) {
+		val = g_key_file_get_string(gkf, g->name, g->key[FIRM_CODE], NULL);
+		cx = snprintf(p, 100, " -drive if=pflash,format=raw,readonly,file=%s", val);
+		p += cx;
+		val = g_key_file_get_string(gkf, g->name, g->key[FIRM_VARS], NULL);
+		cx = snprintf(p, 100, " -drive if=pflash,format=raw,file=%s", val);
+		p += cx;
+	} else {
+		g_warning("cannot find firmware sub-key\n");
+		return -1;
+	}
+
+	g = &g_group[GROUP_DISK];
+	val = g_key_file_get_string(gkf, g->name, g->key[DISK_PATH], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key disk path from group disk\n");
+		goto exit;
+	}
+	cx = snprintf(p, 1024, " -device virtio-scsi-pci,id=scsi0,addr=0x8"
+			       " -drive file=%s,if=none,format=qcow2,id=scsidisk1"
+			       " -device scsi-hd,drive=scsidisk1,bus=scsi0.0", val);
+	p += cx;
+
+	cx = snprintf(p, sizeof(flashing_arg), "%s", flashing_arg);
+	p += cx;
+
+	printf("%s\n", cmd);
+
+	ret = system(cmd);
+	if (ret == 0)
+		printf("\nFlash guest[%s] done\n", name);
+	else
+		printf("\nFlash guest[%s] failed\n", name);
+
+exit:
+	g_key_file_free(gkf);
+	return ret;
+}
