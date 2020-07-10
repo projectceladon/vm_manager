@@ -1,0 +1,29 @@
+name: VM Manager CI
+
+on: [push, pull_request]
+
+jobs:
+  build_ubuntu_gcc:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup
+        run: |
+          sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
+      - name: build
+        run: |
+          export BUILD_DIR=${{ github.workspace }}/build
+          make
+          debuild -b
+          mv ../*.deb $BUILD_DIR
+      - name: artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vm-manager.${{ matrix.os }}
+          path: ${{ github.workspace }}/build/
