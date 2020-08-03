@@ -28,6 +28,11 @@ dd if=/dev/zero of=./flash.vfat bs=63M count=160
 mkfs.vfat ./flash.vfat
 mcopy -i flash.vfat flashfiles_decompress/* ::
 
+persistent_image=./persistent.img
+data_image=./userdata.img
+dd if=/dev/zero of=$persistent_image bs=1024 count=16
+dd if=/dev/zero of=$data_image bs=1M count=4096
+
 ovmf_file="./OVMF.fd"
 [ ! -f $ovmf_file ] && ovmf_file="/usr/share/qemu/OVMF.fd"
 

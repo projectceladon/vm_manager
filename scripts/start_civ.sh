@@ -362,6 +362,41 @@ function set_guest_time_keep() {
     fi
 }
 
+
+function setup_secure_factory_reset(){
+    tpm_binding=$SCRIPTS_DIR/tpm_binding
+	persistent_image=$WORK_DIR/persistent.img
+	data_image=$WORK_DIR/userdata.img
+
+	if [ ! -f "$persistent_image" ]; then
+		echo "create $persistent_image ...."
+		dd if=/dev/zero of=$persistent_image bs=1024 count=16
+	fi
+
+	if [ ! -f "$data_image" ]; then
+		echo "create $data_image ...."
+		dd if=/dev/zero of=$data_image bs=1M count=4096
+	fi
+
+	commandstr="\
+		-drive file=$data_image,if=none,id=disk2 \
+		-device virtio-blk-pci,drive=disk2,bootindex=2 \
+		-drive file=$persistent_image,if=none,id=disk3 \
+		-device virtio-blk-pci,drive=disk3,bootindex=3 \
+	"
+	GUEST_EXTRA_QCMD=${GUEST_EXTRA_QCMD}${commandstr}
+	echo "GUEST_BLK_DEV: '${GUEST_BLK_DEV}' !"
+	if [ ! -f "$tpm_binding" ]; then
+		echo "Fatal: $tpm_binding not fould !"
+		exit -2
+	else
+		chmod +x $tpm_binding
+		kill -9 `pidof tpm_binding`
+		$tpm_binding persistent.img --daemon
+	fi
+	echo "dedicate disk image: '$data_image' '$persistent_image'"
+}
+
 function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
@@ -549,6 +584,7 @@ check_nested_vt || exit -1
 
 setup_rpmb_dev || exit -1
 setup_audio_dev || exit -1
+setup_secure_factory_reset || exit -1
 launch_guest
 
 echo "Done: \"$(realpath $0) $@\""

@@ -240,6 +240,18 @@ function parse_arg() {
     done
 }
 
+function ubu_build_tss2(){
+    sudo apt install -y git autoconf-archive libcmocka0 libcmocka-dev procps iproute2 build-essential git pkg-config gcc libtool automake libssl-dev uthash-dev autoconf doxygen libjson-c-dev libini-config-dev libgcrypt-dev libcurl4-openssl-dev
+    cd $CIV_WORK_DIR/
+    git clone https://github.com/tpm2-software/tpm2-tss
+    cd tpm2-tss
+    git checkout 2.4.0 -b build
+    ./bootstrap
+    ./configure
+    make -j4
+    sudo make install
+    cd $CIV_WORK_DIR/
+}
 
 #-------------    main processes    -------------
 
@@ -251,6 +263,7 @@ check_os
 check_network
 check_kernel_version
 
+ubu_build_tss2
 ubu_changes_require
 ubu_install_qemu_gvt
 ubu_build_ovmf_gvt
