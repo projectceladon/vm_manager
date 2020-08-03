@@ -39,6 +39,7 @@ GUEST_ETH_PT_DEV=
 GUEST_WIFI_PT_DEV=
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
+GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0"
 
 GUEST_STATIC_OPTION="\
  -name caas-vm \
@@ -132,6 +133,12 @@ function setup_rpmb_dev() {
 function cleanup_rpmb_dev() {
     kill_daemon_proc "$GUEST_RPMB_DEV_PID" "rpmb_dev"
     [[ -z "$GUEST_RPMB_DEV_SOCK" ]] || ( [[ -S $GUEST_RPMB_DEV_SOCK ]] && rm $GUEST_RPMB_DEV_SOCK )
+}
+
+function setup_swtpm() {
+    #start software Trusted Platform Module
+    mkdir -p $WORK_DIR/vtpm0
+    swtpm socket --tpmstate dir=$WORK_DIR/vtpm0 --tpm2 --ctrl type=unixio,path=$WORK_DIR/vtpm0/swtpm-sock &
 }
 
 function setup_thermal_mediation() {
@@ -395,6 +402,7 @@ function launch_guest() {
                    $GUEST_WIFI_PT_DEV \
                    $GUEST_PM_CTRL \
                    $GUEST_TIME_KEEP \
+                   $GUSET_VTPM \
                    $GUEST_STATIC_OPTION \
                    $GUEST_EXTRA_QCMD \
     "
@@ -548,6 +556,7 @@ check_kernel_version || exit -1
 check_nested_vt || exit -1
 
 setup_rpmb_dev || exit -1
+setup_swtpm
 setup_audio_dev || exit -1
 launch_guest
 

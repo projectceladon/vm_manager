@@ -5,6 +5,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+WORK_DIR=$PWD
+
 [ $# -lt 1 ] && echo "Usage: $0 caas-flashfiles-eng-<user>.zip" && exit -1
 
 if [ -f android.qcow2 ]
@@ -38,6 +40,10 @@ else
 	display_type="gtk,gl=on"
 fi
 
+#start software Trusted Platform Module
+mkdir -p $WORK_DIR/vtpm0
+swtpm socket --tpmstate dir=$WORK_DIR/vtpm0 --tpm2 --ctrl type=unixio,path=$WORK_DIR/vtpm0/swtpm-sock &
+
 qemu-system-x86_64 \
   -m 2048 -smp 2 -M q35 \
   -name caas-vm \
@@ -57,5 +63,8 @@ qemu-system-x86_64 \
   -no-reboot \
   -display $display_type \
   -boot menu=on,splash-time=5000,strict=on \
+  -chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock \
+  -tpmdev emulator,id=tpm0,chardev=chrtpm \
+  -device tpm-crb,tpmdev=tpm0 \
 
 echo "Flashing is completed"

@@ -201,6 +201,36 @@ function setup_sof() {
     $CIV_WORK_DIR/scripts/setup_audio_host.sh
 }
 
+function ubu_install_swtpm() {
+    TPMS_VER=v0.7.3
+    TPMS_LIB=libtpms-0.7.3
+    SWTPM_VER=v0.3.3
+    SWTPM=swtpm-0.3.3
+
+    #install libtpms
+    apt-get -y install automake autoconf gawk
+    [ ! -f $TPMS_VER.tar.gz ] && wget https://github.com/stefanberger/libtpms/archive/$TPMS_VER.tar.gz -P $CIV_WORK_DIR
+    [ -d $CIV_WORK_DIR/$TPMS_LIB ] && rm -rf  $CIV_WORK_DIR/$TPMS_LIB
+    tar zxvf $CIV_WORK_DIR/$TPMS_VER.tar.gz
+    cd $CIV_WORK_DIR/$TPMS_LIB
+    ./autogen.sh --with-tpm2 --with-openssl --prefix=/usr
+    make -j24
+    make -j24 check
+    make install
+    cd -
+
+    #install swtpm
+    apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect
+    [ ! -f $SWTPM_VER.tar.gz ] && wget https://github.com/stefanberger/swtpm/archive/$SWTPM_VER.tar.gz -P $CIV_WORK_DIR
+    [ -d $CIV_WORK_DIR/$SWTPM ] && rm -rf  $CIV_WORK_DIR/$SWTPM
+    tar zxvf $CIV_WORK_DIR/$SWTPM_VER.tar.gz
+    cd $CIV_WORK_DIR/$SWTPM
+    ./autogen.sh --with-openssl --prefix=/usr
+    make -j24
+    make install
+    cd -
+}
+
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -259,6 +289,7 @@ ubu_enable_host_gvt
 prepare_required_scripts
 ubu_thermal_conf
 setup_sof
+ubu_install_swtpm
 
 ask_reboot
 
