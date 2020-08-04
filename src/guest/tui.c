@@ -572,6 +572,7 @@ static int key_form_driver(int ch)
 			form_driver(form, REQ_END_LINE);
 			set_field_back(form->current, COLOR_PAIR(WHITE_BLUE));
 		}
+		update_scroll_symbol();
 		break;
 	case KEY_UP:
 		if (form->current == field[1]) {
@@ -588,6 +589,7 @@ static int key_form_driver(int ch)
 			form_driver(form, REQ_END_LINE);
 			set_field_back(form->current, COLOR_PAIR(WHITE_BLUE));
 		}
+		update_scroll_symbol();
 		break;
 	case KEY_LEFT:
 		if (field_opts(form->current) & O_EDIT)
@@ -626,8 +628,6 @@ static int key_form_driver(int ch)
 		form_driver(form, ch);
 		break;
 	}
-
-	update_scroll_symbol();
 
 	return ret;
 }
