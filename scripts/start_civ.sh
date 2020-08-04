@@ -507,11 +507,11 @@ function parse_arg() {
                 ;;
 
             --thermal-mediation)
-                set_thermal_mediation
+                setup_thermal_mediation
                 ;;
 
             --battery-mediation)
-                set_battery_mediation
+                setup_battery_mediation
                 ;;
 
             --guest-pm-control)
