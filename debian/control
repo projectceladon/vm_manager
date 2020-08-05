@@ -10,7 +10,7 @@ Build-Depends:
  libglib2.0-dev,
  libjson-c-dev
 Standards-Version: 3.9.8
-Homepage: http://gitlab.devtools.intel.com/caas-amr-gitrunner-grp/gosd_security_prc/civ/vm-manager
+Homepage: http://github.com/projectceladon/vm_manager
 
 Package: vm-manager
 Architecture: any-amd64
