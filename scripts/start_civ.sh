@@ -302,7 +302,7 @@ function set_pt_pci_vfio() {
 }
 
 function set_pt_usb() {
-    local USB_PCI=$(lspci -D |grep "USB controller" | grep -o "....:..:..\..")
+    local USB_PCI=$(lspci -D |grep "USB controller" | grep -v "Thunderbolt" | grep -o "....:..:..\..")
     echo "passthrough USB device: $USB_PCI"
 
     if [[ $1 == "unset" ]]; then
