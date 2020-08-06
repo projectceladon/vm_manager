@@ -96,12 +96,11 @@ function setup_rpmb_dev() {
     local RPMB_DEV=$SCRIPTS_DIR/rpmb_dev
     local RPMB_DATA=$WORK_DIR/RPMB_DATA
     GUEST_RPMB_DEV_SOCK=$WORK_DIR/rpmb_sock
-    local RPMB_INIT_KEY="ea df 64 44 ea 65 5d 1c 87 27 d4 20 71 0d 53 42 dd 73 a3 38 63 e1 d7 94 c3 72 a6 ea e0 64 64 e6"
     # RPMB_DATA is created and initialized with specific key, if this file
     # is deleted by accidently, create a new one without any data.
     if [ ! -f $RPMB_DATA ]; then
         echo "Creating RPMB DATA..."
-        $RPMB_DEV --dev $RPMB_DATA --init --key "$RPMB_INIT_KEY" --size 2048
+        $RPMB_DEV --dev $RPMB_DATA --init --size 2048
     fi
 
     # RPMB sock should be removed at cleanup, if there exists RPMB sock,
