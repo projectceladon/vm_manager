@@ -385,25 +385,37 @@ function launch_guest() {
     local EXE_CMD="$EMULATOR_PATH \
                    $GUEST_MEM \
                    $GUEST_CPU_NUM \
-                   $GUEST_DISP_TYPE \
-                   $GUEST_VGA_DEV \
-                   $GUEST_RPMB_DEV \
-                   $GUEST_DISK \
-                   $GUEST_FIRMWARE \
-                   $GUEST_VSOCK \
-                   $GUEST_SHARE_FOLDER \
-                   $GUEST_NET \
-                   $GUEST_BLK_DEV \
-                   $GUEST_AUDIO_DEV \
-                   $GUEST_USB_PT_DEV \
-                   $GUEST_AUDIO_PT_DEV \
-                   $GUEST_ETH_PT_DEV \
-                   $GUEST_WIFI_PT_DEV \
-                   $GUEST_PM_CTRL \
-                   $GUEST_TIME_KEEP \
-                   $GUSET_VTPM \
-                   $GUEST_STATIC_OPTION \
-                   $GUEST_EXTRA_QCMD \
+    "
+
+    # Please keep RPMB device option to be the first virtio
+    # device in QEMU command line. Since secure storage daemon
+    # in Andriod side communicates with /dev/vport0p1 for RPMB
+    # usage, this is a limitation for Google RPMB solution.
+    # If any other virtio devices are passed to QEMU before RPMB,
+    # virtual port device node will be no longer named /dev/vport0p1,
+    # it leads secure storage daemon working abnormal.
+    EXE_CMD+="$GUEST_RPMB_DEV \
+    "
+
+    # Expand new introduced device here.
+    EXE_CMD+="$GUEST_DISP_TYPE \
+              $GUEST_VGA_DEV \
+              $GUEST_DISK \
+              $GUEST_FIRMWARE \
+              $GUEST_VSOCK \
+              $GUEST_SHARE_FOLDER \
+              $GUEST_NET \
+              $GUEST_BLK_DEV \
+              $GUEST_AUDIO_DEV \
+              $GUEST_USB_PT_DEV \
+              $GUEST_AUDIO_PT_DEV \
+              $GUEST_ETH_PT_DEV \
+              $GUEST_WIFI_PT_DEV \
+              $GUEST_PM_CTRL \
+              $GUEST_TIME_KEEP \
+              $GUSET_VTPM \
+              $GUEST_STATIC_OPTION \
+              $GUEST_EXTRA_QCMD \
     "
 
     echo $EXE_CMD
