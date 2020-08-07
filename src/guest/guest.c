@@ -336,6 +336,7 @@ int import_guest(char *in_path)
 			val = g_key_file_get_string(in, group->name, group->key[VGPU_TYPE], NULL);
 			if (strcmp(val, VGPU_OPTS_GVTG_STR) == 0) {
 				import_field(i, VGPU_UUID, in, out);
+				import_field(i, VGPU_GVTG_VER, in, out);
 			} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_SW_STR) == 0) {
