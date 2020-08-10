@@ -28,7 +28,8 @@ CFLAGS += -Wall -Wextra -Wbad-function-cast \
 	  -Woverlength-strings -Waggregate-return \
 	  -Wmissing-field-initializers -Wpointer-arith -Wcast-qual \
 	  -Wcast-align -Wwrite-strings \
-	  -fno-delete-null-pointer-checks -fstack-protector-strong
+	  -fno-delete-null-pointer-checks -fstack-protector-strong \
+	  -D_FORTIFY_SOURCE=2
 
 
 LDFLAGS = -lglib-2.0 -luuid -lmenu -lform -lncurses -ljson-c
