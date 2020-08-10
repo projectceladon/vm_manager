@@ -314,7 +314,7 @@ function set_pt_usb() {
 
 function set_pt_audio() {
     local AUDIO_PCI=$(lspci -D |grep -i "Audio" | grep -o "....:..:..\..")
-    echo "passthrough Aduio device: $AUDIO_PCI"
+    echo "passthrough Audio device: $AUDIO_PCI"
 
     if [[ $1 == "unset" ]]; then
         set_pt_pci_vfio $AUDIO_PCI "unset"
@@ -327,13 +327,14 @@ function set_pt_audio() {
 
 function set_pt_eth() {
     local ETH_PCI=$(lspci -D |grep -i "Ethernet" | grep -o "....:..:..\..")
-    echo "passthrough Ethernet device: $AUDIO_PCI"
+    echo "passthrough Ethernet device: $ETH_PCI"
 
     if [[ $1 == "unset" ]]; then
         set_pt_pci_vfio $ETH_PCI "unset"
     else
         set_pt_pci_vfio $ETH_PCI
         GUEST_ETH_PT_DEV=" -device vfio-pci,host=${ETH_PCI#*:},x-no-kvm-intx=on"
+        GUEST_NET=""
     fi
 }
 
