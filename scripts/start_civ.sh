@@ -346,7 +346,7 @@ function set_pt_wifi() {
         set_pt_pci_vfio $WIFI_PCI "unset"
     else
         set_pt_pci_vfio $WIFI_PCI
-        GUEST_WIFI_PT_DEV=" -device vfio-pci,host=${ETH_PCI#*:}"
+        GUEST_WIFI_PT_DEV=" -device vfio-pci,host=${WIFI_PCI#*:}"
     fi
 }
 
