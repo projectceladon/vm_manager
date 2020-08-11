@@ -13,17 +13,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          path: vm-manager
+
       - name: setup
         run: |
           sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
+
       - name: build
         run: |
-          export BUILD_DIR=${{ github.workspace }}/build
-          make
+          cd vm-manager/
           debuild -b
-          mv ../*.deb $BUILD_DIR
+
       - name: artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: vm-manager.${{ matrix.os }}
-          path: ${{ github.workspace }}/build/
+          name: vm-manager.${{ matrix.os }}.${{ github.run_id }}.${{ github.sha }}
+          path: |
+            debian/
+            *.deb
+            *.ddeb
+            *.build
+            *.buildinfo
+            *.changes

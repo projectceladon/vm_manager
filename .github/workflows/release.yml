@@ -1,0 +1,60 @@
+name: VM Manager Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build_ubuntu_gcc:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: vm-manager
+
+      - name: setup
+        run: |
+          sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
+
+      - name: Set release version
+        run: echo ::set-env name=REL_VER::${GITHUB_REF##*/}
+
+      - name: build
+        run: |
+          cd vm-manager/
+          debuild -b
+          cp $(realpath ../*.deb) vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
+
+      - name: artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vm-manager.${{ matrix.os }}.${{ github.run_id }}.${{ github.sha }}
+          path: |
+            vm-manager/debian/
+            *.deb
+            *.ddeb
+            *.build
+            *.buildinfo
+            *.changes
+
+      - name: Get release URL
+        id: get_release_url
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        uses: bruceadams/get-release@v1.2.0
+
+      - name: Upload release assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.get_release_url.outputs.upload_url }}
+          asset_path: vm-manager/vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
+          asset_name: vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
+          asset_content_type: application/vnd.debian.binary-package
