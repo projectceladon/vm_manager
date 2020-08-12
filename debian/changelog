@@ -1,3 +1,9 @@
+vm-manager (0.1.0) stable; urgency=medium
+
+  * Bump version to 0.1.0
+
+ -- Qi, Yadong <yadong.qi@intel.com>  Thu, 13 Aug 2020 09:16:18 +0800
+
 vm-manager (0.0.1) UNRELEASED; urgency=medium
 
   * Initial release.
