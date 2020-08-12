@@ -20,8 +20,8 @@
 #include "vm_manager.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 0
-#define VERSION_MICRO 1
+#define VERSION_MINOR 1
+#define VERSION_MICRO 0
 
 #define VERSION xstr(VERSION_MAJOR)"."xstr(VERSION_MINOR)"."xstr(VERSION_MICRO)
 
