@@ -28,7 +28,7 @@ jobs:
       - name: build
         run: |
           cd vm-manager/
-          debuild -b
+          debuild -b -uc -us --lintian-opts --profile debian
           cp $(realpath ../*.deb) vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
 
       - name: artifacts
