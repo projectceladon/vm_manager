@@ -108,6 +108,10 @@ static form_field_data_t g_form_field_data[FORM_NUM + 1] = {
 	{ { NULL, "                 " }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "adb port        :" }, { NULL, FIELD_TYPE_INTEGER, { .integer = { 0, 1024U, 65535U } }, NULL               } },
 	{ { NULL, "fastboot port   :" }, { NULL, FIELD_TYPE_INTEGER, { .integer = { 0, 1024U, 65535U } }, NULL               } },
+	{ { NULL, "swtpm bin       :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
+	{ { NULL, "swtpm data dir  :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
+	{ { NULL, "rpmb bin        :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
+	{ { NULL, "rpmb data dir   :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "extra cmd(qemu) :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, NULL }, { NULL, -1, { }, NULL } }
 };

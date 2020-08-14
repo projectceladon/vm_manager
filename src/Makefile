@@ -12,6 +12,8 @@ SRCS += guest/start.c
 SRCS += guest/flash.c
 SRCS += guest/tui.c
 SRCS += guest/qmp.c
+SRCS += guest/rpmb.c
+SRCS += guest/vtpm.c
 
 INCLUDE = -I./include -I./include/guest -I./include/safestringlib/
 

@@ -47,6 +47,10 @@ typedef enum {
 	FORM_INDEX_VGPU_GVTG_UUID,
 	FORM_INDEX_ADB_PORT,
 	FORM_INDEX_FASTBOOT_PORT,
+	FORM_INDEX_VTPM_BIN_PATH,
+	FORM_INDEX_VTPM_DATA_DIR,
+	FORM_INDEX_RPMB_BIN_PATH,
+	FORM_INDEX_RPMB_DATA_DIR,
 	FORM_INDEX_EXTRA_CMD,
 	FORM_NUM
 } form_index_t;
@@ -103,6 +107,8 @@ enum {
 	GROUP_FIRM,
 	GROUP_DISK,
 	GROUP_VGPU,
+	GROUP_VTPM,
+	GROUP_RPMB,
 	GROUP_EXTRA,
 	GROUP_NUM
 };
@@ -137,6 +143,14 @@ enum {
 	VGPU_TYPE = 0,
 	VGPU_GVTG_VER,
 	VGPU_UUID,
+
+	/* Sub key of group vtpm */
+	VTPM_BIN_PATH = 0,
+	VTPM_DATA_DIR,
+
+	/* Sub key of group rpmb */
+	RPMB_BIN_PATH = 0,
+	RPMB_DATA_DIR,
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,
