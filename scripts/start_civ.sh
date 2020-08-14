@@ -40,6 +40,9 @@ GUEST_WIFI_PT_DEV=
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
 GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0"
+GUEST_AAF="-fsdev local,security_model=none,id=fsdev_aaf,path=$WORK_DIR/aaf -device virtio-9p-pci,fsdev=fsdev_aaf,mount_tag=aaf"
+GUEST_AAF_DIR=$WORK_DIR/aaf
+GUEST_AAF_CONFIG=$GUEST_AAF_DIR/mixins.spec
 
 GUEST_STATIC_OPTION="\
  -name caas-vm \
@@ -209,6 +212,21 @@ function set_share_folder() {
     GUEST_SHARE_FOLDER="-fsdev local,security_model=none,id=fsdev0,path=$1 -device virtio-9p-pci,fsdev=fsdev0,mount_tag=hostshare"
 }
 
+function set_default_aaf_config() {
+    sudo modprobe 9pnet && \
+    sudo modprobe 9pnet_virtio && \
+    sudo modprobe 9p
+
+    mkdir -p $WORK_DIR/aaf
+    rm -rf $GUEST_AAF_CONFIG
+    touch $GUEST_AAF_CONFIG
+    echo "suspend:false" >> $GUEST_AAF_CONFIG
+}
+
+function allow_guest_suspend() {
+    sed -i s/suspend:false/suspend:true/g $GUEST_AAF_CONFIG
+}
+
 function set_graphics() {
     if [[ $1 =~ ^GVT-d ]]; then
         if [[ $1 == "GVT-d" ]]; then
@@ -223,6 +241,7 @@ function set_graphics() {
             return -1
         fi
         echo "setup GVT-d"
+        echo "gpu-type:gvtd" >> $GUEST_AAF_CONFIG
         sudo sh -c "modprobe vfio"
         sudo sh -c "modprobe vfio_pci"
         local intel_vga_pci_id=$(lspci -nn | grep "02.0 VGA" | grep -o "8086:....")
@@ -243,8 +262,10 @@ function set_graphics() {
         fi
         create_gvtg_vgpu GVTG_VGPU_SYS_DEV "$vgpu_uuid"
         GUEST_VGA_DEV="-device vfio-pci-nohotplug,ramfb=on,sysfsdev=$GVTG_VGPU_SYS_DEV,display=on,x-igd-opregion=on"
+        echo "gpu-type:gvtg" >> $GUEST_AAF_CONFIG
     elif [[ $1 == "VirtIO" ]]; then
         GUEST_VGA_DEV="-device virtio-gpu-pci"
+        echo "gpu-type:virtio" >> $GUEST_AAF_CONFIG
     elif [[ $1 == "QXL" ]]; then
         GUEST_VGA_DEV="-device qxl-vga,xres=480,yres=360"
     else
@@ -415,6 +436,7 @@ function launch_guest() {
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
               $GUSET_VTPM \
+              $GUEST_AAF \
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
     "
@@ -424,7 +446,7 @@ function launch_guest() {
 }
 
 function show_help() {
-    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep]\n"
+    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend]\n"
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
@@ -450,6 +472,7 @@ function show_help() {
     printf "\t--battery-mediation enable battery mediation.\n"
     printf "\t--guest-pm-control allow guest control host PM.\n"
     printf "\t--guest-time-keep reflect guest time setting on Host OS.\n"
+    printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
 }
 
 function parse_arg() {
@@ -542,6 +565,10 @@ function parse_arg() {
                 set_guest_time_keep
                 ;;
 
+            --allow-suspend)
+                allow_guest_suspend
+                ;;
+
             -?*)
                 echo "Error: Invalid option $1"
                 show_help
@@ -561,7 +588,7 @@ function parse_arg() {
 
 trap 'cleanup' EXIT
 trap 'error ${LINENO} "$BASH_COMMAND"' ERR
-
+set_default_aaf_config
 parse_arg "$@" || exit -1
 
 check_kernel_version || exit -1
