@@ -28,6 +28,8 @@ keyfile_group_t g_group[] = {
 	{ "firmware", { "type", "path", "code", "vars", NULL } },
 	{ "disk",     { "path", "size", NULL } },
 	{ "graphics", { "type", "gvtg_version", "vgpu_uuid", NULL } },
+	{ "vtpm",     { "bin_path", "data_dir", NULL } },
+	{ "rpmb",     { "bin_path", "data_dir", NULL } },
 	{ "extra",    { "cmd", NULL } },
 };
 
@@ -102,6 +104,18 @@ int load_form_data(char *name)
 		val = g_key_file_get_string(in, g->name, g->key[VGPU_UUID], NULL);
 		set_field_data(FORM_INDEX_VGPU_GVTG_UUID, val);
 	}
+
+	g = &g_group[GROUP_VTPM];
+	val = g_key_file_get_string(in, g->name, g->key[VTPM_BIN_PATH], NULL);
+	set_field_data(FORM_INDEX_VTPM_BIN_PATH, val);
+	val = g_key_file_get_string(in, g->name, g->key[VTPM_DATA_DIR], NULL);
+	set_field_data(FORM_INDEX_VTPM_DATA_DIR, val);
+
+	g = &g_group[GROUP_RPMB];
+	val = g_key_file_get_string(in, g->name, g->key[RPMB_BIN_PATH], NULL);
+	set_field_data(FORM_INDEX_RPMB_BIN_PATH, val);
+	val = g_key_file_get_string(in, g->name, g->key[RPMB_DATA_DIR], NULL);
+	set_field_data(FORM_INDEX_RPMB_DATA_DIR, val);
 
 	g = &g_group[GROUP_EXTRA];
 	val = g_key_file_get_string(in, g->name, g->key[EXTRA_CMD], NULL);
@@ -240,6 +254,30 @@ int generate_keyfile(void)
 		}
 		g_key_file_set_string(out, g_group[GROUP_VGPU].name, g_group[GROUP_VGPU].key[VGPU_UUID], temp);
 	}
+
+	get_field_data(FORM_INDEX_VTPM_BIN_PATH, temp, sizeof(temp) - 1);
+	if (0 != check_field(g_group[GROUP_VTPM].key[VTPM_BIN_PATH], temp)) {
+		goto exit;
+	}
+	g_key_file_set_string(out, g_group[GROUP_VTPM].name, g_group[GROUP_VTPM].key[VTPM_BIN_PATH], temp);
+
+	get_field_data(FORM_INDEX_VTPM_DATA_DIR, temp, sizeof(temp) - 1);
+	if (0 != check_field(g_group[GROUP_VTPM].key[VTPM_DATA_DIR], temp)) {
+		goto exit;
+	}
+	g_key_file_set_string(out, g_group[GROUP_VTPM].name, g_group[GROUP_VTPM].key[VTPM_DATA_DIR], temp);
+
+	get_field_data(FORM_INDEX_RPMB_BIN_PATH, temp, sizeof(temp) - 1);
+	if (0 != check_field(g_group[GROUP_RPMB].key[RPMB_BIN_PATH], temp)) {
+		goto exit;
+	}
+	g_key_file_set_string(out, g_group[GROUP_RPMB].name, g_group[GROUP_RPMB].key[RPMB_BIN_PATH], temp);
+
+	get_field_data(FORM_INDEX_RPMB_DATA_DIR, temp, sizeof(temp) - 1);
+	if (0 != check_field(g_group[GROUP_RPMB].key[RPMB_DATA_DIR], temp)) {
+		goto exit;
+	}
+	g_key_file_set_string(out, g_group[GROUP_RPMB].name, g_group[GROUP_RPMB].key[RPMB_DATA_DIR], temp);
 
 	get_field_data(FORM_INDEX_EXTRA_CMD, temp, sizeof(temp) - 1);
 	g_key_file_set_string(out, g_group[GROUP_EXTRA].name, g_group[GROUP_EXTRA].key[EXTRA_CMD], temp);

@@ -20,15 +20,18 @@
 #include "vm_manager.h"
 #include "guest.h"
 #include "utils.h"
+#include "safe_lib.h"
+#include "rpmb.h"
+#include "vtpm.h"
 
 extern keyfile_group_t g_group[];
 
 static const char *fixed_cmd =
 	" -machine type=q35,kernel_irqchip=off"
 	" -k en-us"
-	" -cpu host -vga none"
+	" -cpu host"
 	" -enable-kvm"
-	" -device qemu-xhci,id=xhci,addr=0x8"
+	" -device qemu-xhci,id=xhci"
 	" -device usb-mouse"
 	" -device usb-kbd"
 	" -device intel-hda -device hda-duplex"
@@ -228,6 +231,104 @@ int start_guest(char *name)
 	cx = snprintf(p, size, ",hostfwd=tcp::%s-:5554", val);
 	p += cx; size -= cx;
 
+	/*
+	 * Please keep RPMB device option to be the first virtio device in QEMU command line. Since secure
+	 * storage daemon in Andriod side communicates with /dev/vport0p1 for RPMB usage, this is a
+	 * limitation for Google RPMB solution. If any other virtio devices are passed to QEMU before RPMB,
+	 * virtual port device node will be no longer named /dev/vport0p1, it leads secure storage daemon
+	 * working abnormal.
+	 */
+	g = &g_group[GROUP_RPMB];
+	val = g_key_file_get_string(gkf, g->name, g->key[RPMB_BIN_PATH], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key rpmb_bin_path from group rpmb\n");
+		return -1;
+	}
+	if (set_rpmb_bin_path(val)) {
+		fprintf(stderr, "Failed to set rpmb bin path! val=%s\n", val);
+		return -1;
+	}
+
+	val = g_key_file_get_string(gkf, g->name, g->key[RPMB_DATA_DIR], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key rpmb_data_dir from group rpmb\n");
+		return -1;
+	}
+	if (set_rpmb_data_dir(val)) {
+		fprintf(stderr, "Failed to set rpmb data dir! val=%s\n", val);
+		return -1;
+	}
+	cx = snprintf(p, size, " -device virtio-serial -device virtserialport,chardev=rpmb0,name=rpmb0 -chardev socket,id=rpmb0,path=%s/%s", val, RPMB_SOCK);
+	p += cx; size -= cx;
+
+	g = &g_group[GROUP_VTPM];
+	val = g_key_file_get_string(gkf, g->name, g->key[VTPM_BIN_PATH], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key vtpm_bin_path from group vtpm\n");
+		return -1;
+	}
+	if (set_vtpm_bin_path(val)) {
+		fprintf(stderr, "Failed to set vtpm bin path! val=%s\n", val);
+		return -1;
+	}
+
+	val = g_key_file_get_string(gkf, g->name, g->key[VTPM_DATA_DIR], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key vtpm_data_dir from group vtpm\n");
+		return -1;
+	}
+	if (set_vtpm_data_dir(val)) {
+		fprintf(stderr, "Failed to set vtpm data dir! val=%s\n", val);
+		return -1;
+	}
+	cx = snprintf(p, size, " -chardev socket,id=chrtpm,path=%s/%s -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0", val, SWTPM_SOCK);
+	p += cx; size -= cx;
+
+	g = &g_group[GROUP_VGPU];
+	val = g_key_file_get_string(gkf, g->name, g->key[VGPU_TYPE], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key name from group graphics\n");
+		return -1;
+	}
+	if (strcmp(val, VGPU_OPTS_GVTG_STR) == 0) {
+		char vgpu_path[MAX_PATH] = { 0 };
+		struct stat st;
+		val = g_key_file_get_string(gkf, g->name, g->key[VGPU_UUID], NULL);
+		if (val == NULL) {
+			g_warning("Invalid VGPU\n");
+			return -1;
+		}
+
+		if (check_uuid(val) != 0) {
+			fprintf(stderr, "Invalid UUID format!\n");
+			return -1;
+		}
+
+		snprintf(vgpu_path, sizeof(vgpu_path), INTEL_GPU_DEV_PATH"/%s", val);
+		if (stat(vgpu_path, &st) != 0) {
+			if (create_vgpu(gkf) == -1) {
+				g_warning("failed to create vGPU\n");
+				return -1;
+			}
+		}
+		cx = snprintf(p, size, " -display gtk,gl=on -device vfio-pci-nohotplug,ramfb=on,sysfsdev=%s,display=on,x-igd-opregion=on", vgpu_path);
+		p += cx; size -= cx;
+	} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
+		if (passthrough_gpu())
+			return -1;
+		cx = snprintf(p, size, " -vga none -nographic -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
+		p += cx; size -= cx;
+	} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
+		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-gpu-pci");
+		p += cx; size -= cx;
+	} else if (strcmp(val, VGPU_OPTS_SW_STR) == 0) {
+		cx = snprintf(p, size, " -display gtk,gl=on -device qxl-vga,xres=480,yres=360");
+		p += cx; size -= cx;
+	} else {
+		g_warning("Invalid Graphics config\n");
+		return -1;
+	}
+
 	g = &g_group[GROUP_MEM];
 	val = g_key_file_get_string(gkf, g->name, g->key[MEM_SIZE], NULL);
 	if (val == NULL) {
@@ -277,50 +378,6 @@ int start_guest(char *name)
 	cx = snprintf(p, size, " -drive file=%s,if=none,id=disk1 -device virtio-blk-pci,drive=disk1,bootindex=1", val);
 	p += cx; size -= cx;
 
-	g = &g_group[GROUP_VGPU];
-	val = g_key_file_get_string(gkf, g->name, g->key[VGPU_TYPE], NULL);
-	if (val == NULL) {
-		g_warning("cannot find key name from group graphics\n");
-		return -1;
-	}
-	if (strcmp(val, VGPU_OPTS_GVTG_STR) == 0) {
-		char vgpu_path[MAX_PATH] = { 0 };
-		struct stat st;
-		val = g_key_file_get_string(gkf, g->name, g->key[VGPU_UUID], NULL);
-		if (val == NULL) {
-			g_warning("Invalid VGPU\n");
-			return -1;
-		}
-
-		if (check_uuid(val) != 0) {
-			fprintf(stderr, "Invalid UUID format!\n");
-			return -1;
-		}
-
-		snprintf(vgpu_path, sizeof(vgpu_path), INTEL_GPU_DEV_PATH"/%s", val);
-		if (stat(vgpu_path, &st) != 0) {
-			if (create_vgpu(gkf) == -1) {
-				g_warning("failed to create vGPU\n");
-				return -1;
-			}
-		}
-		cx = snprintf(p, size, " -display gtk,gl=on -device vfio-pci-nohotplug,ramfb=on,sysfsdev=%s,display=on,x-igd-opregion=on", vgpu_path);
-		p += cx; size -= cx;
-	} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
-		if (passthrough_gpu())
-			return -1;
-		cx = snprintf(p, size, " -vga none -nographic -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
-		p += cx; size -= cx;
-	} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
-		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-gpu-pci");
-		p += cx; size -= cx;
-	} else if (strcmp(val, VGPU_OPTS_SW_STR) == 0) {
-		cx = snprintf(p, size, " -display gtk,gl=on -device qxl-vga,xres=480,yres=360");
-		p += cx; size -= cx;
-	} else {
-		g_warning("Invalid Graphics config\n");
-		return -1;
-	}
 
 	g_autofree gchar **extra_keys = NULL;
 	gsize len = 0, i;
@@ -334,13 +391,26 @@ int start_guest(char *name)
 	cx = snprintf(p, size, "%s", fixed_cmd);
 	p += cx; size -= cx;
 
+	if (run_vtpm_daemon()) {
+		fprintf(stderr, "Failed to run VTPM daemon!\n");
+		return -1;
+	}
+
+	if (run_rpmb_daemon()) {
+		fprintf(stderr, "Failed to run RPMB daemon!\n");
+		return -1;
+	}
+
+
 	fprintf(stderr, "run: %s %s\n", emu_path, cmd_str);
 
-	ret = execute_cmd(emu_path, cmd_str, strlen(cmd_str));
+	ret = execute_cmd(emu_path, cmd_str, strlen(cmd_str), 0);
 	if (ret != 0) {
 		err(1, "%s:Failed to execute emulator command, err=%d\n", __func__, errno);
 		return -1;
 	}
+
+	cleanup_child_proc();
 
 	g_key_file_free(gkf);
 	return 0;

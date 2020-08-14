@@ -17,6 +17,9 @@
 #include <sys/types.h>
 #include "vm_manager.h"
 #include "guest.h"
+#include "utils.h"
+#include "rpmb.h"
+#include "vtpm.h"
 
 extern keyfile_group_t g_group[];
 
@@ -153,6 +156,52 @@ int flash_guest(char *name)
 	cx = snprintf(p, 100, "%s", val);
 	p += cx;
 
+	g = &g_group[GROUP_RPMB];
+	val = g_key_file_get_string(gkf, g->name, g->key[RPMB_BIN_PATH], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key rpmb_bin_path from group rpmb\n");
+		return -1;
+	}
+	if (set_rpmb_bin_path(val)) {
+		fprintf(stderr, "Failed to set rpmb bin path! val=%s\n", val);
+		return -1;
+	}
+
+	val = g_key_file_get_string(gkf, g->name, g->key[RPMB_DATA_DIR], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key rpmb_sock_path from group rpmb\n");
+		return -1;
+	}
+	if (set_rpmb_data_dir(val)) {
+		fprintf(stderr, "Failed to set rpmb data dir! val=%s\n", val);
+		return -1;
+	}
+	cx = snprintf(p, 200, " -device virtio-serial -device virtserialport,chardev=rpmb0,name=rpmb0 -chardev socket,id=rpmb0,path=%s/%s", val, RPMB_SOCK);
+	p += cx;
+
+	g = &g_group[GROUP_VTPM];
+	val = g_key_file_get_string(gkf, g->name, g->key[VTPM_BIN_PATH], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key vtpm_bin_path from group vtpm\n");
+		return -1;
+	}
+	if (set_vtpm_bin_path(val)) {
+		fprintf(stderr, "Failed to set vtpm bin path! val=%s\n", val);
+		return -1;
+	}
+
+	val = g_key_file_get_string(gkf, g->name, g->key[VTPM_DATA_DIR], NULL);
+	if (val == NULL) {
+		g_warning("cannot find key vtpm_sock_path from group vtpm\n");
+		return -1;
+	}
+	if (set_vtpm_data_dir(val)) {
+		fprintf(stderr, "Failed to set vtpm data dir! val=%s\n", val);
+		return -1;
+	}
+	cx = snprintf(p, 200, " -chardev socket,id=chrtpm,path=%s/%s -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0", val, SWTPM_SOCK);
+	p += cx;
+
 	g = &g_group[GROUP_FIRM];
 	val = g_key_file_get_string(gkf, g->name, g->key[FIRM_TYPE], NULL);
 	if (val == NULL) {
@@ -189,6 +238,16 @@ int flash_guest(char *name)
 	cx = snprintf(p, sizeof(flashing_arg), "%s", flashing_arg);
 	p += cx;
 
+	if (run_vtpm_daemon()) {
+		fprintf(stderr, "Failed to run VTPM daemon!\n");
+		return -1;
+	}
+
+	if (run_rpmb_daemon()) {
+		fprintf(stderr, "Failed to run RPMB daemon!\n");
+		return -1;
+	}
+
 	printf("%s\n", cmd);
 
 	ret = system(cmd);
@@ -198,6 +257,7 @@ int flash_guest(char *name)
 		printf("\nFlash guest[%s] failed\n", name);
 
 exit:
+	cleanup_child_proc();
 	g_key_file_free(gkf);
 	return ret;
 }
