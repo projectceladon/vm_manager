@@ -34,6 +34,7 @@ GUEST_BLK_DEV=
 GUEST_AUDIO_DEV="-device intel-hda -device hda-duplex -audiodev id=android_spk,timer-period=5000,server=$XDG_RUNTIME_DIR/pulse/native,driver=pa"
 GUEST_EXTRA_QCMD=
 GUEST_USB_PT_DEV=
+GUEST_UDC_PT_DEV=
 GUEST_AUDIO_PT_DEV=
 GUEST_ETH_PT_DEV=
 GUEST_WIFI_PT_DEV=
@@ -322,7 +323,7 @@ function set_pt_pci_vfio() {
 }
 
 function set_pt_usb() {
-    local USB_PCI=$(lspci -D |grep "USB controller" | grep -v "Thunderbolt" | grep -o "....:..:..\..")
+    local USB_PCI=$(lspci -D |grep -m1 "USB controller" | grep -o "....:..:..\..")
     echo "passthrough USB device: $USB_PCI"
 
     if [[ $1 == "unset" ]]; then
@@ -330,6 +331,18 @@ function set_pt_usb() {
     else
         set_pt_pci_vfio $USB_PCI
         GUEST_USB_PT_DEV=" -device vfio-pci,host=${USB_PCI#*:},x-no-kvm-intx=on"
+    fi
+}
+
+function set_pt_udc() {
+    local UDC_PCI=$(lspci -D | grep -m2 "USB controller" | tail -1 | grep -o "....:..:..\..")
+    echo "passthrough USB device: $UDC_PCI"
+
+    if [[ $1 == "unset" ]]; then
+        set_pt_pci_vfio $UDC_PCI "unset"
+    else
+        set_pt_pci_vfio $UDC_PCI
+        GUEST_UDC_PT_DEV=" -device vfio-pci,host=${UDC_PCI#*:},x-no-kvm-intx=on"
     fi
 }
 
@@ -396,6 +409,7 @@ function cleanup() {
     cleanup_battery_mediation
     [[ -z $GUEST_USB_PT_DEV ]] || set_pt_usb unset
     [[ -z $GUEST_AUDIO_PT_DEV ]] || set_pt_audio unset
+    [[ -z $GUEST_UDC_PT_DEV ]] || set_pt_udc unset
 }
 
 function error() {
@@ -430,6 +444,7 @@ function launch_guest() {
               $GUEST_BLK_DEV \
               $GUEST_AUDIO_DEV \
               $GUEST_USB_PT_DEV \
+              $GUEST_UDC_PT_DEV \
               $GUEST_AUDIO_PT_DEV \
               $GUEST_ETH_PT_DEV \
               $GUEST_WIFI_PT_DEV \
@@ -446,7 +461,7 @@ function launch_guest() {
 }
 
 function show_help() {
-    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend]\n"
+    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend]\n"
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
@@ -465,6 +480,7 @@ function show_help() {
     printf "\t-b  specify host block device as guest virtual device, eg.\" -b /dev/mmcblk0 \"\n"
     printf "\t-e  specify extra qemu cmd, eg. \"-e \"-full-screen -monitor stdio\"\"\n"
     printf "\t--passthrough-pci-usb passthrough USB PCI bus to guest.\n"
+    printf "\t--passthrough-pci-udc passthrough USB Device Controller ie. UDC PCI bus to guest.\n"
     printf "\t--passthrough-pci-audio passthrough Audio PCI bus to guest.\n"
     printf "\t--passthrough-pci-eth passthrough Ethernet PCI bus to guest.\n"
     printf "\t--passthrough-pci-wifi passthrough WiFi PCI bus to guest.\n"
@@ -535,6 +551,10 @@ function parse_arg() {
 
             --passthrough-pci-usb)
                 set_pt_usb
+                ;;
+
+            --passthrough-pci-udc)
+                set_pt_udc
                 ;;
 
             --passthrough-pci-audio)
