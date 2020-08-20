@@ -93,7 +93,7 @@ int cleanup_child_proc(void)
 		return -1;
 	}
 
-	n = read(fd, buf, sizeof(buf));
+	n = read(fd, buf, sizeof(buf) - 1);
 	if (n == -1) {
 		fprintf(stderr, "read %s failed, errno=%d\n", str, errno);
 		close(fd);
