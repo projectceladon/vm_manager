@@ -228,47 +228,137 @@ function allow_guest_suspend() {
     sed -i s/suspend:false/suspend:true/g $GUEST_AAF_CONFIG
 }
 
+function setup_gvtd() {
+    GUEST_DISP_TYPE="-display none"
+    GUEST_VGA_DEV="-device vfio-pci,host=00:02.0,x-igd-gms=2,id=gvtd_dev,bus=pcie.0,addr=0x2,x-igd-opregion=on"
+
+    shift #skip first param: GVT-d
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            romfile=*)
+                local GVTD_ROM=${var#*=}
+                [ -z $GVTD_ROM ] && echo "E: romfile not specified!" && return -1
+                [ ! -f $GVTD_ROM ] && echo "E: $GVTD_ROM not exists" && return -1
+                GUEST_VGA_DEV+=",romfile=$GVTD_ROM"
+                shift
+                ;;
+            *)
+                echo "E: GVT-d: Invalid parameters: $1"
+                return -1
+                ;;
+        esac
+    done
+
+    echo "setup GVT-d"
+    sudo sh -c "modprobe vfio"
+    sudo sh -c "modprobe vfio_pci"
+    local intel_vga_pci_id=$(lspci -nn | grep "02.0 VGA" | grep -o "8086:....")
+    if [ ! -z $intel_vga_pci_id ]; then
+        sudo sh -c "echo 0000:00:02.0 > /sys/bus/pci/devices/0000:00:02.0/driver/unbind"
+        sudo sh -c "echo ${intel_vga_pci_id/:/ } > /sys/bus/pci/drivers/vfio-pci/new_id"
+    fi
+
+    echo "gpu-type:gvtd" >> $GUEST_AAF_CONFIG
+}
+
+function setup_gvtg() {
+    local vgpu_uuid=""
+    local ram_fb="on"
+    local display="on"
+
+    shift #skip first param: GVT-g
+
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            uuid=*)
+                vgpu_uuid=${1#*=}
+                shift
+                ;;
+            display=on)
+                ram_fb="on"
+                display="on"
+                GUEST_DISP_TYPE="-display gtk,gl=on"
+                shift
+                ;;
+            display=off)
+                ram_fb="off"
+                display="off"
+                GUEST_DISP_TYPE="-display none"
+                shift
+                ;;
+            *)
+                echo "E: GVT-g: Invalid parameters: $1"
+                return -1
+                ;;
+        esac
+    done
+
+    create_gvtg_vgpu GVTG_VGPU_SYS_DEV "$vgpu_uuid"
+    GUEST_VGA_DEV="-device vfio-pci-nohotplug,ramfb=$ram_fb,sysfsdev=$GVTG_VGPU_SYS_DEV,display=$display,x-igd-opregion=on"
+
+    echo "gpu-type:gvtg" >> $GUEST_AAF_CONFIG
+}
+
+function setup_virtio_gpu() {
+    GUEST_VGA_DEV="-device virtio-gpu-pci"
+
+    shift #skip first param: VirtIO
+
+    if [[ $# -gt 0 ]]; then
+        case $1 in
+            display=on)
+                GUEST_DISP_TYPE="-display gtk,gl=on"
+                shift
+                ;;
+            display=off)
+                GUEST_DISP_TYPE="-display none"
+                shift
+                ;;
+            *)
+                echo "E: VirtIO GPU: Invalid parameters: $1"
+                return -1
+                ;;
+        esac
+    fi
+
+    echo "gpu-type:virtio" >> $GUEST_AAF_CONFIG
+}
+
+function setup_qxl_vga() {
+    GUEST_VGA_DEV="-device qxl-vga,xres=480,yres=360"
+
+    shift #skip first param: QXL
+
+    if [[ $# -gt 0 ]]; then
+        case $1 in
+            display=on)
+                GUEST_DISP_TYPE="-display gtk,gl=on"
+                shift
+                ;;
+            display=off)
+                GUEST_DISP_TYPE="-display none"
+                shift
+                ;;
+            *)
+                echo "E: QXL GPU: Invalid parameters: $1"
+                return -1
+                ;;
+        esac
+    fi
+}
+
 function set_graphics() {
-    if [[ $1 =~ ^GVT-d ]]; then
-        if [[ $1 == "GVT-d" ]]; then
-            GUEST_VGA_DEV="-device vfio-pci,host=00:02.0,x-igd-gms=2,id=gvtd_dev,bus=pcie.0,addr=0x2,x-igd-opregion=on"
-        elif [[ $1 =~ ^GVT-d,romfile=* ]]; then
-            local GVTD_ROM=${1#*=}
-            [ -z $GVTD_ROM ] && echo "E: romfile not specified!" && return -1
-            [ ! -f $GVTD_ROM ] && echo "E: $GVTD_ROM not exists" && return -1
-            GUEST_VGA_DEV="-device vfio-pci,host=00:02.0,x-igd-gms=2,id=gvtd_dev,bus=pcie.0,addr=0x2,x-igd-opregion=on,romfile=$GVTD_ROM"
-        else
-            echo "E: GVT-d Invalid parameters"
-            return -1
-        fi
-        echo "setup GVT-d"
-        echo "gpu-type:gvtd" >> $GUEST_AAF_CONFIG
-        sudo sh -c "modprobe vfio"
-        sudo sh -c "modprobe vfio_pci"
-        local intel_vga_pci_id=$(lspci -nn | grep "02.0 VGA" | grep -o "8086:....")
-        if [ ! -z $intel_vga_pci_id ]; then
-            sudo sh -c "echo 0000:00:02.0 > /sys/bus/pci/devices/0000:00:02.0/driver/unbind"
-            sudo sh -c "echo ${intel_vga_pci_id/:/ } > /sys/bus/pci/drivers/vfio-pci/new_id"
-            GUEST_DISP_TYPE="-display none"
-        fi
-    elif [[ $1 =~ ^GVT-g ]]; then
-        local vgpu_uuid
-        if [[ $1 == "GVT-g" ]]; then
-            vgpu_uuid=""
-        elif [[ $1 =~ ^GVT-g,uuid=* ]]; then
-            vgpu_uuid=${1#*=}
-        else
-            echo "E: GVT-g Invald parameters"
-            return -1
-        fi
-        create_gvtg_vgpu GVTG_VGPU_SYS_DEV "$vgpu_uuid"
-        GUEST_VGA_DEV="-device vfio-pci-nohotplug,ramfb=on,sysfsdev=$GVTG_VGPU_SYS_DEV,display=on,x-igd-opregion=on"
-        echo "gpu-type:gvtg" >> $GUEST_AAF_CONFIG
-    elif [[ $1 == "VirtIO" ]]; then
-        GUEST_VGA_DEV="-device virtio-gpu-pci"
-        echo "gpu-type:virtio" >> $GUEST_AAF_CONFIG
-    elif [[ $1 == "QXL" ]]; then
-        GUEST_VGA_DEV="-device qxl-vga,xres=480,yres=360"
+    OIFS=$IFS IFS=',' sub_param=($1) IFS=$OIFS
+
+    if [[ ${sub_param[0]} == "GVT-d" ]]; then
+        setup_gvtd ${sub_param[@]} || return -1
+    elif [[ ${sub_param[0]} == "GVT-g" ]]; then
+        setup_gvtg ${sub_param[@]} || return -1
+    elif [[ ${sub_param[0]} == "VirtIO" ]]; then
+        setup_virtio_gpu ${sub_param[@]} || return -1
+    elif [[ ${sub_param[0]} == "QXL" ]]; then
+        setup_qxl_vga ${sub_param[@]} || return -1
     else
         echo "E: VGPU only support VirtIO,GVT-g,GVT-d,QXL. $1 is not supported"
         return -1
@@ -468,10 +558,10 @@ function show_help() {
     printf "\t-c  specify guest cpu number, eg. \"-c 4\"\n"
     printf "\t-g  specify guest graphics mode, current support VirtIO|GVT-g|GVT-d|QXL.\n"
     printf "\t\tThe default value is VirtIO.\n"
-    printf "\t\tVirtIO GPU, eg. \"-g VirtIO\"\n"
-    printf "\t\tQXL VGA, eg. \"-g QXL\"\n"
-    printf "\t\tGVT-g, eg. \"-g GVT-g,uuid=4ec1ff92-81d7-11e9-aed4-5bf6a9a2bb0a\", if uuid is not specified, a hardcoded uuid will be used\n"
-    printf "\t\tGVT-d: romfile is supported for GVT-d, eg. \"-g GVT-d,romfile=/path/to/romfile\"\n"
+    printf "\t\tVirtIO GPU, sub-param: display=[on|off]. eg. \"-g VirtIO,display=off\", display is [on] by default\n"
+    printf "\t\tQXL VGA, sub-param: display=[on|off]. eg. \"-g QXL,display=on\"\n"
+    printf "\t\tGVT-g, sub-param: uuid=[vgpu uuid],display=[on|off]. eg. \"-g GVT-g,uuid=4ec1ff92-81d7-11e9-aed4-5bf6a9a2bb0a,display=on\", if uuid is not specified, a hardcoded uuid will be used\n"
+    printf "\t\tGVT-d: sub-param: romfile=[file path of rom]. eg. \"-g GVT-d,romfile=/path/to/romfile\"\n"
     printf "\t-d  specify guest virtual disk image, eg. \"-d /path/to/android.img\"\n"
     printf "\t-f  specify guest firmware image, eg. \"-d /path/to/ovmf.fd\"\n"
     printf "\t-v  specify guest vsock cid, eg. \"-v 4\"\n"
