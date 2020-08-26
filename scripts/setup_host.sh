@@ -164,12 +164,13 @@ function install_auto_start_service(){
 
     echo "[Service]" >> $service_file
     echo -e "WorkingDirectory=$CIV_WORK_DIR\n" >> $service_file
-    echo -e "ExecStart=/bin/bash -E $CIV_WORK_DIR/scripts/start_android.sh\n" >> $service_file
+    echo -e "ExecStart=/bin/bash -E $CIV_WORK_DIR/scripts/start_civ.sh\n" >> $service_file
 
     echo "[Install]" >> $service_file
     echo -e "WantedBy=multi-user.target\n" >> $service_file
 
     sudo mv $service_file /etc/systemd/system/
+    sudo systemctl enable $civ_service
 }
 
 function ubu_thermal_conf() {
