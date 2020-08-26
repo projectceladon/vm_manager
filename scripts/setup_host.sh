@@ -176,8 +176,10 @@ function install_auto_start_service(){
     echo -e "Description=CiV Auto Start\n" >> $service_file
 
     echo "[Service]" >> $service_file
+    echo -e "Type=forking\n" >> $service_file
+    echo -e "TimeoutSec=infinity\n" >> $service_file
     echo -e "WorkingDirectory=$CIV_WORK_DIR\n" >> $service_file
-    echo -e "ExecStart=/bin/bash -E $CIV_WORK_DIR/scripts/start_civ.sh\n" >> $service_file
+    echo -e "ExecStart=/bin/bash -E $CIV_WORK_DIR/scripts/start_civ.sh $1\n" >> $service_file
 
     echo "[Install]" >> $service_file
     echo -e "WantedBy=multi-user.target\n" >> $service_file
@@ -267,7 +269,8 @@ function parse_arg() {
                 ;;
 
             --auto-start)
-                install_auto_start_service || return -1
+                install_auto_start_service "$2" || return -1
+                shift
                 ;;
 
             -?*)
