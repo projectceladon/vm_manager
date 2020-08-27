@@ -83,6 +83,10 @@ static int create_vusb(GKeyFile *gkf)
 	if (system(cmd))
 		return -1;
 
+	snprintf(cmd, MAX_CMDLINE_LEN, "rm -r /tmp/%s", fname);
+	if (system(cmd))
+		return -1;
+
 	return 0;
 }
 
@@ -257,6 +261,11 @@ int flash_guest(char *name)
 		printf("\nFlash guest[%s] failed\n", name);
 
 exit:
+	//Clean up temp file
+	memset(cmd, 0, sizeof(cmd));
+	snprintf(cmd, MAX_CMDLINE_LEN, "rm -f %s", VUSB_FLASH_DISK);
+	ret = system(cmd);
+
 	cleanup_child_proc();
 	g_key_file_free(gkf);
 	return ret;
