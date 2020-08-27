@@ -393,15 +393,19 @@ function set_pt_pci_vfio() {
     if [ ! -z $PT_PCI ]; then
         sudo sh -c "modprobe vfio-pci"
         local iommu_grp_dev="/sys/bus/pci/devices/$PT_PCI/iommu_group/devices/*"
+        local d
         for d in $iommu_grp_dev; do
             local pci=$(basename $d)
             local vendor=$(cat $d/vendor)
             local device=$(cat $d/device)
 
             if [[ $unset == "unset" ]]; then
-                echo "unset PCI passthrough: $pci, $vendor:$device"
-                sudo sh -c "echo $pci > /sys/bus/pci/drivers/vfio-pci/unbind"
-                sudo sh -c "echo $vendor $device > /sys/bus/pci/drivers/vfio-pci/remove_id"
+                local driver_in_use=$(basename $(realpath $d/driver))
+                if [[ $driver_in_use == "vfio-pci" ]]; then
+                    echo "unset PCI passthrough: $pci, $vendor:$device"
+                    sudo sh -c "echo $pci > /sys/bus/pci/drivers/vfio-pci/unbind"
+                    sudo sh -c "echo $vendor $device > /sys/bus/pci/drivers/vfio-pci/remove_id"
+                fi
                 sudo sh -c "echo $pci > /sys/bus/pci/drivers_probe"
             else
                 echo "set PCI passthrough: $pci, $vendor:$device"
@@ -412,66 +416,109 @@ function set_pt_pci_vfio() {
     fi
 }
 
-function set_pt_usb() {
-    local USB_PCI=$(lspci -D |grep -m1 "USB controller" | grep -o "....:..:..\..")
-    echo "passthrough USB device: $USB_PCI"
-
-    if [[ $1 == "unset" ]]; then
-        set_pt_pci_vfio $USB_PCI "unset"
-    else
-        set_pt_pci_vfio $USB_PCI
-        GUEST_USB_PT_DEV=" -device vfio-pci,host=${USB_PCI#*:},x-no-kvm-intx=on"
+# According to PCI specification, for USB controller, the prog-if field
+# indicates the controller type:
+#      0x00 -- UHCI
+#      0x10 -- OHCI
+#      0x20 -- EHCI
+#      0x30 -- XHCI
+#      0x80 -- Unspecified
+#      0xfe -- USB Device(not a host controller)
+# Refs: https://wiki.osdev.org/PCI
+function is_usb_dev_udc()
+{
+    local pci_id=$1
+    local prog_if=$(lspci -vmms $pci_id | grep ProgIf)
+    if [[ ! -z $prog_if ]]; then
+        if [[ ${prog_if#*:} -eq fe ]]; then
+            return 0
+        fi
     fi
+
+    return -1
+}
+
+function set_pt_usb() {
+    local d
+    local USB_PCI=$(lspci -D |grep -m1 "USB controller" | grep -o "....:..:..\..")
+
+    # passthrough only USB host controller
+    for d in $USB_PCI; do
+        if [[ $1 == "unset" ]]; then
+            set_pt_pci_vfio $d "unset"
+        else
+            is_usb_dev_udc $d && continue
+
+            echo "passthrough USB device: $d"
+            set_pt_pci_vfio $d
+            GUEST_USB_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
+        fi
+    done
 }
 
 function set_pt_udc() {
-    local UDC_PCI=$(lspci -D | grep -m2 "USB controller" | tail -1 | grep -o "....:..:..\..")
-    echo "passthrough USB device: $UDC_PCI"
+    local d
+    local UDC_PCI=$(lspci -D | grep "USB controller" | grep -o "....:..:..\..")
 
-    if [[ $1 == "unset" ]]; then
-        set_pt_pci_vfio $UDC_PCI "unset"
-    else
-        set_pt_pci_vfio $UDC_PCI
-        GUEST_UDC_PT_DEV=" -device vfio-pci,host=${UDC_PCI#*:},x-no-kvm-intx=on"
-    fi
+    # passthrough only USB device controller
+    for d in $UDC_PCI; do
+        if [[ $1 == "unset" ]]; then
+            set_pt_pci_vfio $d "unset"
+        else
+            is_usb_dev_udc $d || continue
+
+            echo "passthrough UDC device: $d"
+            set_pt_pci_vfio $d
+            GUEST_UDC_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
+        fi
+    done
 }
 
 function set_pt_audio() {
+    local d
     local AUDIO_PCI=$(lspci -D |grep -i "Audio" | grep -o "....:..:..\..")
-    echo "passthrough Audio device: $AUDIO_PCI"
 
-    if [[ $1 == "unset" ]]; then
-        set_pt_pci_vfio $AUDIO_PCI "unset"
-    else
-        set_pt_pci_vfio $AUDIO_PCI
-        GUEST_AUDIO_PT_DEV=" -device vfio-pci,host=${AUDIO_PCI#*:},x-no-kvm-intx=on"
-        GUEST_AUDIO_DEV=""
-    fi
+    for d in $AUDIO_PCI; do
+        if [[ $1 == "unset" ]]; then
+            set_pt_pci_vfio $d "unset"
+        else
+            echo "passthrough Audio device: $d"
+            set_pt_pci_vfio $d
+            GUEST_AUDIO_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
+            GUEST_AUDIO_DEV=""
+        fi
+    done
 }
 
 function set_pt_eth() {
+    local d
     local ETH_PCI=$(lspci -D |grep -i "Ethernet" | grep -o "....:..:..\..")
-    echo "passthrough Ethernet device: $ETH_PCI"
 
-    if [[ $1 == "unset" ]]; then
-        set_pt_pci_vfio $ETH_PCI "unset"
-    else
-        set_pt_pci_vfio $ETH_PCI
-        GUEST_ETH_PT_DEV=" -device vfio-pci,host=${ETH_PCI#*:},x-no-kvm-intx=on"
-        GUEST_NET=""
-    fi
+    for d in $ETH_PCI; do
+        if [[ $1 == "unset" ]]; then
+            set_pt_pci_vfio $d "unset"
+        else
+            echo "passthrough Ethernet device: $d"
+            set_pt_pci_vfio $d
+            GUEST_ETH_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
+            GUEST_NET=""
+        fi
+    done
 }
 
 function set_pt_wifi() {
+    local d
     local WIFI_PCI=$(lspci -D |grep -i "Network controller.* Wireless" | grep -o "....:..:..\..")
-    echo "passthrough WiFi device: $WIFI_PCI"
 
-    if [[ $1 == "unset" ]]; then
-        set_pt_pci_vfio $WIFI_PCI "unset"
-    else
-        set_pt_pci_vfio $WIFI_PCI
-        GUEST_WIFI_PT_DEV=" -device vfio-pci,host=${WIFI_PCI#*:}"
-    fi
+    for d in $WIFI_PCI; do
+        if [[ $1 == "unset" ]]; then
+            set_pt_pci_vfio $d "unset"
+        else
+            echo "passthrough WiFi device: $d"
+            set_pt_pci_vfio $d
+            GUEST_WIFI_PT_DEV+=" -device vfio-pci,host=${d#*:}"
+        fi
+    done
 }
 
 function set_guest_pm() {
@@ -500,6 +547,8 @@ function cleanup() {
     [[ -z $GUEST_USB_PT_DEV ]] || set_pt_usb unset
     [[ -z $GUEST_AUDIO_PT_DEV ]] || set_pt_audio unset
     [[ -z $GUEST_UDC_PT_DEV ]] || set_pt_udc unset
+    [[ -z $GUEST_WIFI_PT_DEV ]] || set_pt_wifi unset
+    [[ -z $GUEST_ETH_PT_DEV ]] || set_pt_eth unset
 }
 
 function error() {
@@ -551,7 +600,7 @@ function launch_guest() {
 }
 
 function show_help() {
-    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend]\n"
+    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend]\n"
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
