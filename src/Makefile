@@ -31,8 +31,8 @@ CFLAGS += -Wall -Wextra -Wbad-function-cast \
 	  -Wmissing-field-initializers -Wpointer-arith -Wcast-qual \
 	  -Wcast-align -Wwrite-strings \
 	  -fno-delete-null-pointer-checks -fstack-protector-strong \
-	  -D_FORTIFY_SOURCE=2
-
+	  -D_FORTIFY_SOURCE=2 \
+	  -fno-strict-overflow -fwrapv
 
 LDFLAGS = -lglib-2.0 -luuid -lmenu -lform -lncurses -ljson-c
 
