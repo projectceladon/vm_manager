@@ -12,6 +12,7 @@ reboot_required=0
 QEMU_REL="qemu-4.2.0"
 CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
+CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
 
 #---------      Functions    -------------------
 function error() {
@@ -46,6 +47,12 @@ function ubu_install_qemu_gvt(){
         for i in $CIV_GOP_DIR/qemu/*.patch; do patch -p1 < $i; done
     fi
 
+    if [ -d $CIV_VERTICAl_DIR ]; then
+	for i in $CIV_VERTICAl_DIR/qemu/*.patch; do
+        echo "applying qemu patch $i";
+        patch -p1 < $i; done
+    fi
+
     ./configure --prefix=/usr \
         --enable-kvm \
         --disable-xen \
@@ -74,6 +81,12 @@ function ubu_build_ovmf_gvt(){
     if [ -d $CIV_GOP_DIR ]; then
         for i in $CIV_GOP_DIR/ovmf/*.patch; do patch -p1 < $i; done
         cp $CIV_GOP_DIR/ovmf/Vbt.bin OvmfPkg/Vbt/Vbt.bin
+    fi
+
+    if [ -d $CIV_VERTICAl_DIR ]; then
+        for i in $CIV_VERTICAl_DIR/ovmf/*.patch; do
+                echo "applying ovmf patch $i";
+                patch -p1 < $i; done
     fi
 
     source ./edksetup.sh
