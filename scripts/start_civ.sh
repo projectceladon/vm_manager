@@ -38,6 +38,7 @@ GUEST_UDC_PT_DEV=
 GUEST_AUDIO_PT_DEV=
 GUEST_ETH_PT_DEV=
 GUEST_WIFI_PT_DEV=
+GUEST_ACPI_SSDT=
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
 GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0"
@@ -383,6 +384,11 @@ function set_block_dev() {
     [ ! -z $1 ] && GUEST_BLK_DEV+="-drive file=$1,format=raw"
 }
 
+function set_acpi_ssdt() {
+    local ssdt_file="${WORK_DIR}/${1}_ssdt_headless.aml"
+    [ -f "$ssdt_file" ] && GUEST_ACPI_SSDT="-acpitable sig=SSDT,rev=1,oem_id=INTEL,oem_table_id=INTLSSDT,oem_rev=1,asl_compiler_id=iasl,asl_compiler_rev=20190509,data=${ssdt_file}"
+}
+
 function set_extra_qcmd() {
     GUEST_EXTRA_QCMD=$1
 }
@@ -538,6 +544,7 @@ function launch_guest() {
               $GUEST_AUDIO_PT_DEV \
               $GUEST_ETH_PT_DEV \
               $GUEST_WIFI_PT_DEV \
+              $GUEST_ACPI_SSDT \
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
               $GUSET_VTPM \
@@ -568,6 +575,7 @@ function show_help() {
     printf "\t-s  specify guest share folder path, eg. \"-s /path/to/share/with/guest\"\n"
     printf "\t-p  specify host forward ports, current support adb/fastboot, eg. \"-p adb=6666,fastboot=7777\"\n"
     printf "\t-b  specify host block device as guest virtual device, eg.\" -b /dev/mmcblk0 \"\n"
+    printf "\t-ssdt  specify extra per-SKU ACPI ssdt table to guest, eg.\" -ssdt <sku> \"\n"
     printf "\t-e  specify extra qemu cmd, eg. \"-e \"-full-screen -monitor stdio\"\"\n"
     printf "\t--passthrough-pci-usb passthrough USB PCI bus to guest.\n"
     printf "\t--passthrough-pci-udc passthrough USB Device Controller ie. UDC PCI bus to guest.\n"
@@ -631,6 +639,11 @@ function parse_arg() {
 
             -b)
                 set_block_dev $2
+                shift
+                ;;
+
+            -ssdt)
+                set_acpi_ssdt $2
                 shift
                 ;;
 
