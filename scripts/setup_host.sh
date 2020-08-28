@@ -28,7 +28,7 @@ function ubu_changes_require(){
     if [ x$res = xn ]; then
         return 1
     fi
-    sudo apt install -y wget mtools ovmf dmidecode python3-usb python3-pyudev pulseaudio jq
+    sudo apt install -y wget mtools ovmf dmidecode python3-usb python3-pyudev pulseaudio jq acpica-tools
 }
 
 function ubu_install_qemu_gvt(){
@@ -210,6 +210,33 @@ function set_host_ui() {
     fi
 }
 
+function prepare_guest_ssdt() {
+    local sku=$1
+    # Delete old ssdt generation
+    ssdt_dsl="$CIV_WORK_DIR/skucfg/${sku}/ssdt.dsl"
+    ssdt_aml="$CIV_WORK_DIR/${sku}_ssdt.aml"
+    ssdt_headless_aml="$CIV_WORK_DIR/${sku}_ssdt_headless.aml"
+    if [[ -f "${ssdt_aml}" ]]; then
+        rm ${ssdt_aml}
+    fi
+    if [[ -f "${ssdt_headless_aml}" ]]; then
+        rm ${ssdt_headless_aml}
+    fi
+    if [[ -f "${ssdt_dsl}" ]]; then
+        printf "Generating SSDT for ${sku} ...\n"
+        # Compile dsl to aml
+        iasl -Pn -vs -p ${ssdt_aml} ${ssdt_dsl} > /dev/null 2>&1
+        # Strip header
+        dd if=${ssdt_aml} of=${ssdt_headless_aml} bs=1 skip=36 > /dev/null 2>&1
+        # Delete useless aml
+        if [[ -f "${ssdt_aml}" ]]; then
+            rm ${ssdt_aml}
+        fi
+    else
+        printf "${sku} SSDT not found\n"
+    fi
+}
+
 function setup_sof() {
     $CIV_WORK_DIR/sof_audio/configure_sof.sh "install" $CIV_WORK_DIR
     $CIV_WORK_DIR/scripts/setup_audio_host.sh
@@ -250,6 +277,7 @@ function show_help() {
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-u  specify Host OS's UI, support \"headless\" and \"GUI\" eg. \"-u headless\" or \"-u GUI\"\n"
+    printf "\t-ssdt  generate SKU-specific ACPI ssdt table for guest, eg. \" -ssdt <sku> \"\n"
     printf "\t--auto-start auto start CiV guest when Host boot up.\n"
 }
 
@@ -263,6 +291,11 @@ function parse_arg() {
 
             -u)
                 set_host_ui $2 || return -1
+                shift
+                ;;
+
+            -ssdt)
+                prepare_guest_ssdt $2 || return -1
                 shift
                 ;;
 
