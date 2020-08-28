@@ -45,6 +45,8 @@ GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev em
 GUEST_AAF="-fsdev local,security_model=none,id=fsdev_aaf,path=$WORK_DIR/aaf -device virtio-9p-pci,fsdev=fsdev_aaf,mount_tag=aaf"
 GUEST_AAF_DIR=$WORK_DIR/aaf
 GUEST_AAF_CONFIG=$GUEST_AAF_DIR/mixins.spec
+GUEST_POWER_BUTTON=
+GUEST_GRAPHIC_MODE=
 
 GUEST_STATIC_OPTION="\
  -name caas-vm \
@@ -355,6 +357,7 @@ function setup_ramfb_vga() {
 
 function set_graphics() {
     OIFS=$IFS IFS=',' sub_param=($1) IFS=$OIFS
+    GUEST_GRAPHIC_MODE=${sub_param[0]}
 
     if [[ ${sub_param[0]} == "GVT-d" ]]; then
         setup_gvtd ${sub_param[@]} || return -1
@@ -544,6 +547,20 @@ function set_guest_time_keep() {
     fi
 }
 
+function set_guest_pwr_vol_button() {
+    echo "Guest graphic mode is $GUEST_GRAPHIC_MODE"
+    if [[ $GUEST_GRAPHIC_MODE == "GVT-d" ]]; then
+        cd $SCRIPTS_DIR
+        sudo ./vinput-manager --gvtd
+        GUEST_POWER_BUTTON='-qmp unix:./qmp-vinput-sock,server,nowait -device virtio-input-host-pci,evdev=/dev/input/by-id/Power-Button-vm0 -device virtio-input-host-pci,evdev=/dev/input/by-id/Volume-Button-vm0'
+    else
+        cd $SCRIPTS_DIR
+        sudo ./vinput-manager
+        GUEST_POWER_BUTTON='-device virtio-input-host-pci,evdev=/dev/input/by-id/Power-Button-vm0 -device virtio-input-host-pci,evdev=/dev/input/by-id/Volume-Button-vm0'
+    fi
+    cd -
+}
+
 function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
@@ -593,6 +610,7 @@ function launch_guest() {
               $GUEST_WIFI_PT_DEV \
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
+              $GUEST_POWER_BUTTON \
               $GUSET_VTPM \
               $GUEST_AAF \
               $GUEST_KIRQ_CHIP \
@@ -634,6 +652,7 @@ function show_help() {
     printf "\t--guest-time-keep reflect guest time setting on Host OS.\n"
     printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
     printf "\t--disable-kernel-irqchip set kernel_irqchip=off.\n"
+    printf "\t--passthrough-pwr-vol-button passthrough the power button and volume button to guest.\n"
 }
 
 function parse_arg() {
@@ -736,6 +755,10 @@ function parse_arg() {
 
             --disable-kernel-irqchip)
                 disable_kernel_irq_chip
+                ;;
+
+            --passthrough-pwr-vol-button)
+                set_guest_pwr_vol_button
                 ;;
 
             -?*)
