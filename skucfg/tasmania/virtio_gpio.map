@@ -1,0 +1,4 @@
+# devfn in guest, must match DSDT/SSDT
+0x14.0
+# pin mapping json for virtio-gpio-pci
+{"base":0,,"map":[{"chip":"gpiochip0",, "pin":0,,"bypass":true},,{"chip":"gpiochip0",, "pin":257},,{"chip":"gpiochip0",, "pin":192},,{"chip":"gpiochip0",, "pin":86}]}
