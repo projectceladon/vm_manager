@@ -38,6 +38,7 @@ GUEST_UDC_PT_DEV=
 GUEST_AUDIO_PT_DEV=
 GUEST_ETH_PT_DEV=
 GUEST_WIFI_PT_DEV=
+GUEST_I2C_PT_DEV=
 GUEST_ACPI_SSDT=
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
@@ -480,6 +481,31 @@ function set_pt_wifi() {
     fi
 }
 
+function set_pt_i2c() {
+    local I2C_PCI=()
+    local idx=0
+    while IFS= read -r line; do
+        I2C_PCI+=( "${line}" )
+    done < <( lspci -D |grep -i "I2C Controller" | grep -o "....:..:..\.." )
+    echo "passthrough I2C controller:"
+    for i2c in "${I2C_PCI[@]}"; do
+        echo "  ${i2c}"
+        local bdf=()
+        IFS=':' read -ra bdf <<< "$i2c"
+        if [[ $1 == "unset" ]]; then
+            set_pt_pci_vfio $i2c "unset"
+        else
+            set_pt_pci_vfio $i2c
+            GUEST_I2C_PT_DEV="${GUEST_I2C_PT_DEV} -device vfio-pci,host=${i2c#*:},id=host-i2c-$idx,bus=pcie.0,addr=0x${bdf[${#bdf[@]}-1]}"
+            # Multifunction requires option multifunction=on
+            if [[ "${i2c}" == *.0 ]]; then
+                GUEST_I2C_PT_DEV="${GUEST_I2C_PT_DEV},multifunction=on"
+            fi
+        fi
+        idx=$((idx+1))
+    done
+}
+
 function set_guest_pm() {
     local guest_pm_ctrl_daemon=$SCRIPTS_DIR/guest_pm_control
     if [ -f $guest_pm_ctrl_daemon ]; then
@@ -544,6 +570,7 @@ function launch_guest() {
               $GUEST_AUDIO_PT_DEV \
               $GUEST_ETH_PT_DEV \
               $GUEST_WIFI_PT_DEV \
+              $GUEST_I2C_PT_DEV \
               $GUEST_ACPI_SSDT \
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
@@ -582,6 +609,7 @@ function show_help() {
     printf "\t--passthrough-pci-audio passthrough Audio PCI bus to guest.\n"
     printf "\t--passthrough-pci-eth passthrough Ethernet PCI bus to guest.\n"
     printf "\t--passthrough-pci-wifi passthrough WiFi PCI bus to guest.\n"
+    printf "\t--passthrough-pci-i2c passthrough PCI I2C controller to guest.\n"
     printf "\t--thermal-mediation enable thermal mediation.\n"
     printf "\t--battery-mediation enable battery mediation.\n"
     printf "\t--guest-pm-control allow guest control host PM.\n"
@@ -670,6 +698,10 @@ function parse_arg() {
 
             --passthrough-pci-wifi)
                 set_pt_wifi
+                ;;
+
+            --passthrough-pci-i2c)
+                set_pt_i2c
                 ;;
 
             --thermal-mediation)
