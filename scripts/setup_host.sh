@@ -186,6 +186,11 @@ function install_auto_start_service(){
     sudo systemctl enable $service_file
 }
 
+function setup_power_button(){
+    sudo sed -i 's/#*HandlePowerKey=\w*/HandlePowerKey=ignore/' /etc/systemd/logind.conf
+    reboot_required=1
+}
+
 function ubu_thermal_conf() {
     #starting Intel Thermal Deamon, currently supporting CML/EHL only.
     sudo systemctl stop thermald.service
@@ -197,6 +202,7 @@ function ubu_thermal_conf() {
 
 function set_host_ui() {
     if [[ $1 == "headless" ]]; then
+        setup_power_button
         [[ $(systemctl get-default) == "multi-user.target" ]] && return 0
         sudo systemctl set-default multi-user.target
         reboot_required=1
