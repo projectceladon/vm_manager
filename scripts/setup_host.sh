@@ -47,7 +47,7 @@ function ubu_install_qemu_gvt(){
         for i in $CIV_GOP_DIR/qemu/*.patch; do patch -p1 < $i; done
     fi
 
-    if [ -d $CIV_VERTICAl_DIR ]; then
+    if [ -f $CIV_VERTICAl_DIR/qemu/*.patch ]; then
 	for i in $CIV_VERTICAl_DIR/qemu/*.patch; do
         echo "applying qemu patch $i";
         patch -p1 < $i; done
@@ -83,7 +83,7 @@ function ubu_build_ovmf_gvt(){
         cp $CIV_GOP_DIR/ovmf/Vbt.bin OvmfPkg/Vbt/Vbt.bin
     fi
 
-    if [ -d $CIV_VERTICAl_DIR ]; then
+    if [ -f $CIV_VERTICAl_DIR/ovmf/*.patch ]; then
         for i in $CIV_VERTICAl_DIR/ovmf/*.patch; do
                 echo "applying ovmf patch $i";
                 patch -p1 < $i; done
