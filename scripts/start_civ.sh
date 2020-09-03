@@ -237,7 +237,7 @@ function setup_gvtd() {
     while [[ $# -gt 0 ]]; do
         case $1 in
             romfile=*)
-                local GVTD_ROM=${var#*=}
+                local GVTD_ROM=${1#*=}
                 [ -z $GVTD_ROM ] && echo "E: romfile not specified!" && return -1
                 [ ! -f $GVTD_ROM ] && echo "E: $GVTD_ROM not exists" && return -1
                 GUEST_VGA_DEV+=",romfile=$GVTD_ROM"
