@@ -55,6 +55,7 @@ GUEST_STATIC_OPTION="\
  -device qemu-xhci,id=xhci \
  -usb \
  -device usb-kbd \
+ -device usb-mouse \
  -chardev socket,id=charserial0,path=$WORK_DIR/kernel-console,server,nowait,logfile=$WORK_DIR/civ_serial.log \
  -serial chardev:charserial0 \
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
