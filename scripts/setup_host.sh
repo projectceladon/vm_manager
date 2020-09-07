@@ -183,7 +183,7 @@ function install_auto_start_service(){
     echo -e "WantedBy=multi-user.target\n" >> $service_file
 
     sudo mv $service_file /etc/systemd/system/
-    sudo systemctl enable $civ_service
+    sudo systemctl enable $service_file
 }
 
 function ubu_thermal_conf() {
