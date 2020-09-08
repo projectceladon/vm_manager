@@ -596,7 +596,7 @@ function launch_guest() {
     "
 
     echo $EXE_CMD
-    $EXE_CMD
+    eval $EXE_CMD
 }
 
 function show_help() {
