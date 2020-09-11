@@ -584,9 +584,10 @@ function set_guest_pm() {
 
 function set_guest_time_keep() {
     local guest_time_keep_daemon=$SCRIPTS_DIR/guest_time_keeping.sh
-    if [ -f $guest_keep_daemon ]; then
+    local guest_time_keep_rtc_daemon=$SCRIPTS_DIR/guest_rtc_monitor
+    if [ -f $guest_keep_daemon ] && [ -f $guest_time_keep_rtc_daemon ]; then
         local guest_time_keep_pipe=$WORK_DIR/qmp-time-keep-pipe
-        $guest_time_keep_daemon "$guest_time_keep_pipe" &
+        $guest_time_keep_daemon "$guest_time_keep_pipe" "$guest_time_keep_rtc_daemon" &
         GUEST_TIME_KEEP="-qmp pipe:$guest_time_keep_pipe"
     fi
 }
@@ -704,7 +705,7 @@ function show_help() {
     printf "\t--thermal-mediation enable thermal mediation.\n"
     printf "\t--battery-mediation enable battery mediation.\n"
     printf "\t--guest-pm-control allow guest control host PM.\n"
-    printf "\t--guest-time-keep reflect guest time setting on Host OS.\n"
+    printf "\t--guest-time-keep reflect guest RTC settings on Host OS.\n"
     printf "\t--qmp-pipe specify the name of the pipe used for qmp communication.\n"
     printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
     printf "\t--disable-kernel-irqchip set kernel_irqchip=off.\n"
