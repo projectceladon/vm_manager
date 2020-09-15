@@ -16,7 +16,6 @@
 #include <assert.h>
 #include <uuid/uuid.h>
 #include "guest.h"
-#include "safe_lib.h"
 
 static int disp_field_rows = FORM_NUM;
 #define FORM_ROWS   (disp_field_rows + 2)
@@ -343,7 +342,7 @@ static void update_disp_field(int start_row)
 {
 	int i;
 
-	memcpy_s(disp_field, (disp_field_rows * 2) * sizeof (FIELD *), &field[start_row * 2], (disp_field_rows * 2) * sizeof(FIELD *));
+	memcpy(disp_field, &field[start_row * 2], (disp_field_rows * 2) * sizeof(FIELD *));
 	disp_field[disp_field_rows * 2 + 1] = NULL;
 
 	for (i = 0; i < disp_field_rows * 2; i++) {
@@ -646,7 +645,7 @@ int get_field_data(form_index_t index, char *out, size_t out_len)
 	if (!out)
 		return -1;
 
-	strcpy_s(out, out_len, field_buffer(g_form_field_data[index].input.f, 0));
+	strncpy(out,field_buffer(g_form_field_data[index].input.f, 0),out_len);
 
 	if (g_form_field_data[index].input.sub_opts) {
 		if (g_form_field_data[index].input.sub_opts->pick_index == -1) {

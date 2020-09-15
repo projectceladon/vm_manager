@@ -20,7 +20,6 @@
 #include "vm_manager.h"
 #include "guest.h"
 #include "utils.h"
-#include "safe_lib.h"
 #include "rpmb.h"
 #include "vtpm.h"
 
