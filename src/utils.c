@@ -11,10 +11,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <errno.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 #include "vm_manager.h"
-#include "safe_lib.h"
+
 
 int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 {
@@ -22,8 +23,7 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 	int wst;
 	int i = 0;
 	char *tok, *next_tok;
-	rsize_t smax;
-	char arg_dup[RSIZE_MAX_STR] = { 0 };
+	char arg_dup[MAX_CMDLINE_LEN] = { 0 };
 	char *argv[1024];
 
 	if (cmd == NULL) {
@@ -38,13 +38,10 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 
 	argv[i++] = basename(strdup(cmd));
 
-	strncpy_s(arg_dup, sizeof(arg_dup) - 1, arg, arg_len);
-	smax = strlen(arg_dup);
+	strncpy(arg_dup, arg,sizeof(arg_dup) - 1);
 	/* split cmd into argument array */
-	tok = strtok_s(arg_dup, &smax, " ", &next_tok);
-	while (tok != NULL) {
+	while((tok = strtok_r(arg_dup, " ", &next_tok))){
 		argv[i++] = tok;
-		tok = strtok_s(NULL, &smax, " ", &next_tok);
 	}
 	argv[i] = NULL;
 
@@ -79,7 +76,6 @@ int cleanup_child_proc(void)
 	char str[512] = { 0 };
 	char buf[1024] = { 0 };
 	char *tok, *ntok;
-	rsize_t smax;
 	int ret;
 
 	parent = getpid();
@@ -101,15 +97,14 @@ int cleanup_child_proc(void)
 	}
 	close(fd);
 
-	smax = strlen(buf);
-	tok = strtok_s(buf, &smax, " ", &ntok);
+	tok = strtok_r(buf, " ", &ntok);
 	while (tok != NULL) {
 		child = strtol(tok, NULL, 10);
 		printf("terminate: pid=%d\n", child);
 		ret = kill(child, SIGTERM);
 		if (ret != 0)
 			fprintf(stderr, "Failed to terminate sub-process: pid=%d, errno=%d\n", child, errno);
-		tok = strtok_s(NULL, &smax, " ", &ntok);
+		tok = strtok_r(buf," ", &ntok);
 	}
 
 	return 0;

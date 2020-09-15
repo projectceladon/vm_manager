@@ -19,8 +19,6 @@
 #include "guest.h"
 #include "utils.h"
 #include "vtpm.h"
-#include "safe_lib.h"
-
 
 struct _vtpm {
 	char *bin;
@@ -33,7 +31,6 @@ int set_vtpm_bin_path(const char *bin_path)
 {
 	struct stat st;
 	size_t len;
-	int ret;
 
 	if (!bin_path)
 		return -1;
@@ -47,12 +44,7 @@ int set_vtpm_bin_path(const char *bin_path)
 	if (!vtpm.bin)
 		return -1;
 
-	ret = strcpy_s(vtpm.bin, len, bin_path);
-	if (ret != EOK) {
-		free(vtpm.bin);
-		vtpm.bin = NULL;
-		return -1;
-	}
+	strncpy(vtpm.bin, bin_path, len);
 
 	return 0;
 }
@@ -61,7 +53,6 @@ int set_vtpm_data_dir(const char *data_dir)
 {
 	struct stat st;
 	size_t len;
-	int ret;
 
 	printf("%s: %s\n", __func__, data_dir);
 	if (!data_dir)
@@ -76,12 +67,7 @@ int set_vtpm_data_dir(const char *data_dir)
 	if (!vtpm.data_dir)
 		return -1;
 
-	ret = strcpy_s(vtpm.data_dir, len, data_dir);
-	if (ret != EOK) {
-		free(vtpm.data_dir);
-		vtpm.data_dir = NULL;
-		return -1;
-	}
+	strncpy(vtpm.data_dir,  data_dir, len);
 
 	return 0;
 }

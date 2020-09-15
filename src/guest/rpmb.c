@@ -19,8 +19,6 @@
 #include "guest.h"
 #include "utils.h"
 #include "rpmb.h"
-#include "safe_lib.h"
-
 
 struct _rpmb {
 	char *bin;
@@ -33,7 +31,6 @@ int set_rpmb_bin_path(const char *bin_path)
 {
 	struct stat st;
 	size_t len;
-	int ret;
 
 	if (!bin_path) {
 		fprintf(stderr, "%s: Invalid input!\n", __func__);
@@ -53,13 +50,7 @@ int set_rpmb_bin_path(const char *bin_path)
 		return -1;
 	}
 
-	ret = strcpy_s(rpmb.bin, len, bin_path);
-	if (ret != EOK) {
-		fprintf(stderr, "Cannot copy rpmb bin path string! ret=%d\n", ret);
-		free(rpmb.bin);
-		rpmb.bin = NULL;
-		return -1;
-	}
+	strncpy(rpmb.bin, bin_path,len);
 
 	return 0;
 }
@@ -68,7 +59,6 @@ int set_rpmb_data_dir(const char *data_dir)
 {
 	struct stat st;
 	size_t len;
-	int ret;
 
 	if (!data_dir)
 		return -1;
@@ -82,12 +72,7 @@ int set_rpmb_data_dir(const char *data_dir)
 	if (!rpmb.data_dir)
 		return -1;
 
-	ret = strcpy_s(rpmb.data_dir, len, data_dir);
-	if (ret != EOK) {
-		free(rpmb.data_dir);
-		rpmb.data_dir = NULL;
-		return -1;
-	}
+	strncpy(rpmb.data_dir, data_dir,len);
 
 	return 0;
 }

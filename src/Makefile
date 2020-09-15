@@ -15,7 +15,7 @@ SRCS += guest/qmp.c
 SRCS += guest/rpmb.c
 SRCS += guest/vtpm.c
 
-INCLUDE = -I./include -I./include/guest -I./include/safestringlib/
+INCLUDE = -I./include -I./include/guest
 
 INCLUDE += -I/usr/include \
 	   -I/usr/include/glib-2.0 \
@@ -40,7 +40,6 @@ BUILD_DIR ?= $(CURDIR)
 OBJDIR ?= $(BUILD_DIR)/obj
 
 OBJS := $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
-OBJS += external/libsafestring.a
 
 $(OBJDIR)/%.o: %.c
 	@mkdir -p $(dir $@)

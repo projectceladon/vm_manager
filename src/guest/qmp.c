@@ -15,7 +15,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include "vm_manager.h"
-#include "safe_lib.h"
 
 static void get_result(int fd, char **result)
 {
@@ -72,7 +71,7 @@ int send_qmp_cmd(const char *path, const char *cmd, char **result)
 
 	memset((char *)&sock, 0, sizeof(sock));
 	sock.sun_family = AF_UNIX;
-	strcpy_s(sock.sun_path, sizeof(sock.sun_path), path);
+	strncpy(sock.sun_path, path ,sizeof(sock.sun_path));
 
 	sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock_fd < 0) {
