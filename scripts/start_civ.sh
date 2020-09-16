@@ -199,7 +199,7 @@ function set_disk() {
     GUEST_DISK="-drive file=$1,if=none,id=disk1"
 }
 
-function set_firmware() {
+function set_firmware_path() {
     GUEST_FIRMWARE="-drive file=$1,format=raw,if=pflash"
 }
 
