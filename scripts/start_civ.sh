@@ -17,6 +17,7 @@ GUEST_CPU_NUM="-smp 1"
 GUEST_DISK="-drive file=$WORK_DIR/android.qcow2,if=none,id=disk1"
 GUEST_FIRMWARE="-drive file=$WORK_DIR/OVMF.fd,format=raw,if=pflash"
 GUEST_DISP_TYPE="-display gtk,gl=on"
+GUEST_KIRQ_CHIP="-machine kernel_irqchip=on"
 GUEST_VGA_DEV="-device virtio-gpu-pci"
 GUEST_RPMB_DEV=
 GUEST_RPMB_DEV_PID=
@@ -48,7 +49,6 @@ GUEST_AAF_CONFIG=$GUEST_AAF_DIR/mixins.spec
 GUEST_STATIC_OPTION="\
  -name caas-vm \
  -M q35 \
- -machine kernel_irqchip=off \
  -enable-kvm \
  -k en-us \
  -cpu host \
@@ -227,6 +227,10 @@ function set_default_aaf_config() {
 
 function allow_guest_suspend() {
     sed -i s/suspend:false/suspend:true/g $GUEST_AAF_CONFIG
+}
+
+function disable_kernel_irq_chip() {
+    GUEST_KIRQ_CHIP="-machine kernel_irqchip=off"
 }
 
 function setup_gvtd() {
@@ -591,6 +595,7 @@ function launch_guest() {
               $GUEST_TIME_KEEP \
               $GUSET_VTPM \
               $GUEST_AAF \
+              $GUEST_KIRQ_CHIP \
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
     "
@@ -600,7 +605,7 @@ function launch_guest() {
 }
 
 function show_help() {
-    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend]\n"
+    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend] [--disable-kernel-irqchip]\n"
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
@@ -628,6 +633,7 @@ function show_help() {
     printf "\t--guest-pm-control allow guest control host PM.\n"
     printf "\t--guest-time-keep reflect guest time setting on Host OS.\n"
     printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
+    printf "\t--disable-kernel-irqchip set kernel_irqchip=off.\n"
 }
 
 function parse_arg() {
@@ -726,6 +732,10 @@ function parse_arg() {
 
             --allow-suspend)
                 allow_guest_suspend
+                ;;
+
+            --disable-kernel-irqchip)
+                disable_kernel_irq_chip
                 ;;
 
             -?*)
