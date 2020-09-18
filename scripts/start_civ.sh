@@ -528,7 +528,6 @@ function set_guest_pm() {
         local guest_pm_qmp_sock=$WORK_DIR/qmp-pm-sock
         $guest_pm_ctrl_daemon $guest_pm_qmp_sock &
         GUEST_PM_CTRL="-qmp unix:$guest_pm_qmp_sock,server,nowait -no-reboot"
-        $guest_pm_ctrl_daemon "$guest_pm_ctrl_pipe" &
     fi
 }
 
