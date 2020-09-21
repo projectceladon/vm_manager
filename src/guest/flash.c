@@ -36,7 +36,7 @@ static char flashing_arg[] =
 	" -drive file="VUSB_FLASH_DISK",id=udisk1,format=raw,if=none"
 	" -device usb-storage,drive=udisk1,bus=xhci.0"
 	" -no-reboot"
-	" -nographic -display none -serial mon:stdio -vnc :0"
+	" -nographic -display none -serial mon:stdio"
 	" -boot menu=on,splash-time=5000,strict=on ";
 
 static int create_vusb(GKeyFile *gkf)
