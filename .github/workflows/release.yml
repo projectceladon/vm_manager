@@ -20,6 +20,7 @@ jobs:
 
       - name: setup
         run: |
+          sudo apt-get --quiet update --yes
           sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
 
       - name: Set release version
