@@ -52,7 +52,7 @@ GUEST_STATIC_OPTION="\
  -enable-kvm \
  -k en-us \
  -cpu host \
- -device qemu-xhci,id=xhci \
+ -device qemu-xhci,id=xhci,p2=8,p3=8 \
  -usb \
  -device usb-kbd \
  -device usb-mouse \
