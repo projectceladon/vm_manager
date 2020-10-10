@@ -330,10 +330,10 @@ function setup_virtio_gpu() {
     echo "gpu-type:virtio" >> $GUEST_AAF_CONFIG
 }
 
-function setup_qxl_vga() {
-    GUEST_VGA_DEV="-device qxl-vga,xres=480,yres=360"
+function setup_ramfb_vga() {
+    GUEST_VGA_DEV="-device ramfb"
 
-    shift #skip first param: QXL
+    shift #skip first param: RAMFB
 
     if [[ $# -gt 0 ]]; then
         case $1 in
@@ -346,7 +346,7 @@ function setup_qxl_vga() {
                 shift
                 ;;
             *)
-                echo "E: QXL GPU: Invalid parameters: $1"
+                echo "E: RAMFB GPU: Invalid parameters: $1"
                 return -1
                 ;;
         esac
@@ -362,10 +362,10 @@ function set_graphics() {
         setup_gvtg ${sub_param[@]} || return -1
     elif [[ ${sub_param[0]} == "VirtIO" ]]; then
         setup_virtio_gpu ${sub_param[@]} || return -1
-    elif [[ ${sub_param[0]} == "QXL" ]]; then
-        setup_qxl_vga ${sub_param[@]} || return -1
+    elif [[ ${sub_param[0]} == "RAMFB" ]]; then
+        setup_ramfb_vga ${sub_param[@]} || return -1
     else
-        echo "E: VGPU only support VirtIO,GVT-g,GVT-d,QXL. $1 is not supported"
+        echo "E: VGPU only support VirtIO,GVT-g,GVT-d,RAMFB. $1 is not supported"
         return -1
     fi
 }
@@ -610,10 +610,10 @@ function show_help() {
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
     printf "\t-c  specify guest cpu number, eg. \"-c 4\"\n"
-    printf "\t-g  specify guest graphics mode, current support VirtIO|GVT-g|GVT-d|QXL.\n"
+    printf "\t-g  specify guest graphics mode, current support VirtIO|GVT-g|GVT-d|RAMFB.\n"
     printf "\t\tThe default value is VirtIO.\n"
     printf "\t\tVirtIO GPU, sub-param: display=[on|off]. eg. \"-g VirtIO,display=off\", display is [on] by default\n"
-    printf "\t\tQXL VGA, sub-param: display=[on|off]. eg. \"-g QXL,display=on\"\n"
+    printf "\t\tRAMFB VGA, sub-param: display=[on|off]. eg. \"-g RAMFB,display=on\"\n"
     printf "\t\tGVT-g, sub-param: uuid=[vgpu uuid],display=[on|off]. eg. \"-g GVT-g,uuid=4ec1ff92-81d7-11e9-aed4-5bf6a9a2bb0a,display=on\", if uuid is not specified, a hardcoded uuid will be used\n"
     printf "\t\tGVT-d: sub-param: romfile=[file path of rom]. eg. \"-g GVT-d,romfile=/path/to/romfile\"\n"
     printf "\t-d  specify guest virtual disk image, eg. \"-d /path/to/android.img\"\n"
