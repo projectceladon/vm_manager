@@ -215,6 +215,10 @@ function setup_sof() {
     $CIV_WORK_DIR/scripts/setup_audio_host.sh
 }
 
+function enable_headset() {
+   $CIV_WORK_DIR/scripts/setup_audio_host.sh enableHeadset
+}
+
 function ubu_install_swtpm() {
     TPMS_VER=v0.7.3
     TPMS_LIB=libtpms-0.7.3
@@ -302,6 +306,7 @@ ubu_enable_host_gvt
 
 prepare_required_scripts
 ubu_thermal_conf
+enable_headset
 setup_sof
 ubu_install_swtpm
 
