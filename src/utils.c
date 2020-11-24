@@ -25,7 +25,8 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 	char *tok, *next_tok;
 	char arg_dup[MAX_CMDLINE_LEN] = { 0 };
 	char *argv[1024];
-
+	char * arg_ptr = arg_dup;
+	
 	if (cmd == NULL) {
 		fprintf(stderr, "%s: Invalid command\n", __func__);
 		return -1;
@@ -39,9 +40,11 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 	argv[i++] = basename(strdup(cmd));
 
 	strncpy(arg_dup, arg,sizeof(arg_dup) - 1);
+
 	/* split cmd into argument array */
-	while((tok = strtok_r(arg_dup, " ", &next_tok))){
+	while((tok = strtok_r(arg_ptr, " ", &next_tok))){
 		argv[i++] = tok;
+		arg_ptr = NULL;
 	}
 	argv[i] = NULL;
 
