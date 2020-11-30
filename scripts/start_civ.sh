@@ -578,7 +578,7 @@ function setup_qmp_pipe() {
 function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
-    cleanup_battery_mediation/
+    cleanup_battery_mediation
     [[ -z $GUEST_USB_PT_DEV ]] || set_pt_usb unset
     [[ -z $GUEST_AUDIO_PT_DEV ]] || set_pt_audio unset
     [[ -z $GUEST_UDC_PT_DEV ]] || set_pt_udc unset
