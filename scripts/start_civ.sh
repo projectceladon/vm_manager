@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set -eE
+cd "$(dirname "$0")/.."
 
 #------------------------------------------------------      Global variable    ----------------------------------------------------------
 WORK_DIR=$PWD
@@ -42,6 +43,7 @@ GUEST_WIFI_PT_DEV=
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
 GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0"
+GUEST_QMP_PIPE=
 GUEST_AAF="-fsdev local,security_model=none,id=fsdev_aaf,path=$WORK_DIR/aaf -device virtio-9p-pci,fsdev=fsdev_aaf,mount_tag=aaf"
 GUEST_AAF_DIR=$WORK_DIR/aaf
 GUEST_AAF_CONFIG=$GUEST_AAF_DIR/mixins.spec
@@ -561,10 +563,22 @@ function set_guest_pwr_vol_button() {
     cd -
 }
 
+function create_pipe() {
+    [[ -z $1 ]] && return
+    [[ -p $1".in" ]] || mkfifo $1".in"
+    [[ -p $1".out" ]] || mkfifo $1".out"
+}
+
+function setup_qmp_pipe() {
+    local qmp_pipe=$1
+    create_pipe "$qmp_pipe"
+    GUEST_QMP_PIPE="-qmp pipe:$qmp_pipe"
+}
+
 function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
-    cleanup_battery_mediation
+    cleanup_battery_mediation/
     [[ -z $GUEST_USB_PT_DEV ]] || set_pt_usb unset
     [[ -z $GUEST_AUDIO_PT_DEV ]] || set_pt_audio unset
     [[ -z $GUEST_UDC_PT_DEV ]] || set_pt_udc unset
@@ -611,6 +625,7 @@ function launch_guest() {
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
               $GUEST_POWER_BUTTON \
+              $GUEST_QMP_PIPE \
               $GUSET_VTPM \
               $GUEST_AAF \
               $GUEST_KIRQ_CHIP \
@@ -623,7 +638,7 @@ function launch_guest() {
 }
 
 function show_help() {
-    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--allow-suspend] [--disable-kernel-irqchip]\n"
+    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--qmp-pipe] [--allow-suspend] [--disable-kernel-irqchip]\n"
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
@@ -650,6 +665,7 @@ function show_help() {
     printf "\t--battery-mediation enable battery mediation.\n"
     printf "\t--guest-pm-control allow guest control host PM.\n"
     printf "\t--guest-time-keep reflect guest time setting on Host OS.\n"
+    printf "\t--qmp-pipe specify the name of the pipe used for qmp communication.\n"
     printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
     printf "\t--disable-kernel-irqchip set kernel_irqchip=off.\n"
     printf "\t--passthrough-pwr-vol-button passthrough the power button and volume button to guest.\n"
@@ -710,6 +726,11 @@ function parse_arg() {
 
             -e)
                 set_extra_qcmd "$2"
+                shift
+                ;;
+            
+            --qmp-pipe)
+                setup_qmp_pipe $2
                 shift
                 ;;
 
