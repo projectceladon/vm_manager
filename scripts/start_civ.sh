@@ -15,7 +15,7 @@ SCRIPTS_DIR=$WORK_DIR/scripts
 EMULATOR_PATH=$(which qemu-system-x86_64)
 GUEST_MEM="-m 2G"
 GUEST_CPU_NUM="-smp 1"
-GUEST_DISK="-drive file=$WORK_DIR/android.qcow2,if=none,id=disk1"
+GUEST_DISK="-drive file=$WORK_DIR/android.qcow2,if=none,id=disk1,discard=unmap,detect-zeroes=unmap"
 GUEST_FIRMWARE="-drive file=$WORK_DIR/OVMF.fd,format=raw,if=pflash"
 GUEST_DISP_TYPE="-display gtk,gl=on"
 GUEST_KIRQ_CHIP="-machine kernel_irqchip=on"
