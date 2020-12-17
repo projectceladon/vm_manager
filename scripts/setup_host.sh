@@ -29,6 +29,9 @@ function ubu_changes_require(){
         return 1
     fi
     sudo apt install -y wget mtools ovmf dmidecode python3-usb python3-pyudev pulseaudio jq
+
+    # Install libs for vm-manager
+    sudo apt install -y libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev
 }
 
 function ubu_install_qemu_gvt(){
