@@ -200,15 +200,6 @@ function setup_power_button(){
     reboot_required=1
 }
 
-function ubu_thermal_conf() {
-    #starting Intel Thermal Deamon, currently supporting CML/EHL only.
-    sudo systemctl stop thermald.service
-    sudo cp $CIV_WORK_DIR/scripts/intel-thermal-conf.xml /etc/thermald
-    sudo cp $CIV_WORK_DIR/scripts/thermald.service  /lib/systemd/system
-    sudo systemctl daemon-reload
-    sudo systemctl start thermald.service
-}
-
 function set_host_ui() {
     if [[ $1 == "headless" ]]; then
         setup_power_button
@@ -317,7 +308,6 @@ ubu_build_ovmf_gvt
 ubu_enable_host_gvt
 
 prepare_required_scripts
-ubu_thermal_conf
 setup_sof
 ubu_install_swtpm
 
