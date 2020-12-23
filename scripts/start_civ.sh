@@ -88,6 +88,19 @@ function check_kernel_version() {
     fi
 }
 
+function stop_thermal_daemon() {
+    sudo systemctl stop thermald.service
+}
+
+function start_thermal_daemon() {
+    #starting Intel Thermal Deamon, currently supporting CML/EHL only.
+    sudo systemctl stop thermald.service
+    sudo cp $SCRIPTS_DIR/intel-thermal-conf.xml /etc/thermald
+    sudo cp $SCRIPTS_DIR/thermald.service  /lib/systemd/system
+    sudo systemctl daemon-reload
+    sudo systemctl start thermald.service
+}
+
 function setup_audio_dev() {
     local AUDIO_SETUP=$SCRIPTS_DIR/setup_audio_host.sh
     $AUDIO_SETUP setMicGain &
@@ -638,7 +651,7 @@ function launch_guest() {
 }
 
 function show_help() {
-    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--qmp-pipe] [--allow-suspend] [--disable-kernel-irqchip]\n"
+    printf "$(basename "$0") [-h] [-m] [-c] [-g] [-d] [-f] [-v] [-s] [-p] [-b] [-e] [--passthrough-pci-usb] [--passthrough-pci-udc] [--passthrough-pci-audio] [--passthrough-pci-eth] [--passthrough-pci-wifi] [--thermal-mediation] [--battery-mediation] [--guest-pm-control] [--guest-time-keep] [--qmp-pipe] [--allow-suspend] [--disable-kernel-irqchip] [--host-thermal-control]\n"
     printf "Options:\n"
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
@@ -669,6 +682,7 @@ function show_help() {
     printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
     printf "\t--disable-kernel-irqchip set kernel_irqchip=off.\n"
     printf "\t--passthrough-pwr-vol-button passthrough the power button and volume button to guest.\n"
+    printf "\t--host-thermal-control Host thermal control.\n"
 }
 
 function parse_arg() {
@@ -782,6 +796,10 @@ function parse_arg() {
                 set_guest_pwr_vol_button
                 ;;
 
+            --host-thermal-control)
+                start_thermal_daemon
+                ;;
+
             -?*)
                 echo "Error: Invalid option $1"
                 show_help
@@ -802,6 +820,7 @@ function parse_arg() {
 trap 'cleanup' EXIT
 trap 'error ${LINENO} "$BASH_COMMAND"' ERR
 set_default_aaf_config
+stop_thermal_daemon
 parse_arg "$@" || exit -1
 
 check_kernel_version || exit -1
