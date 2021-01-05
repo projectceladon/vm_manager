@@ -27,7 +27,8 @@ static int disp_field_rows = FORM_NUM;
 #define MIN_ROWS ((MIN_FORM_ROWS) + (STATIC_ROWS))
 
 #define WIN_BODY_ROWS   ((FORM_ROWS) + (MENU_ROWS) + (MSG_ROWS) + 3U)
-#define WIN_BODY_COLS   80U
+static uint32_t body_width = 80U; // default body width is 80 and will be updated in prepare_layout()
+#define WIN_BODY_COLS   (uint32_t)(body_width)
 #define WIN_BODY_STARTX  0U
 #define WIN_BODY_STARTY  0U
 
@@ -303,7 +304,7 @@ static void create_form_fields(void)
 		id_input = id_label + 1;
 
 		data->label.f = new_field(1, 18, i,  0, 0, 0);
-		data->input.f = new_field(1, 56, i, 18, 0, 0);
+		data->input.f = new_field(1, WIN_BODY_COLS - 18 - 6, i, 18, 0, 0);
 		field[id_label] = data->label.f;
 		field[id_input] = data->input.f;
 
@@ -412,7 +413,7 @@ static void create_menu(void)
 	set_menu_win(menu, win_menu);
 	set_menu_format(menu, 1, 2);
 	tmp = menu->fcols * (menu->namelen + menu->spc_rows) - 1;
-	win_menu_sub = derwin(win_menu, 1, tmp, 1, (80-3-tmp)/2);
+	win_menu_sub = derwin(win_menu, 1, tmp, 1, (WIN_BODY_COLS-3-tmp)/2);
 	assert(win_menu_sub != NULL);
 	set_menu_sub(menu, win_menu_sub);
 	set_menu_mark(menu, "");
@@ -705,8 +706,10 @@ int prepare_layout(void)
 		return -1;
 	}
 
-	if (maxy < (FORM_NUM + 2))
+	if ((uint32_t)maxy <= (FORM_NUM + STATIC_ROWS + 2))
 		disp_field_rows = maxy - STATIC_ROWS - 2;
+
+	body_width = maxx;
 
 	return 0;
 }
