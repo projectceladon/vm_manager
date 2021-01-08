@@ -122,6 +122,7 @@ static form_field_data_t g_form_field_data[FORM_NUM + 1] = {
 	{ { NULL, "rpmb bin        :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "rpmb data dir   :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "passthrough pci :" }, { NULL, FIELD_TYPE_NORMAL,  { 								   }, &passthrough_sub_opts	} },
+	{ { NULL, "aaf path        :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "extra cmd(qemu) :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, NULL }, { NULL, -1, { }, NULL } }
 };

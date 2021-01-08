@@ -52,6 +52,7 @@ typedef enum {
 	FORM_INDEX_RPMB_BIN_PATH,
 	FORM_INDEX_RPMB_DATA_DIR,
 	FORM_INDEX_PCI_PT,
+	FORM_INDEX_AAF_PATH,
 	FORM_INDEX_EXTRA_CMD,
 	FORM_NUM
 } form_index_t;
@@ -112,6 +113,7 @@ enum {
 	GROUP_VGPU,
 	GROUP_VTPM,
 	GROUP_RPMB,
+	GROUP_AAF,
 	GROUP_EXTRA,
 	GROUP_PCI_PT,
 	GROUP_NUM
@@ -155,6 +157,9 @@ enum {
 	/* Sub key of group rpmb */
 	RPMB_BIN_PATH = 0,
 	RPMB_DATA_DIR,
+
+	/* Sub key of group aaf */
+	AAF_PATH = 0,
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,

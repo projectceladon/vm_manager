@@ -14,6 +14,7 @@ SRCS += guest/tui.c
 SRCS += guest/qmp.c
 SRCS += guest/rpmb.c
 SRCS += guest/vtpm.c
+SRCS += guest/aaf.c
 
 INCLUDE = -I./include -I./include/guest
 

@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "rpmb.h"
 #include "vtpm.h"
+#include "aaf.h"
 
 
 extern keyfile_group_t g_group[];
@@ -426,7 +427,7 @@ int start_guest(char *name)
 		fprintf(stderr, "Failed to set rpmb data dir! val=%s\n", val);
 		return -1;
 	}
-	cx = snprintf(p, size, " -device virtio-serial -device virtserialport,chardev=rpmb0,name=rpmb0 -chardev socket,id=rpmb0,path=%s/%s", val, RPMB_SOCK);
+	cx = snprintf(p, size, " -device virtio-serial,addr=1 -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1 -chardev socket,id=rpmb0,path=%s/%s", val, RPMB_SOCK);
 	p += cx; size -= cx;
 
 	g = &g_group[GROUP_VTPM];
@@ -451,6 +452,17 @@ int start_guest(char *name)
 	}
 	cx = snprintf(p, size, " -chardev socket,id=chrtpm,path=%s/%s -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0", val, SWTPM_SOCK);
 	p += cx; size -= cx;
+
+	g = &g_group[GROUP_AAF];
+	val = g_key_file_get_string(gkf, g->name, g->key[AAF_PATH], NULL);
+	if (val) {
+		if (set_aaf_path(val)) {
+			fprintf(stderr, "Failed to set aaf path! val=%s\n", val);
+			return -1;
+		}
+		cx = snprintf(p, size, " -fsdev local,security_model=none,id=fsdev_aaf,path=%s -device virtio-9p-pci,fsdev=fsdev_aaf,mount_tag=aaf,addr=3", val);
+		p += cx; size -= cx;
+	}
 
 	g = &g_group[GROUP_VGPU];
 	val = g_key_file_get_string(gkf, g->name, g->key[VGPU_TYPE], NULL);
@@ -479,16 +491,19 @@ int start_guest(char *name)
 				return -1;
 			}
 		}
-		cx = snprintf(p, size, " -display gtk,gl=on -device vfio-pci-nohotplug,ramfb=on,sysfsdev=%s,display=on,x-igd-opregion=on", vgpu_path);
+		cx = snprintf(p, size, " -display gtk,gl=on -device vfio-pci-nohotplug,ramfb=on,sysfsdev=%s,display=on,addr=2.0,x-igd-opregion=on", vgpu_path);
 		p += cx; size -= cx;
+		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTG);
 	} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
 		if (passthrough_gpu())
 			return -1;
 		cx = snprintf(p, size, " -vga none -nographic -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
 		p += cx; size -= cx;
+		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTD);
 	} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
 		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-gpu-pci");
 		p += cx; size -= cx;
+		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
 	} else if (strcmp(val, VGPU_OPTS_SW_STR) == 0) {
 		cx = snprintf(p, size, " -display gtk,gl=on -device qxl-vga,xres=480,yres=360");
 		p += cx; size -= cx;
@@ -621,6 +636,8 @@ int start_guest(char *name)
 		fprintf(stderr, "Failed to run RPMB daemon!\n");
 		return -1;
 	}
+
+	flush_aaf_config();
 
 	fprintf(stderr, "run: %s %s\n", emu_path, cmd_str);
 
