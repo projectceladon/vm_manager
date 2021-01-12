@@ -71,7 +71,7 @@ int send_qmp_cmd(const char *path, const char *cmd, char **result)
 
 	memset((char *)&sock, 0, sizeof(sock));
 	sock.sun_family = AF_UNIX;
-	strncpy(sock.sun_path, path ,sizeof(sock.sun_path));
+	strncpy(sock.sun_path, path, sizeof(sock.sun_path) - 1);
 
 	sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock_fd < 0) {
