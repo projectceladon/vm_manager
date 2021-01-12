@@ -30,7 +30,6 @@ static struct _vtpm vtpm = { NULL, NULL };
 int set_vtpm_bin_path(const char *bin_path)
 {
 	struct stat st;
-	size_t len;
 
 	if (!bin_path)
 		return -1;
@@ -38,13 +37,11 @@ int set_vtpm_bin_path(const char *bin_path)
 	if (stat(bin_path, &st) != 0)
 		return -1;
 
-	len = strlen(bin_path) + 1;
-
-	vtpm.bin = malloc(strlen(bin_path));
-	if (!vtpm.bin)
+	vtpm.bin = strndup(bin_path, MAX_PATH);
+	if (!vtpm.bin) {
+		fprintf(stderr, "Failed to duplicate swtpm bin dir!\n");
 		return -1;
-
-	strncpy(vtpm.bin, bin_path, len);
+	}
 
 	return 0;
 }
@@ -52,22 +49,18 @@ int set_vtpm_bin_path(const char *bin_path)
 int set_vtpm_data_dir(const char *data_dir)
 {
 	struct stat st;
-	size_t len;
 
-	printf("%s: %s\n", __func__, data_dir);
 	if (!data_dir)
 		return -1;
 
 	if (stat(data_dir, &st) != 0)
 		return -1;
 
-	len = strlen(data_dir) + 1;
-
-	vtpm.data_dir = malloc(strlen(data_dir));
-	if (!vtpm.data_dir)
+	vtpm.data_dir = strndup(data_dir, MAX_PATH);
+	if (!vtpm.data_dir) {
+		fprintf(stderr, "Failed to duplicate swtpm data dir!\n");
 		return -1;
-
-	strncpy(vtpm.data_dir,  data_dir, len);
+	}
 
 	return 0;
 }

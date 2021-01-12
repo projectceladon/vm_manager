@@ -30,7 +30,6 @@ static struct _rpmb rpmb = { NULL, NULL };
 int set_rpmb_bin_path(const char *bin_path)
 {
 	struct stat st;
-	size_t len;
 
 	if (!bin_path) {
 		fprintf(stderr, "%s: Invalid input!\n", __func__);
@@ -42,15 +41,11 @@ int set_rpmb_bin_path(const char *bin_path)
 		return -1;
 	}
 
-	len = strlen(bin_path) + 1;
-
-	rpmb.bin = calloc(strlen(bin_path), len);
+	rpmb.bin = strndup(bin_path, MAX_PATH);
 	if (!rpmb.bin) {
-		fprintf(stderr, "Failed to alloc memory!\n");
+		fprintf(stderr, "Failed to duplicate rpmb bin path!\n");
 		return -1;
 	}
-
-	strncpy(rpmb.bin, bin_path,len);
 
 	return 0;
 }
@@ -58,7 +53,6 @@ int set_rpmb_bin_path(const char *bin_path)
 int set_rpmb_data_dir(const char *data_dir)
 {
 	struct stat st;
-	size_t len;
 
 	if (!data_dir)
 		return -1;
@@ -66,13 +60,11 @@ int set_rpmb_data_dir(const char *data_dir)
 	if (stat(data_dir, &st) != 0)
 		return -1;
 
-	len = strlen(data_dir) + 1;
-
-	rpmb.data_dir = malloc(strlen(data_dir));
-	if (!rpmb.data_dir)
+	rpmb.data_dir = strndup(data_dir, MAX_PATH);
+	if (!rpmb.data_dir) {
+		fprintf(stderr, "Failed to duplicate rpmb data dir!\n");
 		return -1;
-
-	strncpy(rpmb.data_dir, data_dir,len);
+	}
 
 	return 0;
 }
