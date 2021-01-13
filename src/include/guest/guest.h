@@ -53,6 +53,7 @@ typedef enum {
 	FORM_INDEX_RPMB_DATA_DIR,
 	FORM_INDEX_PCI_PT,
 	FORM_INDEX_AAF_PATH,
+	FORM_INDEX_AAF_SUSPEND,
 	FORM_INDEX_EXTRA_CMD,
 	FORM_NUM
 } form_index_t;
@@ -90,6 +91,14 @@ enum {
 #define GVTG_OPTS_V5_8_STR "i915-GVTg_V5_8"
 
 #define PT_MAX 64		// Maximum number of passthrough devices
+
+enum {
+	SUSPEND_ENABLE = 0,
+	SUSPEND_DISABLE
+};
+
+#define SUSPEND_ENABLE_STR  "enable"
+#define SUSPEND_DISABLE_STR "disable"
 
 enum {
 	FIELD_TYPE_NORMAL = 0,
@@ -160,6 +169,7 @@ enum {
 
 	/* Sub key of group aaf */
 	AAF_PATH = 0,
+	AAF_SUSPEND,
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,

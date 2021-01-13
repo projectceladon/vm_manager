@@ -30,7 +30,7 @@ keyfile_group_t g_group[] = {
 	{ "graphics", { "type", "gvtg_version", "vgpu_uuid", NULL } },
 	{ "vtpm",     { "bin_path", "data_dir", NULL } },
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
-	{ "aaf",      { "path", NULL } },
+	{ "aaf",      { "path", "support_suspend", NULL } },
 	{ "extra",    { "cmd", NULL } },
 	{ "passthrough", { "passthrough_pci", NULL}},
 };
@@ -122,6 +122,10 @@ int load_form_data(char *name)
 	g = &g_group[GROUP_AAF];
 	val = g_key_file_get_string(in, g->name, g->key[AAF_PATH], NULL);
 	set_field_data(FORM_INDEX_AAF_PATH, val);
+
+	g = &g_group[GROUP_AAF];
+	val = g_key_file_get_string(in, g->name, g->key[AAF_SUSPEND], NULL);
+	set_field_data(FORM_INDEX_AAF_SUSPEND, val);
 
 	g = &g_group[GROUP_EXTRA];
 	val = g_key_file_get_string(in, g->name, g->key[EXTRA_CMD], NULL);
@@ -292,6 +296,11 @@ int generate_keyfile(void)
 	get_field_data(FORM_INDEX_AAF_PATH, temp, sizeof(temp) - 1);
 	if (0 == check_field(g_group[GROUP_AAF].key[AAF_PATH], temp)) {
 		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_PATH], temp);
+	}
+
+	get_field_data(FORM_INDEX_AAF_SUSPEND, temp, sizeof(temp) - 1);
+	if (0 == check_field(g_group[GROUP_AAF].key[AAF_SUSPEND], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_SUSPEND], temp);
 	}
 
 
