@@ -462,6 +462,16 @@ int start_guest(char *name)
 		}
 		cx = snprintf(p, size, " -fsdev local,security_model=none,id=fsdev_aaf,path=%s -device virtio-9p-pci,fsdev=fsdev_aaf,mount_tag=aaf,addr=3", val);
 		p += cx; size -= cx;
+
+		val = g_key_file_get_string(gkf, g->name, g->key[AAF_SUSPEND], NULL);
+		if (val) {
+			if (0 == strcmp(val, SUSPEND_ENABLE_STR))
+				set_aaf_option(AAF_CONFIG_SUSPEND, AAF_SUSPEND_ENABLE);
+			else if (0 == strcmp(val, SUSPEND_DISABLE_STR))
+				set_aaf_option(AAF_CONFIG_SUSPEND, AAF_SUSPEND_DISABLE);
+			else
+				g_warning("Invalid setting of AAF Allow suspend option, it should be either true or false\n");
+		}
 	}
 
 	g = &g_group[GROUP_VGPU];
