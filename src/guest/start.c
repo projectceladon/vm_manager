@@ -39,7 +39,7 @@ static const char *fixed_cmd =
 	" -k en-us"
 	" -cpu host"
 	" -enable-kvm"
-	" -device qemu-xhci,id=xhci"
+	" -device qemu-xhci,id=xhci,p2=8,p3=8"
 	" -device usb-mouse"
 	" -device usb-kbd"
 	" -device intel-hda -device hda-duplex"
