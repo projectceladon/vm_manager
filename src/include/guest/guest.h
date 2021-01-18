@@ -51,6 +51,7 @@ typedef enum {
 	FORM_INDEX_VTPM_DATA_DIR,
 	FORM_INDEX_RPMB_BIN_PATH,
 	FORM_INDEX_RPMB_DATA_DIR,
+	FORM_INDEX_PCI_PT,
 	FORM_INDEX_EXTRA_CMD,
 	FORM_NUM
 } form_index_t;
@@ -87,6 +88,8 @@ enum {
 #define GVTG_OPTS_V5_4_STR "i915-GVTg_V5_4"
 #define GVTG_OPTS_V5_8_STR "i915-GVTg_V5_8"
 
+#define PT_MAX 64		// Maximum number of passthrough devices
+
 enum {
 	FIELD_TYPE_NORMAL = 0,
 	FIELD_TYPE_ALNUM,
@@ -110,6 +113,7 @@ enum {
 	GROUP_VTPM,
 	GROUP_RPMB,
 	GROUP_EXTRA,
+	GROUP_PCI_PT,
 	GROUP_NUM
 };
 
@@ -154,10 +158,13 @@ enum {
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,
+
+	/* Sub key of group pci passthrough */
+	PCI_PT = 0,
 };
 
 void show_msg(const char *msg);
-int set_field_data(form_index_t i, char *str);
+int set_field_data(form_index_t i, const char *str);
 int get_field_data(form_index_t i, char *str, size_t len);
 int generate_keyfile(void);
 int load_form_data(char *name);

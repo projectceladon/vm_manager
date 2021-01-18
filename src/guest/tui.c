@@ -16,13 +16,14 @@
 #include <assert.h>
 #include <uuid/uuid.h>
 #include "guest.h"
+#include "utils.h"
 
 static int disp_field_rows = FORM_NUM;
 #define FORM_ROWS   (disp_field_rows + 2)
 #define MENU_ROWS 3U
 #define MSG_ROWS 1U
 
-#define STATIC_ROWS (2U + 1U + 1U + MENU_ROWS) //Boder, title, message box, menu
+#define STATIC_ROWS (2U + 1U + 1U + MENU_ROWS) //	Border, title, message box, menu
 #define MIN_FORM_ROWS 8U
 #define MIN_ROWS ((MIN_FORM_ROWS) + (STATIC_ROWS))
 
@@ -43,6 +44,9 @@ static int disp_field_rows = FORM_NUM;
 #define MENU_STARTX ((WIN_BODY_STARTX) + 1U)
 #define MENU_STARTY ((MSG_STARTY) + (MSG_ROWS))
 
+#define PCI_PT_MAX_COLS 40U
+#define PT_FIELD_LEN_MAX 1024
+
 typedef union {
 	struct {
 		int pad;
@@ -55,6 +59,7 @@ typedef union {
 typedef struct {
 	int num;
 	int pick_index;
+	int *selected;
 	const char *opts[];
 } field_sub_opts_t;
 
@@ -87,9 +92,13 @@ static ITEM *items[MENU_NUM + 1];
 static FIELD *msg_field[2];
 static int form_start_row = 0;
 
-static field_sub_opts_t firmware_sub_opts = { 2, -1, { FIRM_OPTS_UNIFIED_STR,  FIRM_OPTS_SPLITED_STR } };
-static field_sub_opts_t graphics_sub_opts = { 4, -1, { VGPU_OPTS_VIRTIO_STR, VGPU_OPTS_SW_STR, VGPU_OPTS_GVTG_STR, VGPU_OPTS_GVTD_STR } };
-static field_sub_opts_t gvtg_sub_opts =     { 4, -1, { GVTG_OPTS_V5_1_STR, GVTG_OPTS_V5_2_STR, GVTG_OPTS_V5_4_STR, GVTG_OPTS_V5_8_STR } };
+static field_sub_opts_t firmware_sub_opts = 	{ 2, -1, NULL, { FIRM_OPTS_UNIFIED_STR,  FIRM_OPTS_SPLITED_STR } };
+static field_sub_opts_t graphics_sub_opts = 	{ 4, -1, NULL, { VGPU_OPTS_VIRTIO_STR, VGPU_OPTS_SW_STR, VGPU_OPTS_GVTG_STR, VGPU_OPTS_GVTD_STR } };
+static field_sub_opts_t gvtg_sub_opts =     	{ 4, -1, NULL, { GVTG_OPTS_V5_1_STR, GVTG_OPTS_V5_2_STR, GVTG_OPTS_V5_4_STR, GVTG_OPTS_V5_8_STR } };
+static int pt_selected[PT_MAX] = { 0 };
+static char pt_opts[PT_FIELD_LEN_MAX] = { 0 };
+static field_sub_opts_t passthrough_sub_opts = 	{ 5, -1, pt_selected, {NULL} };
+
 
 static form_field_data_t g_form_field_data[FORM_NUM + 1] = {
 	{ { NULL, "name            :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
@@ -111,6 +120,7 @@ static form_field_data_t g_form_field_data[FORM_NUM + 1] = {
 	{ { NULL, "swtpm data dir  :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "rpmb bin        :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "rpmb data dir   :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
+	{ { NULL, "passthrough pci :" }, { NULL, FIELD_TYPE_NORMAL,  { 								   }, &passthrough_sub_opts	} },
 	{ { NULL, "extra cmd(qemu) :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, NULL }, { NULL, -1, { }, NULL } }
 };
@@ -132,7 +142,7 @@ static void set_color(void)
 	init_pair(GREEN_BLACK, COLOR_GREEN, COLOR_BLACK);
 }
 
-static int popup_sub_menu(WINDOW *parent, const char **opts, int nb_opts)
+static int popup_sub_menu(WINDOW *parent, const char *opts[], int nb_opts, int selected[])
 {
 	WINDOW *win_sub, *inner;
 	MENU *menu;
@@ -144,11 +154,17 @@ static int popup_sub_menu(WINDOW *parent, const char **opts, int nb_opts)
 	assert(items != NULL);
 
 	for (i = 0; i < nb_opts; i++) {
-		items[i] = new_item(opts[i], " ");
+		if (selected) {
+			items[i] = new_item(opts[i], selected[i] ? "*  " : "   ");
+		} else {
+			items[i] = new_item(opts[i], " ");
+		}
 		temp = strlen(opts[i]);
 		if (temp > max_cols)
 			max_cols = temp;
 	}
+	if (selected)
+		max_cols += 3;
 	items[i] = NULL;
 
 	menu = new_menu(items);
@@ -177,11 +193,15 @@ static int popup_sub_menu(WINDOW *parent, const char **opts, int nb_opts)
 			break;
 		case '\n':
 			exit = true;
-			for (i = 0; i < nb_opts; i++) {
+			for (i = 0; i < nb_opts; i++) 
 				if (current_item(menu) == items[i]) {
-					ret = i;
+					if (selected) {
+						selected[i] = !selected[i];
+					} else {
+						ret = i;
+					}
 				}
-			}
+			
 			break;
 		default:
 			break;
@@ -206,6 +226,7 @@ static int popup_sub_menu(WINDOW *parent, const char **opts, int nb_opts)
 	return ret;
 }
 
+
 void create_main(void)
 {
 	win_main = newwin(WIN_BODY_ROWS, WIN_BODY_COLS, WIN_BODY_STARTY, WIN_BODY_STARTX);
@@ -214,7 +235,7 @@ void create_main(void)
 	mvwprintw(win_main, 1, 1, "Celadon in VM Configuration");
 }
 
-static void set_opts_buffer(FIELD *f, char *in)
+static void set_opts_buffer(FIELD *f, const char *in)
 {
 	char buf[128] = { 0 };
 
@@ -225,7 +246,7 @@ static void set_opts_buffer(FIELD *f, char *in)
 	set_field_buffer(f, 0, buf);
 }
 
-int set_field_data(form_index_t index, char *in)
+int set_field_data(form_index_t index, const char *in)
 {
 	switch (index) {
 	case FORM_INDEX_FIRM:
@@ -282,6 +303,53 @@ int set_field_data(form_index_t index, char *in)
 			gvtg_sub_opts.pick_index = GVTG_OPTS_V5_4;
 		else if (strcmp(in, GVTG_OPTS_V5_8_STR))
 			gvtg_sub_opts.pick_index = GVTG_OPTS_V5_8;
+		break;
+	case FORM_INDEX_PCI_PT: ;
+
+		strncpy(pt_opts, in, PT_FIELD_LEN_MAX-1);
+		pt_opts[PT_FIELD_LEN_MAX-1] = '\0';
+		fprintf(stderr, "%s\n", pt_opts);
+
+		char opts[64][20];
+		char *temp[64];
+
+		for (int i=0; i<64; i++) {
+			temp[i] = opts[i];
+		}
+
+		
+		int res_count = find_pci("", 64, temp);
+
+		char delim[] = ",";
+
+		char *ptr = strtok(in, delim);
+
+		while (ptr != NULL) {
+			for (int i=0; i<res_count; i++) {
+				if (strcmp(ptr, temp[i]) == 0) {
+					pt_selected[i] = 1;
+				}
+			}
+			ptr = strtok(NULL, delim);
+		}
+
+		char buf[1024], out[1024];
+		char *p = out;
+		int size = 1024, cx;
+		unsigned int tot = 0;
+
+		for (int i=0; i < res_count; i++) {
+			if (pt_selected[i]) {
+				cx = snprintf(p, size, "%s,", temp[i]);
+				p += cx; size -= cx; tot += cx;
+			}
+		}
+		if (tot > PCI_PT_MAX_COLS) {
+			snprintf(buf, 1024, "[%.*s ...] ==>", PCI_PT_MAX_COLS - 4, out);
+		} else  {
+			snprintf(buf, 1024, "[%.*s] ==>", PCI_PT_MAX_COLS, out);
+		}
+		set_field_buffer(g_form_field_data[index].input.f, 0, buf);
 		break;
 	default:
 		set_field_buffer(g_form_field_data[index].input.f, 0, in);
@@ -484,7 +552,44 @@ static int form_key_enter(void)
 	char buf[512] = { 0 };
 
 	if (ff->input.sub_opts) {
-		pick_index = popup_sub_menu(win_form, ff->input.sub_opts->opts, ff->input.sub_opts->num);
+		if (form->current == g_form_field_data[FORM_INDEX_PCI_PT].input.f) {
+			char opts[PT_MAX][20];
+			char *temp[PT_MAX];
+			char buf[1024];
+
+			for (int i=0; i<64; i++) {
+				temp[i] = opts[i];
+			}
+
+			
+			int res_count = find_pci("", PT_MAX, temp);
+
+			char out[1024];
+
+			pick_index = popup_sub_menu(win_form, temp, res_count, pt_selected);
+			char *p = out;
+			int size = 1024, cx;
+			unsigned int tot = 0;
+
+			for (int i=0; i<res_count; i++) {
+				if (pt_selected[i]) {
+					cx = snprintf(p, size, "%s,", temp[i]);
+					p += cx; size -= cx; tot += cx;
+				}
+			}
+			if (tot > PCI_PT_MAX_COLS) {
+				snprintf(buf, 1024, "[%.*s ...] ==>", PCI_PT_MAX_COLS - 4, out);
+			} else  {
+				snprintf(buf, 1024, "[%.*s] ==>", PCI_PT_MAX_COLS, out);
+			}
+			strncpy(pt_opts, out, 1023);
+			pt_opts[1023] = '\0';
+
+			set_field_buffer(form->current, 0, buf);
+
+		} else {
+			pick_index = popup_sub_menu(win_form, ff->input.sub_opts->opts, ff->input.sub_opts->num, ff->input.sub_opts->selected);
+		}
 		update_scroll_symbol();
 		if (pick_index != -1) {
 			ff->input.sub_opts->pick_index = pick_index;
@@ -645,15 +750,18 @@ int get_field_data(form_index_t index, char *out, size_t out_len)
 	if (!out)
 		return -1;
 
-	strncpy(out,field_buffer(g_form_field_data[index].input.f, 0),out_len);
-
 	if (g_form_field_data[index].input.sub_opts) {
-		if (g_form_field_data[index].input.sub_opts->pick_index == -1) {
+		if  (g_form_field_data[index].input.sub_opts->selected) {
+			strncpy(out, pt_opts, out_len);
+		} else if ((g_form_field_data[index].input.sub_opts->pick_index == -1)){
 			memset(out, '\0', out_len);
 		} else {
+			strncpy(out,field_buffer(g_form_field_data[index].input.f, 0),out_len);
 			g_strdelimit(out, "[", ' ');
 			g_strdelimit(out, "]", '\0');
 		}
+	} else {
+		strncpy(out,field_buffer(g_form_field_data[index].input.f, 0),out_len);
 	}
 
 	g_strstrip(out);

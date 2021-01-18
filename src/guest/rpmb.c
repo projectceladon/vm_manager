@@ -111,3 +111,15 @@ int run_rpmb_daemon(void)
 	snprintf(cmd, 1024, "--dev %s/%s --sock %s/%s", rpmb.data_dir, RPMB_DATA, rpmb.data_dir, RPMB_SOCK);
 	return execute_cmd(rpmb.bin, cmd, strlen(cmd), 1);
 }
+
+void cleanup_rpmb(void) {
+	char path[1024] = { 0 };
+	struct stat st;
+
+	memset(path, 0, sizeof(path));
+	snprintf(path, 1024, "%s/%s", rpmb.data_dir, RPMB_SOCK);
+
+	if (stat(path, &st) == 0) {
+		remove(path);
+	}
+}
