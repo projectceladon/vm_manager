@@ -28,4 +28,6 @@ void list_guests(void);
 int stop_guest(char *name);
 int delete_guest(char *name);
 
+void set_cleanup();
+
 #endif /* __VM_MANAGER_H__*/

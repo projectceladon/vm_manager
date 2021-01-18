@@ -14,5 +14,6 @@
 int set_rpmb_bin_path(const char *bin_path);
 int set_rpmb_data_dir(const char *data_dir);
 int run_rpmb_daemon(void);
+void cleanup_rpmb(void);
 
 #endif /* __RPMB_H__ */

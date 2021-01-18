@@ -105,6 +105,8 @@ int main(int argc, char *argv[])
 	if (setup_work_dir() != 0)
 		return -1;
 
+	set_cleanup();
+
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
@@ -140,6 +142,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'b':
 			printf("start guest %s\n", optarg);
+			set_cleanup();
 			ret = start_guest(optarg);
 			break;
 		case 'q':

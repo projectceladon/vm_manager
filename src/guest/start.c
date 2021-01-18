@@ -17,11 +17,19 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include <errno.h>
+#include <libgen.h>
+#include <regex.h>
+#include <string.h>
 #include "vm_manager.h"
 #include "guest.h"
 #include "utils.h"
 #include "rpmb.h"
 #include "vtpm.h"
+
 
 extern keyfile_group_t g_group[];
 
@@ -173,6 +181,173 @@ static int passthrough_gpu(void)
 
 	return 0;
 }
+
+void system_call(const char *process, const char *args) {
+	pid_t pid;
+	int stat;
+
+	if (0 == (pid = fork())) {
+		execl(process, args, (char *)NULL);
+		char error_msg[128];
+		sprintf(error_msg, "%s command failed.", process);
+		perror(error_msg);
+		exit(1);
+	} else {
+		wait(&stat);
+	}
+	if (WIFEXITED(stat))
+		printf("Exit status: %d\n", WEXITSTATUS(stat));
+	else if (WIFSIGNALED(stat))
+		psignal(WTERMSIG(stat), "Exit signal");
+}
+
+static void cleanup(void)
+{
+	
+	cleanup_child_proc();
+	cleanup_rpmb();
+
+	exit(130);
+}
+
+void set_cleanup(void) 
+{
+	signal(SIGINT, cleanup); 
+}
+
+static int setup_passthrough(char *pci_device, int unset) {
+	/* Add vfio-pci kernel module, needs sudo privilege */
+	int pid;
+	int wst;
+
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("modprobe", "modprobe", "vfio", NULL);
+		return -1;
+	} else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: vfio\n");
+			return -1;
+		}
+	}
+
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("modprobe", "modprobe", "vfio-pci", NULL);
+		return -1;
+	} else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: vfio-pci\n");
+			return -1;
+		}
+	}
+
+	char iommu_grp_dev[64] = {0};
+	snprintf(iommu_grp_dev, 64, "/sys/bus/pci/devices/%s/iommu_group/devices", pci_device);
+	
+	DIR *dp;
+	int ret;
+	struct dirent *ep;     
+
+	dp = opendir(iommu_grp_dev);
+
+	if (dp != NULL)
+	{
+		/* Iterate through devices in iommu group directory */
+		while (ep = readdir (dp)) {
+			char *pci_device = ep->d_name;
+			if (strcmp(pci_device, ".") == 0 || strcmp(pci_device, "..") == 0) {
+				continue;
+			}
+			char buffer[128] = {0}, device[64] = {0}, vendor[64] = {0};
+			
+			/* Get device_id and vendor_id */
+			snprintf(buffer, 128, "%s/%s/device", iommu_grp_dev, pci_device);
+			fprintf(stderr, "%s\n", buffer);
+			FILE *f = fopen(buffer, "r");
+			if (f == NULL || !fgets(device, sizeof(device), f)) {
+				fprintf(stderr, "Cannot get device name for device %s.", pci_device);
+				continue;
+			}
+				
+			fclose(f);
+
+			snprintf(buffer, 128, "%s/%s/vendor", iommu_grp_dev, pci_device);
+			f = fopen(buffer, "r");
+			if (!fgets(vendor, sizeof(vendor), f)) {
+				fprintf(stderr, "Cannot get device name for device %s.", pci_device);
+				continue;
+			}
+			fclose(f);
+
+			if (unset) {
+				snprintf(buffer, 128, "%s/%s/driver", iommu_grp_dev, pci_device);
+
+				char *driver_in_use = basename(realpath(buffer, NULL));
+
+				if (strcmp(driver_in_use, "vfio-pci")) {
+					ret = write_to_file("/sys/bus/pci/drivers/vfio-pci/unbind", pci_device);
+					snprintf(buffer, sizeof(buffer), "%s %s", vendor, device);
+					// "echo %s %s > /sys/bus/pci/drivers/vfio-pci/remove_id"
+					ret = write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buffer);
+				}
+				free(driver_in_use);
+				ret = write_to_file("/sys/bus/pci/drivers_probe", pci_device);
+
+			} else {
+				/* Check if driver exists, unbind if it exists */
+				snprintf(buffer, 128, "%s/%s/driver", iommu_grp_dev, pci_device);
+
+				DIR* dir = opendir(buffer);
+				if (dir) {
+					/* Driver directory exists. */
+					snprintf(buffer, 128, "%s/%s/driver/unbind", iommu_grp_dev, pci_device);
+					ret = write_to_file(buffer, pci_device);
+
+					closedir(dir);
+				} else if (ENOENT == errno) {
+					/* Directory does not exist. */
+					fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
+					continue;
+				} else {
+					/* opendir() failed for some other reason. */
+					fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
+					continue;
+				}
+
+				memset(buffer, 0, sizeof(buffer));
+				snprintf(buffer, sizeof(buffer), "%s %s", vendor, device);
+
+				write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buffer);
+			}
+		}
+		(void) closedir (dp);
+	}
+	else {
+    	fprintf(stderr, "Couldn't open the directory");
+		return -1;
+	}
+	return 0;
+}
+
+static int setup_passthrough_pci(char *pci_device, char *p, size_t size) {
+
+	int cx = 0;
+
+	if (setup_passthrough(pci_device, 0) == 0) {
+		cx = snprintf(p, size, " -device vfio-pci,host=%s,x-no-kvm-intx=on", pci_device);
+	} 
+
+	return cx;
+} 
 
 int start_guest(char *name)
 {
@@ -377,6 +552,34 @@ int start_guest(char *name)
 	cx = snprintf(p, size, " -drive file=%s,if=none,id=disk1 -device virtio-blk-pci,drive=disk1,bootindex=1", val);
 	p += cx; size -= cx;
 
+	g = &g_group[GROUP_PCI_PT];
+
+	val = g_key_file_get_string(gkf, g->name, g->key[PCI_PT], NULL);
+
+	char opts[PT_MAX][20];
+	char *temp[PT_MAX];
+	char buf[1024];
+
+	for (int i=0; i<PT_MAX; i++) {
+		temp[i] = opts[i];
+	}
+
+	int res_count = find_pci("", PT_MAX, temp);
+	
+	char delim[] = ",";
+
+	char *ptr = strtok(val, delim);
+
+	while (ptr != NULL) {
+		for (int i=0; i<res_count; i++) {
+			if (strcmp(ptr, temp[i]) == 0) {
+				cx = setup_passthrough_pci(ptr, p, cx);
+				p += cx; size -= cx;
+				break;
+			}
+		}
+		ptr = strtok(NULL, delim);
+	}
 
 	g_autofree gchar **extra_keys = NULL;
 	gsize len = 0, i;
@@ -395,21 +598,22 @@ int start_guest(char *name)
 		return -1;
 	}
 
+	cleanup_rpmb();
 	if (run_rpmb_daemon()) {
 		fprintf(stderr, "Failed to run RPMB daemon!\n");
 		return -1;
 	}
 
-
 	fprintf(stderr, "run: %s %s\n", emu_path, cmd_str);
 
 	ret = execute_cmd(emu_path, cmd_str, strlen(cmd_str), 0);
+	
+	cleanup_child_proc();
+
 	if (ret != 0) {
 		err(1, "%s:Failed to execute emulator command, err=%d\n", __func__, errno);
 		return -1;
 	}
-
-	cleanup_child_proc();
 
 	g_key_file_free(gkf);
 	return 0;

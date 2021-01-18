@@ -31,6 +31,7 @@ keyfile_group_t g_group[] = {
 	{ "vtpm",     { "bin_path", "data_dir", NULL } },
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
 	{ "extra",    { "cmd", NULL } },
+	{ "passthrough", { "passthrough_pci", NULL}},
 };
 
 int load_form_data(char *name)
@@ -120,6 +121,10 @@ int load_form_data(char *name)
 	g = &g_group[GROUP_EXTRA];
 	val = g_key_file_get_string(in, g->name, g->key[EXTRA_CMD], NULL);
 	set_field_data(FORM_INDEX_EXTRA_CMD, val);
+
+	g = &g_group[GROUP_PCI_PT];
+	val = g_key_file_get_string(in, g->name, g->key[PCI_PT], NULL);
+	set_field_data(FORM_INDEX_PCI_PT, val);
 
 	return 0;
 }
@@ -281,6 +286,10 @@ int generate_keyfile(void)
 
 	get_field_data(FORM_INDEX_EXTRA_CMD, temp, sizeof(temp) - 1);
 	g_key_file_set_string(out, g_group[GROUP_EXTRA].name, g_group[GROUP_EXTRA].key[EXTRA_CMD], temp);
+	
+	get_field_data(FORM_INDEX_PCI_PT, temp, sizeof(temp) - 1);
+
+	g_key_file_set_string(out, g_group[GROUP_PCI_PT].name, g_group[GROUP_PCI_PT].key[PCI_PT], temp);
 
 	g_key_file_save_to_file(out, file_path, NULL);
 	ret = 0;
