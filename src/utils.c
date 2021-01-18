@@ -14,7 +14,15 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include "vm_manager.h"
+#include "utils.h"
+#include <string.h>
+#include <paths.h>
+#include <regex.h>
+
+#define PCI_STR_SIZE 16
+
 
 
 int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
@@ -107,8 +115,7 @@ int cleanup_child_proc(void)
 		ret = kill(child, SIGTERM);
 		if (ret != 0)
 			fprintf(stderr, "Failed to terminate sub-process: pid=%d, errno=%d\n", child, errno);
-		tok = strtok_r(buf," ", &ntok);
+		tok = strtok_r(NULL," ", &ntok);
 	}
-
 	return 0;
 }
