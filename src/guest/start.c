@@ -568,7 +568,7 @@ int start_guest(char *name)
 		g_warning("cannot find key name from group disk\n");
 		return -1;
 	}
-	cx = snprintf(p, size, " -drive file=%s,if=none,id=disk1 -device virtio-blk-pci,drive=disk1,bootindex=1", val);
+	cx = snprintf(p, size, " -drive file=%s,if=none,id=disk1,discard=unmap,detect-zeroes=unmap -device virtio-blk-pci,drive=disk1,bootindex=1", val);
 	p += cx; size -= cx;
 
 	g = &g_group[GROUP_PCI_PT];
