@@ -531,7 +531,7 @@ function set_pt_eth() {
 
 function set_pt_wifi() {
     local d
-    local WIFI_PCI=$(lspci -D |grep -i "Network controller.* Wireless" | grep -o "....:..:..\..")
+    local WIFI_PCI=$(lshw -C network |grep -i "description: wireless interface" -A5 |grep "bus info" |grep -o "....:..:....")
 
     for d in $WIFI_PCI; do
         if [[ $1 == "unset" ]]; then
