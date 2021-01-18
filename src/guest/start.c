@@ -514,8 +514,8 @@ int start_guest(char *name)
 		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-gpu-pci");
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
-	} else if (strcmp(val, VGPU_OPTS_SW_STR) == 0) {
-		cx = snprintf(p, size, " -display gtk,gl=on -device qxl-vga,xres=480,yres=360");
+	} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
+		cx = snprintf(p, size, " -display gtk,gl=on -device ramfb");
 		p += cx; size -= cx;
 	} else {
 		g_warning("Invalid Graphics config\n");

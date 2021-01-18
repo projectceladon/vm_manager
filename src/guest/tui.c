@@ -97,7 +97,7 @@ static int pt_selected[PT_MAX] = { 0 };
 static char pt_opts[PT_FIELD_LEN_MAX] = { 0 };
 
 static field_sub_opts_t firmware_sub_opts = 	{ 2, -1, NULL, { FIRM_OPTS_UNIFIED_STR,  FIRM_OPTS_SPLITED_STR } };
-static field_sub_opts_t graphics_sub_opts = 	{ 4, -1, NULL, { VGPU_OPTS_VIRTIO_STR, VGPU_OPTS_SW_STR, VGPU_OPTS_GVTG_STR, VGPU_OPTS_GVTD_STR } };
+static field_sub_opts_t graphics_sub_opts = 	{ 4, -1, NULL, { VGPU_OPTS_VIRTIO_STR, VGPU_OPTS_RAMFB_STR, VGPU_OPTS_GVTG_STR, VGPU_OPTS_GVTD_STR } };
 static field_sub_opts_t gvtg_sub_opts =     	{ 4, -1, NULL, { GVTG_OPTS_V5_1_STR, GVTG_OPTS_V5_2_STR, GVTG_OPTS_V5_4_STR, GVTG_OPTS_V5_8_STR } };
 static field_sub_opts_t passthrough_sub_opts = 	{ 5, -1, pt_selected, {NULL} };
 static field_sub_opts_t suspend_opts =          { 2, -1, NULL, { SUSPEND_ENABLE_STR, SUSPEND_DISABLE_STR } };
@@ -289,8 +289,8 @@ int set_field_data(form_index_t index, const char *in)
 			graphics_sub_opts.pick_index = VGPU_OPTS_GVTD;
 		} else if (strcmp(in, VGPU_OPTS_VIRTIO_STR) == 0) {
 			graphics_sub_opts.pick_index = VGPU_OPTS_VIRTIO;
-		} else if (strcmp(in, VGPU_OPTS_SW_STR) == 0) {
-			graphics_sub_opts.pick_index = VGPU_OPTS_SW;
+		} else if (strcmp(in, VGPU_OPTS_RAMFB_STR) == 0) {
+			graphics_sub_opts.pick_index = VGPU_OPTS_RAMFB;
 		} else {
 			fprintf(stderr, "Invalid virtual GPU type!\n");
 			return -1;

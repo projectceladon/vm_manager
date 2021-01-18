@@ -406,7 +406,7 @@ int import_guest(char *in_path)
 				import_field(i, VGPU_GVTG_VER, in, out);
 			} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
-			} else if (strcmp(val, VGPU_OPTS_SW_STR) == 0) {
+			} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
 			} else {
 				g_warning("cannot find graphics sub-key\n");
 				return -1;
