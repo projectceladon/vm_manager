@@ -463,7 +463,7 @@ function is_usb_dev_udc()
 
 function set_pt_usb() {
     local d
-    local USB_PCI=$(lspci -D |grep -m1 "USB controller" | grep -o "....:..:..\..")
+    local USB_PCI=$(lspci -D  | grep -i "USB controller" | grep -i "14.0")
 
     # passthrough only USB host controller
     for d in $USB_PCI; do
