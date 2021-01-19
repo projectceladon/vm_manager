@@ -144,6 +144,7 @@ int main(int argc, char *argv[])
 			printf("start guest %s\n", optarg);
 			set_cleanup();
 			ret = start_guest(optarg);
+			fprintf(stderr, "Exiting.");
 			break;
 		case 'q':
 			printf("stop guest %s\n", optarg);

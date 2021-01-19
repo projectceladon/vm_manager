@@ -47,6 +47,11 @@ static const char *fixed_cmd =
 	" -device intel-iommu,device-iotlb=off,caching-mode=on"
 	" -nodefaults ";
 
+/* Used to keep track of pcis that are passed through */
+#define PT_LEN 16
+static char *pci_pt_record[PT_MAX] = { 0 };
+static int pci_count = 0;
+
 static int create_vgpu(GKeyFile *gkf)
 {
 	int fd = 0;
@@ -201,11 +206,22 @@ void system_call(const char *process, const char *args) {
 		psignal(WTERMSIG(stat), "Exit signal");
 }
 
-static void cleanup(void)
+static int setup_passthrough(char *pci_device, int unset);
+
+static void cleanup_passthrough(void) {
+	for (int i=0; i<1; i++) {
+		fprintf(stderr, "pci unset: %s\n", pci_pt_record[i]);
+		setup_passthrough(pci_pt_record[i], 1);
+		free(pci_pt_record[i]);
+	}
+}
+
+static void cleanup(int num)
 {
-	
+	fprintf(stderr, "Cleaning up...\n");
 	cleanup_child_proc();
 	cleanup_rpmb();
+	cleanup_passthrough();
 
 	exit(130);
 }
@@ -215,48 +231,19 @@ void set_cleanup(void)
 	signal(SIGINT, cleanup); 
 }
 
+static int check_driver_unbinded(const char *driver) {
+	sleep(1);
+	return 0;
+}
+
 static int setup_passthrough(char *pci_device, int unset) {
-	/* Add vfio-pci kernel module, needs sudo privilege */
-	int pid;
-	int wst;
-
-	pid = fork();
-	if (pid == -1) {
-		fprintf(stderr, "%s: Failed to fork.", __func__);
-		return -1;
-	} else if (pid == 0) {
-		execlp("modprobe", "modprobe", "vfio", NULL);
-		return -1;
-	} else {
-		wait(&wst);
-		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
-			fprintf(stderr, "Failed to load module: vfio\n");
-			return -1;
-		}
-	}
-
-	pid = fork();
-	if (pid == -1) {
-		fprintf(stderr, "%s: Failed to fork.", __func__);
-		return -1;
-	} else if (pid == 0) {
-		execlp("modprobe", "modprobe", "vfio-pci", NULL);
-		return -1;
-	} else {
-		wait(&wst);
-		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
-			fprintf(stderr, "Failed to load module: vfio-pci\n");
-			return -1;
-		}
-	}
 
 	char iommu_grp_dev[64] = {0};
-	snprintf(iommu_grp_dev, 64, "/sys/bus/pci/devices/%s/iommu_group/devices", pci_device);
-	
-	DIR *dp;
 	int ret;
-	struct dirent *ep;     
+	DIR *dp;
+	struct dirent *ep;    
 
+	snprintf(iommu_grp_dev, 64, "/sys/bus/pci/devices/%s/iommu_group/devices", pci_device);
 	dp = opendir(iommu_grp_dev);
 
 	if (dp != NULL)
@@ -292,15 +279,22 @@ static int setup_passthrough(char *pci_device, int unset) {
 				snprintf(buffer, 128, "%s/%s/driver", iommu_grp_dev, pci_device);
 
 				char *driver_in_use = basename(realpath(buffer, NULL));
-
-				if (strcmp(driver_in_use, "vfio-pci")) {
+				fprintf(stderr, "driverinuse %s %d\n", driver_in_use, strcmp(driver_in_use, "vfio-pci"));
+				if (strcmp(driver_in_use, "vfio-pci") == 0) {
+					fprintf(stderr, "unbind %s\n", pci_device);
 					ret = write_to_file("/sys/bus/pci/drivers/vfio-pci/unbind", pci_device);
-					snprintf(buffer, sizeof(buffer), "%s %s", vendor, device);
+					snprintf(buffer, sizeof(buffer), "%.6s %.6s", vendor, device);
 					// "echo %s %s > /sys/bus/pci/drivers/vfio-pci/remove_id"
+					fprintf(stderr, "remove_id %s\n", buffer);
 					ret = write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buffer);
 				}
-				free(driver_in_use);
-				ret = write_to_file("/sys/bus/pci/drivers_probe", pci_device);
+				// free(driver_in_use);
+				if (check_driver_unbinded(pci_device) == 0) {
+					fprintf(stderr, "drivers_probe reset %s\n", pci_device);
+					ret = write_to_file("/sys/bus/pci/drivers_probe", pci_device);
+				} else {
+					fprintf(stderr, "Failed to unbind driver or did not finish in the given time frame.\n");
+				}
 
 			} else {
 				/* Check if driver exists, unbind if it exists */
@@ -315,12 +309,12 @@ static int setup_passthrough(char *pci_device, int unset) {
 					closedir(dir);
 				} else if (ENOENT == errno) {
 					/* Directory does not exist. */
-					fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
-					continue;
+					// fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
+					// continue;
 				} else {
 					/* opendir() failed for some other reason. */
-					fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
-					continue;
+					// fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
+					// continue;
 				}
 
 				memset(buffer, 0, sizeof(buffer));
@@ -565,9 +559,25 @@ int start_guest(char *name)
 	}
 
 	int res_count = find_pci("", PT_MAX, temp);
-	
-	char delim[] = ",";
+	pci_count = 0;
 
+	if (res_count > 0) {
+		/* Add vfio-pci kernel module, needs sudo privilege */	
+		int ret;
+		
+		if ((ret = load_kernel_module("vfio")) != 0) {
+			fprintf(stderr, "vfio error\n");
+			goto SKIP_PT;
+		}
+		
+		if ((ret = load_kernel_module("vfio-pci")) != 0) {
+			fprintf(stderr, "vfio-pci error\n");
+			goto SKIP_PT;
+		}
+	}
+
+	ret = 0;
+	char delim[] = ",";
 	char *ptr = strtok(val, delim);
 
 	while (ptr != NULL) {
@@ -575,11 +585,19 @@ int start_guest(char *name)
 			if (strcmp(ptr, temp[i]) == 0) {
 				cx = setup_passthrough_pci(ptr, p, cx);
 				p += cx; size -= cx;
+
+				if (cx != 0) {
+					pci_pt_record[pci_count] = malloc(PT_MAX);
+					strncpy(pci_pt_record[pci_count], ptr, PT_MAX-1);
+					pci_count++;
+				}
+
 				break;
 			}
 		}
 		ptr = strtok(NULL, delim);
 	}
+	SKIP_PT: if (ret != 0) fprintf(stderr, "Passthrough not enabled due to failure to load vfio modules.\n");
 
 	g_autofree gchar **extra_keys = NULL;
 	gsize len = 0, i;
@@ -608,7 +626,7 @@ int start_guest(char *name)
 
 	ret = execute_cmd(emu_path, cmd_str, strlen(cmd_str), 0);
 	
-	cleanup_child_proc();
+	cleanup(0);
 
 	if (ret != 0) {
 		err(1, "%s:Failed to execute emulator command, err=%d\n", __func__, errno);

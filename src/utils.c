@@ -23,6 +23,54 @@
 
 #define PCI_STR_SIZE 16
 
+int load_kernel_module(const char *module) {
+
+	/* First check if module is already loaded */
+	FILE * fp;
+    char * line = NULL;
+    size_t len = 0, name_len = strlen(module);
+    ssize_t read;
+	// char buffer[1024] = { 0 };
+
+	// snprintf(buffer, 1023, "%s", module);
+
+    fp = fopen("/proc/modules", "r");
+    if (fp == NULL) {
+		fprintf(stderr, "Cannot read loaded kernel modules.\n");
+		return -1;
+	}
+
+    while ((read = getline(&line, &len, fp)) != -1) {
+		char *temp = strstr(line, module);
+		if ((temp == line) && (line[name_len] == '\0')) {
+			return 0;
+		}
+    }
+
+    fclose(fp);
+    if (line)
+        free(line);
+		
+	
+	int pid;
+	int wst;
+
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("modprobe", "modprobe", module, NULL);
+		return -1;
+	} else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: %s\n", module);
+			return -1;
+		}
+	}
+	return 0;
+}
 
 
 int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
@@ -71,7 +119,7 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 
 		wait(&wst);
 		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
-			fprintf(stderr, "%s: Failed to execute %s %s\n", __func__, cmd, arg);
+			fprintf(stderr, "%s: Failed to execute %s %s\n Exit status: %d\n", __func__, cmd, arg, WEXITSTATUS(wst));
 			return -1;
 		}
 	}
