@@ -23,5 +23,6 @@ typedef struct
 int write_to_file(const char *path, const char *buffer);
 int find_pci(const char * name, int n, char *res[]);
 int find_ProgIf(char *pci_device, char * res); 
+int load_kernel_module(const char *module);
 
 #endif /* __UTILS_H__ */
