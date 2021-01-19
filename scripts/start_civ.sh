@@ -16,6 +16,7 @@ EMULATOR_PATH=$(which qemu-system-x86_64)
 GUEST_MEM="-m 2G"
 GUEST_CPU_NUM="-smp 1"
 GUEST_DISK="-drive file=$WORK_DIR/android.qcow2,if=none,id=disk1,discard=unmap,detect-zeroes=unmap"
+GUEST_EXTERNAL_WAKEUP=
 GUEST_FIRMWARE="-drive file=$WORK_DIR/OVMF.fd,format=raw,if=pflash"
 GUEST_DISP_TYPE="-display gtk,gl=on"
 GUEST_KIRQ_CHIP="-machine kernel_irqchip=on"
@@ -618,6 +619,10 @@ function set_guest_pwr_vol_button() {
     cd -
 }
 
+function enable_external_wakeup_mode() {
+    GUEST_EXTERNAL_WAKEUP='-global mc146818rtc.external_wakeup=on'
+}
+
 function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
@@ -663,6 +668,7 @@ function launch_guest() {
               $GUEST_WIFI_PT_DEV \
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
+              $GUEST_EXTERNAL_WAKEUP \
               $GUEST_QMP_PIPE \
               $GUEST_POWER_BUTTON \
               $GUSET_VTPM \
@@ -810,6 +816,10 @@ function parse_arg() {
 
             --guest-time-keep)
                 set_guest_time_keep
+                ;;
+
+            --external-wakeup-mode)
+                enable_external_wakeup_mode
                 ;;
 
             --allow-suspend)
