@@ -296,13 +296,13 @@ int set_field_data(form_index_t index, const char *in)
 		break;
 	case FORM_INDEX_VGPU_GVTG_VER:
 		set_opts_buffer(g_form_field_data[index].input.f, in);
-		if (strcmp(in, GVTG_OPTS_V5_1_STR))
+		if (strcmp(in, GVTG_OPTS_V5_1_STR) == 0)
 			gvtg_sub_opts.pick_index = GVTG_OPTS_V5_1;
-		else if (strcmp(in, GVTG_OPTS_V5_2_STR))
+		else if (strcmp(in, GVTG_OPTS_V5_2_STR) == 0)
 			gvtg_sub_opts.pick_index = GVTG_OPTS_V5_2;
-		else if (strcmp(in, GVTG_OPTS_V5_4_STR))
+		else if (strcmp(in, GVTG_OPTS_V5_4_STR) == 0)
 			gvtg_sub_opts.pick_index = GVTG_OPTS_V5_4;
-		else if (strcmp(in, GVTG_OPTS_V5_8_STR))
+		else if (strcmp(in, GVTG_OPTS_V5_8_STR) == 0)
 			gvtg_sub_opts.pick_index = GVTG_OPTS_V5_8;
 		break;
 	case FORM_INDEX_PCI_PT: ;
