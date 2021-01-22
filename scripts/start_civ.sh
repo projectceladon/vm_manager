@@ -49,6 +49,11 @@ GUEST_AAF_DIR=$WORK_DIR/aaf
 GUEST_AAF_CONFIG=$GUEST_AAF_DIR/mixins.spec
 GUEST_POWER_BUTTON=
 GUEST_GRAPHIC_MODE=
+GUEST_USB_XHCI_OPT="\
+ -device qemu-xhci,id=xhci,p2=8,p3=8 \
+ -usb \
+ -device usb-kbd \
+ -device usb-mouse"
 
 GUEST_STATIC_OPTION="\
  -name caas-vm \
@@ -56,10 +61,6 @@ GUEST_STATIC_OPTION="\
  -enable-kvm \
  -k en-us \
  -cpu host \
- -device qemu-xhci,id=xhci,p2=8,p3=8 \
- -usb \
- -device usb-kbd \
- -device usb-mouse \
  -chardev socket,id=charserial0,path=$WORK_DIR/kernel-console,server,nowait,logfile=$WORK_DIR/civ_serial.log \
  -serial chardev:charserial0 \
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
@@ -477,6 +478,10 @@ function set_pt_usb() {
             GUEST_USB_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
         fi
     done
+
+    if [[ $GUEST_USB_PT_DEV != "" ]]; then
+        GUEST_USB_XHCI_OPT=""
+    fi
 }
 
 function set_pt_udc() {
@@ -642,6 +647,7 @@ function launch_guest() {
               $GUSET_VTPM \
               $GUEST_AAF \
               $GUEST_KIRQ_CHIP \
+              $GUEST_USB_XHCI_OPT \
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
     "
