@@ -55,6 +55,8 @@ GUEST_USB_XHCI_OPT="\
  -device usb-kbd \
  -device usb-mouse"
 
+XHCI_CONTROLLERS_VENDORID="a0ed 02ed 06ed 9d2f 9d30 a0ee"
+
 GUEST_STATIC_OPTION="\
  -name caas-vm \
  -M q35 \
@@ -464,7 +466,10 @@ function is_usb_dev_udc()
 
 function set_pt_usb() {
     local d
-    local USB_PCI=$(lspci -D |grep -m1 "USB controller" | grep -o "....:..:..\..")
+
+    for i in $XHCI_CONTROLLERS_VENDORID; do
+        USB_PCI="$USB_PCI $(lspci -nn -D |grep  "USB controller" | grep $i | awk '{print $1}')"
+    done
 
     # passthrough only USB host controller
     for d in $USB_PCI; do
