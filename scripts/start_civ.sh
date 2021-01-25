@@ -464,7 +464,11 @@ function is_usb_dev_udc()
 
 function set_pt_usb() {
     local d
-    local USB_PCI=$(lspci -D |grep -m1 "USB controller" | grep -o "....:..:..\..")
+
+    # Deny USB Thunderbolt controllers to avoid performance degrade during suspend/resume
+    local USB_CONTROLLERS_DENYLIST='8086:15e9\|8086:9a13\|8086:9a1b\|8086:9a1c\|8086:9a15\|8086:9a1d'
+
+    local USB_PCI=`lspci -D -nn | grep -i usb | grep -v "$USB_CONTROLLERS_DENYLIST" | awk '{print $1}'`
 
     # passthrough only USB host controller
     for d in $USB_PCI; do
