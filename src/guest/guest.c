@@ -33,6 +33,7 @@ keyfile_group_t g_group[] = {
 	{ "passthrough", { "passthrough_pci", NULL}},
 	{ "mediation", { "battery_med", "thermal_med", NULL }},
 	{ "aaf",      { "path", "support_suspend", NULL } },
+	{ "guest_control", { "time_keep", "pm_control", NULL }},
 	{ "extra",    { "cmd", NULL } },
 };
 
@@ -137,6 +138,13 @@ int load_form_data(char *name)
 	set_field_data(FORM_INDEX_AAF_PATH, val);
 	val = g_key_file_get_string(in, g->name, g->key[AAF_SUSPEND], NULL);
 	set_field_data(FORM_INDEX_AAF_SUSPEND, val);
+
+	g = &g_group[GROUP_GUEST_SERVICE];
+	val = g_key_file_get_string(in, g->name, g->key[GUEST_TIME_KEEP], NULL);
+	set_field_data(FORM_INDEX_GUEST_TIME_KEEP, val);
+
+	val = g_key_file_get_string(in, g->name, g->key[GUEST_PM], NULL);
+	set_field_data(FORM_INDEX_PM_CONTROL, val);
 
 	g = &g_group[GROUP_EXTRA];
 	val = g_key_file_get_string(in, g->name, g->key[EXTRA_CMD], NULL);
@@ -319,6 +327,12 @@ int generate_keyfile(void)
 
 	get_field_data(FORM_INDEX_THERMAL_MED, temp, sizeof(temp) - 1);
 	g_key_file_set_string(out, g_group[GROUP_MEDIATION].name, g_group[GROUP_MEDIATION].key[THERMAL_MED], temp);
+
+	get_field_data(FORM_INDEX_GUEST_TIME_KEEP, temp, sizeof(temp) - 1);
+	g_key_file_set_string(out, g_group[GROUP_GUEST_SERVICE].name, g_group[GROUP_GUEST_SERVICE].key[GUEST_TIME_KEEP], temp);
+	
+	get_field_data(FORM_INDEX_PM_CONTROL, temp, sizeof(temp) - 1);
+	g_key_file_set_string(out, g_group[GROUP_GUEST_SERVICE].name, g_group[GROUP_GUEST_SERVICE].key[GUEST_PM], temp);
 
 	get_field_data(FORM_INDEX_EXTRA_CMD, temp, sizeof(temp) - 1);
 	g_key_file_set_string(out, g_group[GROUP_EXTRA].name, g_group[GROUP_EXTRA].key[EXTRA_CMD], temp);

@@ -352,6 +352,33 @@ static int run_thermal_mediation_daemon(char *path) {
 	return execute_cmd(path, NULL, 0, 1);
 }
 
+static int run_guest_timekeep(char *path, char *p, size_t size, char *pipe_name) {
+	int cx = 0; 
+	char *pipe = pipe_name ? pipe_name : "qmp-time-keep-pipe";
+	char buffer[1024] = {0}, dirn[1024] = {0};
+	strncpy(dirn, path, 1023);
+	snprintf(buffer, 1023, "%s/%s", dirname(dirn), pipe);
+	fprintf(stderr, "Timekeep: %s %s\n", path, buffer);
+	int ret = execute_cmd(path, buffer, strlen(buffer), 1);
+	if (ret == 0) {
+		cx = snprintf(p, size, " -qmp pipe:%s", buffer);
+	}
+	return cx;
+}
+
+static int run_guest_pm(char *path, char *p, size_t size, char *socket_name) {
+	int cx = 0; 
+	char *socket = socket_name ? socket_name : "qmp-pm-sock";
+	char buffer[1024] = {0}, dirn[1024] = {0};
+	snprintf(buffer, 1023, "%s/%s", dirname(dirn), socket);
+	fprintf(stderr, "PM: %s %s\n", path, buffer);
+	int ret = execute_cmd(path, buffer, strlen(buffer), 1);
+	if (ret == 0) {
+		cx = snprintf(p, size, " -qmp unix:%s,server,nowait -no-reboot", buffer);
+	}
+	return cx;
+}
+
 int start_guest(char *name)
 {
 	int ret;
@@ -643,6 +670,25 @@ int start_guest(char *name)
 	val = g_key_file_get_string(gkf, g->name, g->key[THERMAL_MED], NULL);
 	if (val != NULL && (strcmp("", val) != 0))
 		run_thermal_mediation_daemon(val);
+
+	/* run guest pm */
+	g = &g_group[GROUP_GUEST_SERVICE];
+
+	val = g_key_file_get_string(gkf, g->name, g->key[GUEST_TIME_KEEP], NULL);
+	if (val != NULL && (strcmp("", val) != 0)) {
+		cx = run_guest_timekeep(val, p, size, NULL);
+		p += cx; size -= cx;
+	}
+
+	/* run guest time keep */
+
+	val = g_key_file_get_string(gkf, g->name, g->key[GUEST_PM], NULL);
+	if (val != NULL && (strcmp("", val) != 0)) {
+		cx = run_guest_pm(val, p, size, NULL);
+		p += cx; size -= cx;
+	}
+
+	/* extra keys */
 
 	g_autofree gchar **extra_keys = NULL;
 	gsize len = 0, i;
