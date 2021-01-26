@@ -52,6 +52,8 @@ typedef enum {
 	FORM_INDEX_RPMB_BIN_PATH,
 	FORM_INDEX_RPMB_DATA_DIR,
 	FORM_INDEX_PCI_PT,
+	FORM_INDEX_BATTERY_MED,
+	FORM_INDEX_THERMAL_MED,
 	FORM_INDEX_AAF_PATH,
 	FORM_INDEX_AAF_SUSPEND,
 	FORM_INDEX_EXTRA_CMD,
@@ -122,9 +124,10 @@ enum {
 	GROUP_VGPU,
 	GROUP_VTPM,
 	GROUP_RPMB,
-	GROUP_AAF,
-	GROUP_EXTRA,
 	GROUP_PCI_PT,
+	GROUP_MEDIATION,
+  	GROUP_AAF,
+	GROUP_EXTRA,
 	GROUP_NUM
 };
 
@@ -167,15 +170,21 @@ enum {
 	RPMB_BIN_PATH = 0,
 	RPMB_DATA_DIR,
 
-	/* Sub key of group aaf */
+	/* Sub key of group pci passthrough */
+	PCI_PT = 0,
+
+	/* Sub key of group mediation */
+	BATTERY_MED = 0,
+	THERMAL_MED,
+
+  	/* Sub key of group aaf */
 	AAF_PATH = 0,
 	AAF_SUSPEND,
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,
 
-	/* Sub key of group pci passthrough */
-	PCI_PT = 0,
+
 };
 
 void show_msg(const char *msg);

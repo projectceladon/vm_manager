@@ -30,9 +30,10 @@ keyfile_group_t g_group[] = {
 	{ "graphics", { "type", "gvtg_version", "vgpu_uuid", NULL } },
 	{ "vtpm",     { "bin_path", "data_dir", NULL } },
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
+	{ "passthrough", { "passthrough_pci", NULL}},
+	{ "mediation", { "battery_med", "thermal_med", NULL }},
 	{ "aaf",      { "path", "support_suspend", NULL } },
 	{ "extra",    { "cmd", NULL } },
-	{ "passthrough", { "passthrough_pci", NULL}},
 };
 
 int load_form_data(char *name)
@@ -119,11 +120,21 @@ int load_form_data(char *name)
 	val = g_key_file_get_string(in, g->name, g->key[RPMB_DATA_DIR], NULL);
 	set_field_data(FORM_INDEX_RPMB_DATA_DIR, val);
 
-	g = &g_group[GROUP_AAF];
+	g = &g_group[GROUP_PCI_PT];
+	val = g_key_file_get_string(in, g->name, g->key[PCI_PT], NULL);
+	set_field_data(FORM_INDEX_PCI_PT, val);
+
+	g = &g_group[GROUP_MEDIATION];
+	val = g_key_file_get_string(in, g->name, g->key[BATTERY_MED], NULL);
+	set_field_data(FORM_INDEX_BATTERY_MED, val);
+
+	val = g_key_file_get_string(in, g->name, g->key[THERMAL_MED], NULL);
+	set_field_data(FORM_INDEX_THERMAL_MED, val);
+
+  	g = &g_group[GROUP_AAF];
+
 	val = g_key_file_get_string(in, g->name, g->key[AAF_PATH], NULL);
 	set_field_data(FORM_INDEX_AAF_PATH, val);
-
-	g = &g_group[GROUP_AAF];
 	val = g_key_file_get_string(in, g->name, g->key[AAF_SUSPEND], NULL);
 	set_field_data(FORM_INDEX_AAF_SUSPEND, val);
 
@@ -131,9 +142,6 @@ int load_form_data(char *name)
 	val = g_key_file_get_string(in, g->name, g->key[EXTRA_CMD], NULL);
 	set_field_data(FORM_INDEX_EXTRA_CMD, val);
 
-	g = &g_group[GROUP_PCI_PT];
-	val = g_key_file_get_string(in, g->name, g->key[PCI_PT], NULL);
-	set_field_data(FORM_INDEX_PCI_PT, val);
 
 	return 0;
 }
@@ -302,15 +310,19 @@ int generate_keyfile(void)
 	if (0 == check_field(g_group[GROUP_AAF].key[AAF_SUSPEND], temp)) {
 		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_SUSPEND], temp);
 	}
+	
+	get_field_data(FORM_INDEX_PCI_PT, temp, sizeof(temp) - 1);
+	g_key_file_set_string(out, g_group[GROUP_PCI_PT].name, g_group[GROUP_PCI_PT].key[PCI_PT], temp);
 
+	get_field_data(FORM_INDEX_BATTERY_MED, temp, sizeof(temp) - 1);
+	g_key_file_set_string(out, g_group[GROUP_MEDIATION].name, g_group[GROUP_MEDIATION].key[BATTERY_MED], temp);
+
+	get_field_data(FORM_INDEX_THERMAL_MED, temp, sizeof(temp) - 1);
+	g_key_file_set_string(out, g_group[GROUP_MEDIATION].name, g_group[GROUP_MEDIATION].key[THERMAL_MED], temp);
 
 	get_field_data(FORM_INDEX_EXTRA_CMD, temp, sizeof(temp) - 1);
 	g_key_file_set_string(out, g_group[GROUP_EXTRA].name, g_group[GROUP_EXTRA].key[EXTRA_CMD], temp);
 	
-	get_field_data(FORM_INDEX_PCI_PT, temp, sizeof(temp) - 1);
-
-	g_key_file_set_string(out, g_group[GROUP_PCI_PT].name, g_group[GROUP_PCI_PT].key[PCI_PT], temp);
-
 	g_key_file_save_to_file(out, file_path, NULL);
 	ret = 0;
 

@@ -344,6 +344,14 @@ static int setup_passthrough_pci(char *pci_device, char *p, size_t size) {
 	return cx;
 } 
 
+static int run_battery_mediation_daemon(char *path) {
+	return execute_cmd(path, NULL, 0, 1);
+}
+
+static int run_thermal_mediation_daemon(char *path) {
+	return execute_cmd(path, NULL, 0, 1);
+}
+
 int start_guest(char *name)
 {
 	int ret;
@@ -623,6 +631,18 @@ int start_guest(char *name)
 		ptr = strtok(NULL, delim);
 	}
 	SKIP_PT: if (ret != 0) fprintf(stderr, "Passthrough not enabled due to failure to load vfio modules.\n");
+
+	/* run mediation processes */
+
+	g = &g_group[GROUP_MEDIATION];
+
+	val = g_key_file_get_string(gkf, g->name, g->key[BATTERY_MED], NULL);
+	if (val != NULL && (strcmp("", val) != 0))
+		run_battery_mediation_daemon(val);
+	
+	val = g_key_file_get_string(gkf, g->name, g->key[THERMAL_MED], NULL);
+	if (val != NULL && (strcmp("", val) != 0))
+		run_thermal_mediation_daemon(val);
 
 	g_autofree gchar **extra_keys = NULL;
 	gsize len = 0, i;
