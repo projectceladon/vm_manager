@@ -56,6 +56,8 @@ typedef enum {
 	FORM_INDEX_THERMAL_MED,
 	FORM_INDEX_AAF_PATH,
 	FORM_INDEX_AAF_SUSPEND,
+	FORM_INDEX_GUEST_TIME_KEEP,
+	FORM_INDEX_PM_CONTROL,
 	FORM_INDEX_EXTRA_CMD,
 	FORM_NUM
 } form_index_t;
@@ -127,6 +129,7 @@ enum {
 	GROUP_PCI_PT,
 	GROUP_MEDIATION,
   	GROUP_AAF,
+	GROUP_GUEST_SERVICE,
 	GROUP_EXTRA,
 	GROUP_NUM
 };
@@ -180,6 +183,10 @@ enum {
   	/* Sub key of group aaf */
 	AAF_PATH = 0,
 	AAF_SUSPEND,
+	
+	/* Guest services */
+	GUEST_TIME_KEEP = 0,
+	GUEST_PM = 1,
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,
