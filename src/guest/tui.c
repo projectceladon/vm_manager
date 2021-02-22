@@ -321,11 +321,11 @@ int set_field_data(form_index_t index, const char *in)
 		char opts[64][20];
 		char *temp[64];
 
-		for (int i=0; i<64; i++) {
+		for (int i=0; i < 64; i++) {
 			temp[i] = opts[i];
 		}
 
-		
+
 		int res_count = find_pci("", 64, temp);
 
 		char delim[] = ",";

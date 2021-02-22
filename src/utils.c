@@ -20,38 +20,36 @@
 #include <string.h>
 #include <paths.h>
 #include <regex.h>
+#include <grp.h>
 
 #define PCI_STR_SIZE 16
 
-int load_kernel_module(const char *module) {
+int load_kernel_module(const char *module)
+{
 
 	/* First check if module is already loaded */
 	FILE * fp;
-    char * line = NULL;
-    size_t len = 0, name_len = strlen(module);
-    ssize_t read;
-	// char buffer[1024] = { 0 };
+	char * line = NULL;
+	size_t len = 0, name_len = strlen(module);
+	ssize_t read;
 
-	// snprintf(buffer, 1023, "%s", module);
-
-    fp = fopen("/proc/modules", "r");
-    if (fp == NULL) {
+	fp = fopen("/proc/modules", "r");
+	if (fp == NULL) {
 		fprintf(stderr, "Cannot read loaded kernel modules.\n");
 		return -1;
 	}
 
-    while ((read = getline(&line, &len, fp)) != -1) {
+	while ((read = getline(&line, &len, fp)) != -1) {
 		char *temp = strstr(line, module);
 		if ((temp == line) && (line[name_len] == '\0')) {
 			return 0;
 		}
-    }
+	}
 
-    fclose(fp);
-    if (line)
-        free(line);
-		
-	
+	fclose(fp);
+	if (line)
+		free(line);
+
 	int pid;
 	int wst;
 
@@ -182,8 +180,7 @@ static void spc_drop_privileges(int permanent)
 	gid_t newgid = getgid(), oldgid = getegid();
 	uid_t newuid = getuid(), olduid = geteuid();
 
-	if (!permanent)
-	{
+	if (!permanent) {
 		/* Save information about the privileges that are being dropped so that they
  		* can be restored later.
  		*/
@@ -200,28 +197,14 @@ static void spc_drop_privileges(int permanent)
 	if (!olduid)
 		setgroups(1, &newgid);
 
-	if (newgid != oldgid)
-	{
-#if !defined(linux)
-		setegid(newgid);
-		if (permanent && setgid(newgid) == -1)
+	if (newgid != oldgid) {
+		if (setregid((permanent ? newgid : -1U), newgid) == -1)
 			abort();
-#else
-		if (setregid((permanent ? newgid : -1), newgid) == -1)
-			abort();
-#endif
 	}
 
-	if (newuid != olduid)
-	{
-#if !defined(linux)
-		seteuid(newuid);
-		if (permanent && setuid(newuid) == -1)
+	if (newuid != olduid) {
+		if (setreuid((permanent ? newuid : -1U), newuid) == -1)
 			abort();
-#else
-		if (setreuid((permanent ? newuid : -1), newuid) == -1)
-			abort();
-#endif
 	}
 
 	/* verify that the changes were successful */
@@ -386,7 +369,7 @@ int write_to_file(const char *path, const char *buffer)
 
 static void print_regerror(int errcode, size_t length, regex_t *compiled)
 {
-	char buffer[length];
+	char *buffer = malloc(length);
 	(void)regerror(errcode, compiled, buffer, length);
 	fprintf(stderr, "Regex match failed: %s\n", buffer);
 }
@@ -400,8 +383,7 @@ int find_pci(const char *name, int n, char *res[])
 	int result;
 	snprintf(search_key, 64, "....:..:..\\..( %s)", name);
 	result = regcomp(&regex, search_key, REG_EXTENDED);
-	if (result)
-	{
+	if (result) {
 		if (result == REG_ESPACE)
 			fprintf(stderr, "%s\n", strerror(ENOMEM));
 		else
@@ -414,33 +396,24 @@ int find_pci(const char *name, int n, char *res[])
 	char *options[] = {"lspci", "-D", (char *)0};
 	char *env[] = {(char *)0};
 	SPC_PIPE *pipe_lspci = spc_popen("/usr/bin/lspci", options, env);
-	if (pipe_lspci != 0)
-	{
-		while (fgets(buffer, sizeof(buffer), pipe_lspci->read_fd) != NULL)
-		{
+	if (pipe_lspci != 0) {
+		while (fgets(buffer, sizeof(buffer), pipe_lspci->read_fd) != NULL) {
 			result = regexec(&regex, buffer, 1, matches, 0);
 
-			if (!result)
-			{
+			if (!result) {
 				strncpy(res[count_res], buffer + matches[0].rm_so, 12);
 				res[count_res++][12] = '\0';
 
 				if (count_res >= n)
 					break;
-			}
-			else if (result == REG_NOMATCH)
-			{
+			} else if (result == REG_NOMATCH) {
 				// No match on current line
-			}
-			else
-			{
+			} else {
 				size_t length = regerror(result, &regex, NULL, 0);
 				print_regerror(result, length, &regex);
 			}
 		}
-	}
-	else
-	{
+	} else {
 		fprintf(stderr, "Failed to create spc pipe for lspci.");
 		return -1;
 	}
@@ -457,8 +430,7 @@ int find_ProgIf(char *pci_device, char *res)
 	int result;
 
 	result = regcomp(&regex, search_key, REG_EXTENDED);
-	if (result)
-	{
+	if (result) {
 		if (result == REG_ESPACE)
 			fprintf(stderr, "%s\n", strerror(ENOMEM));
 		else
@@ -471,31 +443,22 @@ int find_ProgIf(char *pci_device, char *res)
 	char *options[] = {"lspci", "-vmms", pci_device, (char *)0};
 	char *env[] = {(char *)0};
 	SPC_PIPE *pipe_lspci = spc_popen("/usr/bin/lspci", options, env);
-	if (pipe_lspci != 0)
-	{
-		while (fgets(buffer, sizeof(buffer), pipe_lspci->read_fd) != NULL)
-		{
+	if (pipe_lspci != 0) {
+		while (fgets(buffer, sizeof(buffer), pipe_lspci->read_fd) != NULL) {
 			result = regexec(&regex, buffer, 1, matches, 0);
-			if (!result)
-			{
+			if (!result) {
 				strncpy(res, buffer + matches[0].rm_so + 8, 3);
 				res[2] = '\0';
 				count_res = 1;
 				break;
-			}
-			else if (result == REG_NOMATCH)
-			{
+			} else if (result == REG_NOMATCH) {
 				// No match on current line
-			}
-			else
-			{
+			} else {
 				size_t length = regerror(result, &regex, NULL, 0);
 				print_regerror(result, length, &regex);
 			}
 		}
-	}
-	else
-	{
+	} else {
 		fprintf(stderr, "Failed to create spc pipe for lspci.");
 		return -1;
 	}
