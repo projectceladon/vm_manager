@@ -64,7 +64,7 @@ GUEST_STATIC_OPTION="\
  -chardev socket,id=charserial0,path=$WORK_DIR/kernel-console,server,nowait,logfile=$WORK_DIR/civ_serial.log \
  -serial chardev:charserial0 \
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
- -device intel-iommu,device-iotlb=off,caching-mode=on \
+ -device intel-iommu,device-iotlb=on,caching-mode=on \
  -smbios type=2,serial=$GUEST_SMBIOS_SERIAL \
  -nodefaults"
 
