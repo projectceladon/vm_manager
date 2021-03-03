@@ -42,6 +42,7 @@ int load_kernel_module(const char *module)
 	while ((read = getline(&line, &len, fp)) != -1) {
 		char *temp = strstr(line, module);
 		if ((temp == line) && (line[name_len] == '\0')) {
+			fclose(fp);
 			return 0;
 		}
 	}
@@ -119,7 +120,7 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 
 		wait(&wst);
 		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
-			fprintf(stderr, "%s: Failed to execute %s %s\n Exit status: %d\n", __func__, cmd, arg, WEXITSTATUS(wst));
+			fprintf(stderr, "%s: Failed to execute %s %s\n Exit status: %d\n", __func__, cmd, arg ? arg : "", WEXITSTATUS(wst));
 			return -1;
 		}
 	}
@@ -322,13 +323,11 @@ static SPC_PIPE *spc_popen(const char *path, char *const argv[], char *const env
 
 static int spc_pclose(SPC_PIPE *p)
 {
-	int status;
-	pid_t pid;
+	int status = 0;
+	pid_t pid = -1;
 
-	if (p->child_pid != -1)
-	{
-		do
-		{
+	if (p->child_pid != -1) {
+		do {
 			pid = waitpid(p->child_pid, &status, 0);
 		} while (pid == -1 && errno == EINTR);
 	}
@@ -370,8 +369,13 @@ int write_to_file(const char *path, const char *buffer)
 static void print_regerror(int errcode, size_t length, regex_t *compiled)
 {
 	char *buffer = malloc(length);
+	if (!buffer) {
+		fprintf(stderr, "%s: Failed to alloc buffer for print regerror!\n", __func__);
+		return;
+	}
 	(void)regerror(errcode, compiled, buffer, length);
 	fprintf(stderr, "Regex match failed: %s\n", buffer);
+	free(buffer);
 }
 
 int find_pci(const char *name, int n, char *res[])
@@ -396,7 +400,7 @@ int find_pci(const char *name, int n, char *res[])
 	char *options[] = {"lspci", "-D", (char *)0};
 	char *env[] = {(char *)0};
 	SPC_PIPE *pipe_lspci = spc_popen("/usr/bin/lspci", options, env);
-	if (pipe_lspci != 0) {
+	if (pipe_lspci != NULL) {
 		while (fgets(buffer, sizeof(buffer), pipe_lspci->read_fd) != NULL) {
 			result = regexec(&regex, buffer, 1, matches, 0);
 
@@ -413,11 +417,11 @@ int find_pci(const char *name, int n, char *res[])
 				print_regerror(result, length, &regex);
 			}
 		}
+		spc_pclose(pipe_lspci);
 	} else {
 		fprintf(stderr, "Failed to create spc pipe for lspci.");
 		return -1;
 	}
-	spc_pclose(pipe_lspci);
 	return count_res;
 }
 
@@ -443,7 +447,7 @@ int find_ProgIf(char *pci_device, char *res)
 	char *options[] = {"lspci", "-vmms", pci_device, (char *)0};
 	char *env[] = {(char *)0};
 	SPC_PIPE *pipe_lspci = spc_popen("/usr/bin/lspci", options, env);
-	if (pipe_lspci != 0) {
+	if (pipe_lspci != NULL) {
 		while (fgets(buffer, sizeof(buffer), pipe_lspci->read_fd) != NULL) {
 			result = regexec(&regex, buffer, 1, matches, 0);
 			if (!result) {
@@ -458,6 +462,7 @@ int find_ProgIf(char *pci_device, char *res)
 				print_regerror(result, length, &regex);
 			}
 		}
+		spc_pclose(pipe_lspci);
 	} else {
 		fprintf(stderr, "Failed to create spc pipe for lspci.");
 		return -1;

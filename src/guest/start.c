@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  */
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <glib.h>
@@ -244,7 +245,7 @@ static int setup_passthrough(char *pci_device, int unset) {
 
 	char iommu_grp_dev[64] = {0};
 	DIR *dp;
-	struct dirent *ep;    
+	struct dirent *ep;
 
 	snprintf(iommu_grp_dev, 64, "/sys/bus/pci/devices/%s/iommu_group/devices", pci_device);
 	dp = opendir(iommu_grp_dev);
@@ -261,30 +262,46 @@ static int setup_passthrough(char *pci_device, int unset) {
 			continue;
 		}
 		char buffer[512] = {0}, device[64] = {0}, vendor[64] = {0};
+		char *rp = NULL;
 			
 		/* Get device_id and vendor_id */
 		snprintf(buffer, 512, "%s/%s/device", iommu_grp_dev, pci_device);
 		fprintf(stderr, "%s\n", buffer);
-		FILE *f = fopen(buffer, "r");
-		if (f == NULL || !fgets(device, sizeof(device), f)) {
+		rp = canonicalize_file_name(buffer);
+		if (!rp)
+			continue;
+		FILE *f = fopen(rp, "r");
+		if (f == NULL)
+			continue;
+		if (!fgets(device, sizeof(device), f)) {
 			fprintf(stderr, "Cannot get device name for device %s.", pci_device);
+			fclose(f);
 			continue;
 		}
-				
 		fclose(f);
+		free(rp); rp = NULL;
 
+		memset(buffer, 0, sizeof(buffer));
 		snprintf(buffer, 512, "%s/%s/vendor", iommu_grp_dev, pci_device);
-		f = fopen(buffer, "r");
+		rp = canonicalize_file_name(buffer);
+		if (!rp)
+			continue;
+		f = fopen(rp, "r");
+		if (f == NULL)
+			continue;
 		if (!fgets(vendor, sizeof(vendor), f)) {
-			fprintf(stderr, "Cannot get device name for device %s.", pci_device);
+			fprintf(stderr, "Cannot get vendor name for device %s.", pci_device);
+			fclose(f);
 			continue;
 		}
 		fclose(f);
+		free(rp); rp = NULL;
 
 		if (unset) {
+			memset(buffer, 0, sizeof(buffer));
 			snprintf(buffer, 512, "%s/%s/driver", iommu_grp_dev, pci_device);
 
-			char *driver_in_use = basename(realpath(buffer, NULL));
+			char *driver_in_use = basename(canonicalize_file_name(buffer));
 			fprintf(stderr, "driverinuse %s %d\n", driver_in_use, strcmp(driver_in_use, "vfio-pci"));
 			if (strcmp(driver_in_use, "vfio-pci") == 0) {
 				fprintf(stderr, "unbind %s\n", pci_device);
@@ -303,9 +320,12 @@ static int setup_passthrough(char *pci_device, int unset) {
 			}
 		} else {
 			/* Check if driver exists, unbind if it exists */
+			memset(buffer, 0, sizeof(buffer));
 			snprintf(buffer, 512, "%s/%s/driver", iommu_grp_dev, pci_device);
-
-			DIR* dir = opendir(buffer);
+			rp = canonicalize_file_name(buffer);
+			if (!rp)
+				continue;
+			DIR* dir = opendir(rp);
 			if (dir) {
 				/* Driver directory exists. */
 				snprintf(buffer, 512, "%s/%s/driver/unbind", iommu_grp_dev, pci_device);
@@ -321,6 +341,7 @@ static int setup_passthrough(char *pci_device, int unset) {
 				// fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
 				// continue;
 			}
+			free(rp); rp = NULL;
 
 			memset(buffer, 0, sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), "%s %s", vendor, device);
@@ -381,7 +402,7 @@ static int run_guest_pm(char *path, char *p, size_t size, char *socket_name) {
 
 int start_guest(char *name)
 {
-	int ret;
+	int ret = 0;
 	int cx;
 	GKeyFile *gkf;
 	g_autofree gchar *val = NULL;
@@ -622,8 +643,6 @@ int start_guest(char *name)
 
 	if (res_count > 0) {
 		/* Add vfio-pci kernel module, needs sudo privilege */	
-		int ret;
-		
 		if ((ret = load_kernel_module("vfio")) != 0) {
 			fprintf(stderr, "vfio error\n");
 			goto SKIP_PT;
@@ -656,7 +675,10 @@ int start_guest(char *name)
 		}
 		ptr = strtok(NULL, delim);
 	}
-	SKIP_PT: if (ret != 0) fprintf(stderr, "Passthrough not enabled due to failure to load vfio modules.\n");
+
+SKIP_PT:
+	if (ret != 0)
+		fprintf(stderr, "Passthrough not enabled due to failure to load vfio modules.\n");
 
 	/* run mediation processes */
 
