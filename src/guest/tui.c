@@ -341,7 +341,7 @@ int set_field_data(form_index_t index, const char *in)
 			ptr = strtok(NULL, delim);
 		}
 
-		char buf[1024], out[1024];
+		char buf[1024] = { 0 }, out[1024] = { 0 };
 		char *p = out;
 		int size = 1024, cx;
 		unsigned int tot = 0;
@@ -575,7 +575,7 @@ static int form_key_enter(void)
 			
 			int res_count = find_pci("", PT_MAX, temp);
 
-			char out[1024];
+			char out[1024] = { 0 };
 
 			pick_index = popup_sub_menu(win_form, temp, res_count, pt_selected);
 			char *p = out;
