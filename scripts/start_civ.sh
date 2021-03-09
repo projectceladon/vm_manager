@@ -325,6 +325,8 @@ function setup_gvtg() {
 
 function setup_virtio_gpu() {
     GUEST_VGA_DEV="-device virtio-gpu-pci"
+    GUEST_SHM_CMD="-device ivshmem-plain,memdev=ivshmem,bus=pcie.0 \
+            -object memory-backend-file,id=ivshmem,share=on,mem-path=/dev/shm/looking-glass,size=32M"
 
     shift #skip first param: VirtIO
 
@@ -654,6 +656,7 @@ function launch_guest() {
               $GUEST_USB_XHCI_OPT \
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
+              $GUEST_SHM_CMD \
     "
 
     echo $EXE_CMD
