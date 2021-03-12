@@ -12,6 +12,8 @@ cd "$(dirname "$0")/.."
 WORK_DIR=$PWD
 SCRIPTS_DIR=$WORK_DIR/scripts
 
+HOST_IP=$(ip route get 8.8.8.8 | awk -F"src " 'NR==1{split($2,a," ");print a[1]}')
+
 EMULATOR_PATH=$(which qemu-system-x86_64)
 GUEST_MEM="-m 2G"
 GUEST_CPU_NUM="-smp 1"
@@ -66,6 +68,7 @@ GUEST_STATIC_OPTION="\
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
  -device intel-iommu,device-iotlb=on,caching-mode=on \
  -smbios type=2,serial=$GUEST_SMBIOS_SERIAL \
+ -smbios type=3,asset=$HOST_IP \
  -nodefaults"
 
 
