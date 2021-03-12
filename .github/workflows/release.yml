@@ -24,7 +24,7 @@ jobs:
           sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
 
       - name: Set release version
-        run: echo ::set-env name=REL_VER::${GITHUB_REF##*/}
+        run: echo "REL_VER=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
       - name: build
         run: |
