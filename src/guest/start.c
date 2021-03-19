@@ -661,7 +661,7 @@ int start_guest(char *name)
 	while (ptr != NULL) {
 		for (int i=0; i<res_count; i++) {
 			if (strcmp(ptr, temp[i]) == 0) {
-				cx = setup_passthrough_pci(ptr, p, cx);
+				cx = setup_passthrough_pci(ptr, p, size);
 				p += cx; size -= cx;
 
 				if (cx != 0) {
