@@ -327,6 +327,7 @@ function setup_virtio_gpu() {
     GUEST_VGA_DEV="-device virtio-gpu-pci"
     GUEST_SHM_CMD="-device ivshmem-plain,memdev=ivshmem,bus=pcie.0 \
             -object memory-backend-file,id=ivshmem,share=on,mem-path=/dev/shm/looking-glass,size=32M"
+    GUEST_SPICE_CMD="-spice port=5900,disable-ticketing"
 
     shift #skip first param: VirtIO
 
@@ -657,6 +658,7 @@ function launch_guest() {
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
               $GUEST_SHM_CMD \
+              $GUEST_SPICE_CMD \
     "
 
     echo $EXE_CMD
