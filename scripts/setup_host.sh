@@ -28,7 +28,7 @@ function ubu_changes_require(){
     if [ x$res = xn ]; then
         return 1
     fi
-    sudo apt install -y wget mtools ovmf dmidecode python3-usb python3-pyudev pulseaudio jq
+    sudo apt install -y wget mtools ovmf dmidecode python3-usb python3-pyudev pulseaudio jq ffmpeg
 
     # Install libs for vm-manager
     sudo apt install -y libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev

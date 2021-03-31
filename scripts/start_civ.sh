@@ -101,6 +101,10 @@ function start_thermal_daemon() {
     sudo systemctl daemon-reload
     sudo systemctl start thermald.service
 }
+function start_ffmpeg_service() {
+    #Execute ffmpeg command
+    sudo $SCRIPTS_DIR/ffmpeg_script.sh
+}
 
 function setup_audio_dev() {
     local AUDIO_SETUP=$SCRIPTS_DIR/setup_audio_host.sh
@@ -839,6 +843,7 @@ check_nested_vt || exit -1
 setup_rpmb_dev || exit -1
 setup_swtpm
 setup_audio_dev || exit -1
+start_ffmpeg_service
 launch_guest
 
 echo "Done: \"$(realpath $0) $@\""
