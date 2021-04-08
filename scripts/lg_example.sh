@@ -3,7 +3,7 @@
 function lg_example_home(){
     #one simple example for lg client
     #display0 is Android home
-    sudo ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass0 -a true -t "Android Home"
+    ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass0 -a true -t "Android Home"
 }
 
 function lg_example_setting(){
@@ -11,7 +11,7 @@ function lg_example_setting(){
     #display1 is Setting
     adb connect localhost
     adb -s localhost:5555 shell am start -n com.android.settings/com.android.settings.homepage.SettingsHomepageActivity --display 1
-    sudo ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass1 -a true -t "Android Setting"
+    ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass1 -a true -t "Android Setting"
 }
 
 function lg_example_documents(){
@@ -19,7 +19,7 @@ function lg_example_documents(){
     #display2 is Documents
     adb connect localhost
     adb -s localhost:5555 shell am start -n com.android.documentsui/com.android.documentsui.files.FilesActivity --display 2
-    sudo ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass2 -a true -t "Android Documents"
+    ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass2 -a true -t "Android Documents"
 }
 
 function lg_example_webview(){
@@ -27,7 +27,7 @@ function lg_example_webview(){
     #display3 is Webview
     adb connect localhost
     adb -s localhost:5555 shell am start -n org.chromium.webview_shell/.WebViewBrowserActivity --display 3
-    sudo ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass3 -a true -t "Android WebView"
+    ./LG_B1_Client -k true -K 60 -f /dev/shm/looking-glass3 -a true -t "Android WebView"
 }
 
 echo "lg simple example start"
