@@ -40,6 +40,7 @@ GUEST_UDC_PT_DEV=
 GUEST_AUDIO_PT_DEV=
 GUEST_ETH_PT_DEV=
 GUEST_WIFI_PT_DEV=
+GUEST_PCI_PT_ARRAY=()
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
 GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0"
@@ -435,9 +436,18 @@ function set_pt_pci_vfio() {
                 echo "set PCI passthrough: $pci, $vendor:$device"
                 [[ -d $d/driver ]] && sudo sh -c "echo $pci > $d/driver/unbind"
                 sudo sh -c "echo $vendor $device > /sys/bus/pci/drivers/vfio-pci/new_id"
+                GUEST_PCI_PT_ARRAY+=($PT_PCI)
             fi
         done
     fi
+}
+
+function cleanup_pt_pci() {
+    local id
+    for id in ${GUEST_PCI_PT_ARRAY[@]}; do
+        set_pt_pci_vfio $id "unset"
+    done
+    unset GUEST_PCI_PT_ARRAY
 }
 
 # According to PCI specification, for USB controller, the prog-if field
@@ -472,15 +482,11 @@ function set_pt_usb() {
 
     # passthrough only USB host controller
     for d in $USB_PCI; do
-        if [[ $1 == "unset" ]]; then
-            set_pt_pci_vfio $d "unset"
-        else
-            is_usb_dev_udc $d && continue
+        is_usb_dev_udc $d && continue
 
-            echo "passthrough USB device: $d"
-            set_pt_pci_vfio $d
-            GUEST_USB_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
-        fi
+        echo "passthrough USB device: $d"
+        set_pt_pci_vfio $d
+        GUEST_USB_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
     done
 
     if [[ $GUEST_USB_PT_DEV != "" ]]; then
@@ -494,15 +500,11 @@ function set_pt_udc() {
 
     # passthrough only USB device controller
     for d in $UDC_PCI; do
-        if [[ $1 == "unset" ]]; then
-            set_pt_pci_vfio $d "unset"
-        else
-            is_usb_dev_udc $d || continue
+        is_usb_dev_udc $d || continue
 
-            echo "passthrough UDC device: $d"
-            set_pt_pci_vfio $d
-            GUEST_UDC_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
-        fi
+        echo "passthrough UDC device: $d"
+        set_pt_pci_vfio $d
+        GUEST_UDC_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
     done
 }
 
@@ -511,14 +513,10 @@ function set_pt_audio() {
     local AUDIO_PCI=$(lspci -D |grep -i "Audio" | grep -o "....:..:..\..")
 
     for d in $AUDIO_PCI; do
-        if [[ $1 == "unset" ]]; then
-            set_pt_pci_vfio $d "unset"
-        else
-            echo "passthrough Audio device: $d"
-            set_pt_pci_vfio $d
-            GUEST_AUDIO_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
-            GUEST_AUDIO_DEV=""
-        fi
+        echo "passthrough Audio device: $d"
+        set_pt_pci_vfio $d
+        GUEST_AUDIO_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
+        GUEST_AUDIO_DEV=""
     done
 }
 
@@ -527,14 +525,10 @@ function set_pt_eth() {
     local ETH_PCI=$(lspci -D |grep -i "Ethernet" | grep -o "....:..:..\..")
 
     for d in $ETH_PCI; do
-        if [[ $1 == "unset" ]]; then
-            set_pt_pci_vfio $d "unset"
-        else
-            echo "passthrough Ethernet device: $d"
-            set_pt_pci_vfio $d
-            GUEST_ETH_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
-            GUEST_NET=""
-        fi
+        echo "passthrough Ethernet device: $d"
+        set_pt_pci_vfio $d
+        GUEST_ETH_PT_DEV+=" -device vfio-pci,host=${d#*:},x-no-kvm-intx=on"
+        GUEST_NET=""
     done
 }
 
@@ -543,13 +537,9 @@ function set_pt_wifi() {
     local WIFI_PCI=$(lshw -C network |grep -i "description: wireless interface" -A5 |grep "bus info" |grep -o "....:..:....")
 
     for d in $WIFI_PCI; do
-        if [[ $1 == "unset" ]]; then
-            set_pt_pci_vfio $d "unset"
-        else
-            echo "passthrough WiFi device: $d"
-            set_pt_pci_vfio $d
-            GUEST_WIFI_PT_DEV+=" -device vfio-pci,host=${d#*:}"
-        fi
+        echo "passthrough WiFi device: $d"
+        set_pt_pci_vfio $d
+        GUEST_WIFI_PT_DEV+=" -device vfio-pci,host=${d#*:}"
     done
 }
 
@@ -601,11 +591,7 @@ function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
     cleanup_battery_mediation
-    [[ -z $GUEST_USB_PT_DEV ]] || set_pt_usb unset
-    [[ -z $GUEST_AUDIO_PT_DEV ]] || set_pt_audio unset
-    [[ -z $GUEST_UDC_PT_DEV ]] || set_pt_udc unset
-    [[ -z $GUEST_WIFI_PT_DEV ]] || set_pt_wifi unset
-    [[ -z $GUEST_ETH_PT_DEV ]] || set_pt_eth unset
+    cleanup_pt_pci
 }
 
 function error() {
