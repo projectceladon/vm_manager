@@ -40,6 +40,7 @@ GUEST_UDC_PT_DEV=
 GUEST_AUDIO_PT_DEV=
 GUEST_ETH_PT_DEV=
 GUEST_WIFI_PT_DEV=
+HOST_WIFI_PCI_ID=
 GUEST_PM_CTRL=
 GUEST_TIME_KEEP=
 GUSET_VTPM="-chardev socket,id=chrtpm,path=$WORK_DIR/vtpm0/swtpm-sock -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0"
@@ -541,16 +542,19 @@ function set_pt_eth() {
 function set_pt_wifi() {
     local d
     local WIFI_PCI=$(lshw -C network |grep -i "description: wireless interface" -A5 |grep "bus info" |grep -o "....:..:....")
-
-    for d in $WIFI_PCI; do
-        if [[ $1 == "unset" ]]; then
+    if [[ $1 == "unset" ]]; then
+        for d in $HOST_WIFI_PCI_ID; do
+            echo "unset WiFi device: $d"
             set_pt_pci_vfio $d "unset"
-        else
+        done
+     else
+        HOST_WIFI_PCI_ID=$WIFI_PCI
+        for d in $WIFI_PCI; do
             echo "passthrough WiFi device: $d"
             set_pt_pci_vfio $d
             GUEST_WIFI_PT_DEV+=" -device vfio-pci,host=${d#*:}"
-        fi
-    done
+        done
+     fi
 }
 
 function set_guest_pm() {
