@@ -479,7 +479,8 @@ function set_pt_usb() {
     local USB_CONTROLLERS_DENYLIST='8086:15e9\|8086:9a13\|8086:9a1b\|8086:9a1c\|8086:9a15\|8086:9a1d'
 
     local USB_PCI=`lspci -D -nn | grep -i usb | grep -v "$USB_CONTROLLERS_DENYLIST" | awk '{print $1}'`
-
+    # As BT chip is going to be passthrough to host, make the interface down in host
+    hciconfig hci0 down
     # passthrough only USB host controller
     for d in $USB_PCI; do
         is_usb_dev_udc $d && continue

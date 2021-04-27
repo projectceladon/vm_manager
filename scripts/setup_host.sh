@@ -252,6 +252,26 @@ function ubu_install_swtpm() {
     cd -
 }
 
+ubu_update_bt_fw(){
+    if [ -d "linux-firmware" ] ; then
+            rm -rf linux-firmware
+    fi
+    git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware
+    cd linux-firmware
+    # Checkout to specific firmware version 22.50.0.4 as guest also uses this version. Latest
+    # is not taken as firmware update process in the guest is manual
+    git checkout fa0efeff4894e36b9c3964376f2c99fae101d147
+    cd -
+    sudo cp linux-firmware/intel/ibt-19-0-4* /lib/firmware/intel
+    if [ "$(hciconfig | grep "UP")" == "" ]; then
+            hciconfig hci0 up
+    fi
+    hcitool cmd 3f 01 01 01 00 00 00 00 00 & > /dev/null
+    sleep 5
+    echo "BT FW in the host got updated"
+    reboot_required=1
+}
+
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -311,6 +331,7 @@ ubu_enable_host_gvt
 prepare_required_scripts
 setup_sof
 ubu_install_swtpm
+ubu_update_bt_fw
 
 ask_reboot
 
