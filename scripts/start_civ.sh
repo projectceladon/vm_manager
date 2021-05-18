@@ -326,6 +326,16 @@ function setup_gvtg() {
 
 function setup_virtio_gpu() {
     GUEST_VGA_DEV="-device virtio-gpu-pci"
+    GUEST_SHM_CMD="
+            -device ivshmem-plain,memdev=ivshmem0,bus=pcie.0 \
+            -object memory-backend-file,id=ivshmem0,share=on,mem-path=/dev/shm/looking-glass0,size=32M \
+            -device ivshmem-plain,memdev=ivshmem1,bus=pcie.0 \
+            -object memory-backend-file,id=ivshmem1,share=on,mem-path=/dev/shm/looking-glass1,size=32M \
+            -device ivshmem-plain,memdev=ivshmem2,bus=pcie.0 \
+            -object memory-backend-file,id=ivshmem2,share=on,mem-path=/dev/shm/looking-glass2,size=32M \
+            -device ivshmem-plain,memdev=ivshmem3,bus=pcie.0 \
+            -object memory-backend-file,id=ivshmem3,share=on,mem-path=/dev/shm/looking-glass3,size=32M"
+    GUEST_SPICE_CMD="-spice port=5900,disable-ticketing"
 
     shift #skip first param: VirtIO
 
@@ -336,7 +346,7 @@ function setup_virtio_gpu() {
                 shift
                 ;;
             display=off)
-                GUEST_DISP_TYPE="-display none"
+                GUEST_DISP_TYPE="-display egl-headless"
                 shift
                 ;;
             *)
@@ -641,6 +651,8 @@ function launch_guest() {
               $GUEST_USB_XHCI_OPT \
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
+              $GUEST_SHM_CMD \
+              $GUEST_SPICE_CMD \
     "
 
     echo $EXE_CMD
