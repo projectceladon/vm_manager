@@ -252,24 +252,45 @@ function ubu_install_swtpm() {
     cd -
 }
 
-ubu_update_bt_fw(){
-    if [ -d "linux-firmware" ] ; then
+function ubu_update_bt_fw() {
+    #kill qemu if android is launched, because BT might have been given as passthrough to the guest.
+    #In this case hciconfig will show null
+    qemu_pid="$(ps -ef | grep qemu-system | grep -v grep | awk '{print $2}')"
+    if [ $qemu_pid != "" ]; then
+        kill $qemu_pid > /dev/null
+        sleep 5
+    fi
+
+    if [ "$(hciconfig)" != "" ]; then
+        if [ "$(hciconfig | grep "UP")" == "" ]; then
+            if [ "$(rfkill list bluetooth | grep "Soft blocked: no" )" == "" ]; then
+                sudo rfkill unblock bluetooth
+            fi
+        fi
+        hciconfig hci0 up
+        if [ -d "linux-firmware" ] ; then
             rm -rf linux-firmware
+        fi
+        git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware
+        cd linux-firmware
+        # Checkout to specific firmware version 22.50.0.4 as guest also uses this version. Latest
+        # is not taken as firmware update process in the guest is manual
+        git checkout fa0efeff4894e36b9c3964376f2c99fae101d147
+        cd -
+        sudo cp linux-firmware/intel/ibt-19-0-4* /lib/firmware/intel
+        hcitool cmd 3f 01 01 01 00 00 00 00 00 & > /dev/null
+        sleep 5
+        echo "BT FW in the host got updated"
+        reboot_required=1
+    else
+        usb_devices="/sys/kernel/debug/usb/devices"
+        cat $usb_devices | grep  -q "Cls=e0(wlcon) Sub=01 Prot=01 Driver=btusb"
+        if [ $? != 0 ]; then
+            echo " Skip the host BT firmware update as BT controller is not present"
+        else
+            echo "Host Bluetooth firmware update failed. Run the setup again after cold reboot"
+        fi
     fi
-    git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware
-    cd linux-firmware
-    # Checkout to specific firmware version 22.50.0.4 as guest also uses this version. Latest
-    # is not taken as firmware update process in the guest is manual
-    git checkout fa0efeff4894e36b9c3964376f2c99fae101d147
-    cd -
-    sudo cp linux-firmware/intel/ibt-19-0-4* /lib/firmware/intel
-    if [ "$(hciconfig | grep "UP")" == "" ]; then
-            hciconfig hci0 up
-    fi
-    hcitool cmd 3f 01 01 01 00 00 00 00 00 & > /dev/null
-    sleep 5
-    echo "BT FW in the host got updated"
-    reboot_required=1
 }
 
 function show_help() {
