@@ -30,6 +30,22 @@ function ubu_changes_require(){
     sudo apt install -y wget mtools ovmf dmidecode python3-usb python3-pyudev pulseaudio jq
 }
 
+function install_ffmpeg() {
+    wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
+    mkdir -p ffmpeg_sources
+    cd ffmpeg_sources && tar xjvf ../ffmpeg-snapshot.tar.bz2
+    cd ffmpeg && PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --extra-cflags="-I$HOME/ffmpeg_build/include"
+    flags="-L$HOME/ffmpeg_build/lib" --extra-libs="-lpthread -lm" -ld="gcc" && PATH="$HOME/bin:$PATH"
+    make
+    make install
+    hash -r
+    sudo cp -r $HOME/ffmpeg_build/lib/*.* /usr/lib/ /usr/local/lib
+    cd ..
+    sudo rm -rf ffmpeg_sources
+    sudo rm -rf ffmpeg-snapshot.tar.bz2
+    sudo rm -rf $HOME/ffmpeg_build
+    cd ..
+}
 function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
@@ -281,7 +297,8 @@ check_os
 check_network
 check_kernel_version
 
-ubu_changes_require
+#ubu_changes_require
+install_ffmpeg
 ubu_install_qemu_gvt
 ubu_build_ovmf_gvt
 ubu_enable_host_gvt
