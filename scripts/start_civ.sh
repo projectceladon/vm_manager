@@ -622,8 +622,8 @@ check_nested_vt || exit -1
 setup_rpmb_dev || exit -1
 setup_swtpm
 setup_audio_dev || exit -1
-launch_guest
-sleep 5
+launch_guest&
+sleep 20
 run_cam_service
 
 echo "Done: \"$(realpath $0) $@\""
