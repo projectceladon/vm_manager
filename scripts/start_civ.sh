@@ -26,12 +26,12 @@ GUEST_RPMB_DEV_SOCK=
 GUEST_THERMAL_DAEMON_PID=
 GUEST_BATTERY_DAEMON_PID=
 GUEST_IMAGE=$WORK_DIR/android.qcow2
-GUEST_VSOCK="-device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3"
+GUEST_VSOCK="-device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3,guest-cid=4"
 GUEST_SHARE_FOLDER=
 GUEST_SMBIOS_SERIAL=$(dmidecode -t 2 | grep -i serial | awk '{print $3}')
 GUEST_QMP_SOCK=$WORK_DIR/.civ.qmp.sock
 GUEST_QMP_UNIX="-qmp unix:$GUEST_QMP_SOCK,server,nowait"
-GUEST_NET="-device e1000,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=tcp::5554-:5554"
+GUEST_NET="-device e1000,netdev=net0 -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=tcp::5554-:5554,hostfwd=tcp::8085-:8085"
 GUEST_BLK_DEV=
 GUEST_AUDIO_DEV="-device intel-hda -device hda-duplex -audiodev id=android_spk,timer-period=5000,server=$XDG_RUNTIME_DIR/pulse/native,driver=pa"
 GUEST_EXTRA_QCMD=
@@ -350,10 +350,10 @@ function setup_virtio_gpu() {
     echo "gpu-type:virtio" >> $GUEST_AAF_CONFIG
 }
 
-function setup_ramfb_vga() {
-    GUEST_VGA_DEV="-device ramfb"
+function setup_softpipe() {
+    GUEST_VGA_DEV="-device virtio-gpu-pci,virgl=off"
 
-    shift #skip first param: RAMFB
+    shift #skip first param: softpipe
 
     if [[ $# -gt 0 ]]; then
         case $1 in
@@ -366,7 +366,7 @@ function setup_ramfb_vga() {
                 shift
                 ;;
             *)
-                echo "E: RAMFB GPU: Invalid parameters: $1"
+                echo "E: Software Render: Invalid parameters: $1"
                 return -1
                 ;;
         esac
@@ -383,10 +383,10 @@ function set_graphics() {
         setup_gvtg ${sub_param[@]} || return -1
     elif [[ ${sub_param[0]} == "VirtIO" ]]; then
         setup_virtio_gpu ${sub_param[@]} || return -1
-    elif [[ ${sub_param[0]} == "RAMFB" ]]; then
-        setup_ramfb_vga ${sub_param[@]} || return -1
+    elif [[ ${sub_param[0]} == "SOFTPIPE" ]]; then
+        setup_softpipe ${sub_param[@]} || return -1
     else
-        echo "E: VGPU only support VirtIO,GVT-g,GVT-d,RAMFB. $1 is not supported"
+        echo "E: VGPU only support VirtIO,GVT-g,GVT-d,SOFTPIPE. $1 is not supported"
         return -1
     fi
 }
@@ -480,7 +480,8 @@ function set_pt_usb() {
     local USB_CONTROLLERS_DENYLIST='8086:15e9\|8086:9a13\|8086:9a1b\|8086:9a1c\|8086:9a15\|8086:9a1d'
 
     local USB_PCI=`lspci -D -nn | grep -i usb | grep -v "$USB_CONTROLLERS_DENYLIST" | awk '{print $1}'`
-
+    # As BT chip is going to be passthrough to host, make the interface down in host
+    hciconfig hci0 down
     # passthrough only USB host controller
     for d in $USB_PCI; do
         is_usb_dev_udc $d && continue
@@ -653,10 +654,10 @@ function show_help() {
     printf "\t-h  show this help message\n"
     printf "\t-m  specify guest memory size, eg. \"-m 4G\"\n"
     printf "\t-c  specify guest cpu number, eg. \"-c 4\"\n"
-    printf "\t-g  specify guest graphics mode, current support VirtIO|GVT-g|GVT-d|RAMFB.\n"
+    printf "\t-g  specify guest graphics mode, current support VirtIO|GVT-g|GVT-d|SOFTPIPE.\n"
     printf "\t\tThe default value is VirtIO.\n"
     printf "\t\tVirtIO GPU, sub-param: display=[on|off]. eg. \"-g VirtIO,display=off\", display is [on] by default\n"
-    printf "\t\tRAMFB VGA, sub-param: display=[on|off]. eg. \"-g RAMFB,display=on\"\n"
+    printf "\t\tSOFTPIPE, sub-param: display=[on|off]. eg. \"-g SOFTPIPE,display=on\"\n"
     printf "\t\tGVT-g, sub-param: uuid=[vgpu uuid],display=[on|off]. eg. \"-g GVT-g,uuid=4ec1ff92-81d7-11e9-aed4-5bf6a9a2bb0a,display=on\", if uuid is not specified, a hardcoded uuid will be used\n"
     printf "\t\tGVT-d: sub-param: romfile=[file path of rom]. eg. \"-g GVT-d,romfile=/path/to/romfile\"\n"
     printf "\t-d  specify guest virtual disk image, eg. \"-d /path/to/android.img\"\n"
