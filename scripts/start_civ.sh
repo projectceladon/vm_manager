@@ -65,6 +65,10 @@ GUEST_STATIC_OPTION="\
  -serial chardev:charserial0 \
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
  -device intel-iommu,device-iotlb=on,caching-mode=on \
+ -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass0 \
+ -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass1 \
+ -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass2 \
+ -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass3 \
  -smbios type=2,serial=$GUEST_SMBIOS_SERIAL \
  -nodefaults"
 
