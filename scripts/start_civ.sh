@@ -67,6 +67,7 @@ GUEST_STATIC_OPTION="\
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
  -device intel-iommu,device-iotlb=on,caching-mode=on \
  -smbios type=2,serial=$GUEST_SMBIOS_SERIAL \
+ -device virtio-input-host-pci,evdev=/dev/input/by-path/pci-0000:00:15.1-platform-i2c_designware.1-event \
  -nodefaults"
 
 
