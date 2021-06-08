@@ -175,6 +175,17 @@ function prepare_required_scripts(){
     chmod +x $CIV_WORK_DIR/scripts/batsys
 }
 
+function install_9p_module(){
+    echo "installing 9p kernel modules for file-sharing"
+    sudo modprobe 9pnet
+    sudo modprobe 9pnet_virtio
+    sudo modprobe 9p
+    FILE_SHARE_DIR=./share_folder
+    if [ ! -d "$FILE_SHARE_DIR" ]; then
+        mkdir ./share_folder
+    fi
+}
+
 function install_auto_start_service(){
     service_file=civ.service
     touch $service_file
@@ -318,7 +329,9 @@ function parse_arg() {
                 install_auto_start_service "$2" || return -1
                 shift
                 ;;
-
+            --file-share)
+                install_9p_module || return -1
+                ;;
             -?*)
                 echo "Error: Invalid option $1"
                 show_help

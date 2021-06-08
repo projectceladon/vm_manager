@@ -66,6 +66,8 @@ GUEST_STATIC_OPTION="\
  -serial chardev:charserial0 \
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
  -device intel-iommu,device-iotlb=on,caching-mode=on \
+ -fsdev local,security_model=none,id=fsdev0,path=./share_folder \
+ -device virtio-9p-pci,fsdev=fsdev0,mount_tag=hostshare \
  -smbios type=2,serial=$GUEST_SMBIOS_SERIAL \
  -nodefaults"
 
