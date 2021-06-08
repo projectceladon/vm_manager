@@ -278,6 +278,8 @@ function ubu_update_bt_fw() {
         git checkout fa0efeff4894e36b9c3964376f2c99fae101d147
         cd -
         sudo cp linux-firmware/intel/ibt-19-0-4* /lib/firmware/intel
+        ln -s /lib/firmware/intel/ibt-19-0-4.sfi /lib/firmware/intel/ibt-19-16-0.sfi
+        ln -s /lib/firmware/intel/ibt-19-0-4.ddc /lib/firmware/intel/ibt-19-16-0.ddc
         hcitool cmd 3f 01 01 01 00 00 00 00 00 & > /dev/null
         sleep 5
         echo "BT FW in the host got updated"
