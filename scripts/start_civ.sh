@@ -71,6 +71,15 @@ GUEST_STATIC_OPTION="\
 
 
 #------------------------------------------------------         Functions       ----------------------------------------------------------
+function check_non_graphical_target() {
+    local target=$(/bin/systemctl get-default)
+    if [[ $target  == *"graphical.target"* ]]; then
+	echo "System is still in graphical.target. Execute below command to set as multi-user target, and reboot before launching GVT-d."
+        echo "           systemctl set-default multi-user.target"
+        exit 0;
+    fi
+}
+
 function check_nested_vt() {
     local nested=$(cat /sys/module/kvm_intel/parameters/nested)
     if [[ $nested != 1 && $nested != 'Y' ]]; then
@@ -377,6 +386,7 @@ function set_graphics() {
     GUEST_GRAPHIC_MODE=${sub_param[0]}
 
     if [[ ${sub_param[0]} == "GVT-d" ]]; then
+        check_non_graphical_target
         setup_gvtd ${sub_param[@]} || return -1
     elif [[ ${sub_param[0]} == "GVT-g" ]]; then
         setup_gvtg ${sub_param[@]} || return -1
