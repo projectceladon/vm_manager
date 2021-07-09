@@ -70,7 +70,6 @@ int run_vtpm_daemon(void)
 	char cmd[1024] = { 0 };
 
 	if (!vtpm.bin || !vtpm.data_dir) {
-		fprintf(stderr, "Invalid vtpm params!\n");
 		return -1;
 	}
 
