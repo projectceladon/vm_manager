@@ -400,6 +400,30 @@ static int run_guest_pm(char *path, char *p, size_t size, char *socket_name) {
 	return cx;
 }
 
+static int run_extra_service(char *str)
+{
+	gchar **cmd = NULL;
+	struct stat st;
+	int ret = 0;
+	int arg_len = 0;
+
+	cmd = g_strsplit(str, " ", 2);
+	if (!cmd)
+		return -1;
+
+	if (stat(cmd[0], &st) != 0)
+		return -1;
+
+	if (cmd[1])
+		arg_len = strlen(cmd[1]);
+
+	ret = execute_cmd(cmd[0], cmd[1], arg_len, 1);
+
+	g_strfreev(cmd);
+
+	return ret;
+}
+
 int start_guest(char *name)
 {
 	int ret = 0;
@@ -695,15 +719,28 @@ SKIP_PT:
 		p += cx; size -= cx;
 	}
 
-	/* extra keys */
-
-	g_autofree gchar **extra_keys = NULL;
-	gsize len = 0, i;
-	extra_keys = g_key_file_get_keys(gkf, "extra", &len, NULL);
-	for (i = 0; i < len; i++) {
-		val = g_key_file_get_string(gkf, "extra", extra_keys[i], NULL);
+	/* extra GROUP */
+	g = &g_group[GROUP_EXTRA];
+	/* extra cmds */
+	val = g_key_file_get_string(gkf, g->name, g->key[EXTRA_CMD], NULL);
+	if (val != NULL && (strcmp("", val) != 0)) {
 		cx = snprintf(p, size, " %s", val);
+		printf("%s: %s\n", g->key[EXTRA_CMD], val);
 		p += cx; size -= cx;
+	}
+	/* extra services */
+	gchar **srv_list = NULL;
+	gsize n_extra_srv = 0;
+	srv_list = g_key_file_get_string_list(gkf, g->name, g->key[EXTRA_SERVICE], &n_extra_srv, NULL);
+	if (srv_list != NULL && (n_extra_srv != 0)) {
+		gsize i;
+		for (i = 0; i < n_extra_srv; i++) {
+			g_strstrip(srv_list[i]);
+			if (strcmp("", srv_list[i])) {
+				run_extra_service(srv_list[i]);
+			}
+		}
+		g_strfreev(srv_list);
 	}
 
 	cx = snprintf(p, size, "%s", fixed_cmd);
