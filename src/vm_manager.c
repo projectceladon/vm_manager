@@ -31,7 +31,7 @@ static void help(int exit_err)
 {
 	fprintf(stderr,
 		"Usage:\n"
-		"\tvm-manager [-c] [-i config_file_path] [-d vm_name] [-b vm_name] [-q vm_name] [-f vm_name] [-m vm_name] [-l] [-v] [-h]\n"
+		"\tvm-manager [-c] [-i config_file_path] [-d vm_name] [-b vm_name] [-q vm_name] [-f vm_name] [-u vm_name] [-l] [-v] [-h]\n"
 		"Options:\n"
 		"\t-c, --create\n"
 		"\t\tCreate a new CiV guest\n"

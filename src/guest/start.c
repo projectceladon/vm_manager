@@ -614,6 +614,8 @@ int start_guest(char *name)
 	g = &g_group[GROUP_PCI_PT];
 
 	val = g_key_file_get_string(gkf, g->name, g->key[PCI_PT], NULL);
+	if (val == NULL || !strcmp("", val))
+		goto SKIP_PT;
 
 	char opts[PT_MAX][20];
 	char *temp[PT_MAX];
