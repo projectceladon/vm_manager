@@ -295,6 +295,34 @@ function ubu_update_bt_fw() {
     fi
 }
 
+function set_sleep_inhibitor() {
+    sudo apt-get install python3-pip
+    sudo pip3 install -U sleep-inhibitor
+    sudo sed -i 's/\/usr\/bin\/%p/\/usr\/local\/bin\/%p/' /usr/local/share/sleep-inhibitor/sleep-inhibitor.service
+    #Download the plugin if not already
+    sudo echo "#! /bin/sh
+if adb get-state 1>/dev/null 2>&1
+then
+        state=\$(adb shell dumpsys display | grep mScreenState= | grep -oE '(ON|OFF)')
+        if [ \"\$state\" = \"ON\" ]; then
+                exit 254
+        else
+                exit 0
+        fi
+else
+        exit 0
+fi" > /usr/local/share/sleep-inhibitor/plugins/is-screen-on
+    sudo chmod a+x /usr/local/share/sleep-inhibitor/plugins/is-screen-on
+    sudo cp /usr/local/share/sleep-inhibitor/sleep-inhibitor.conf /etc/.
+    sudo sed -i 's/plex-media-server/is-screen-on/' /etc/sleep-inhibitor.conf
+    sudo sed -i 's/Plex Media Server/Aandroid Screen On/' /etc/sleep-inhibitor.conf
+    sudo sed -i 's/<your-plex-token>/sleep/' /etc/sleep-inhibitor.conf
+    sudo sed -i 's/period: 5/period: 0\.01/' /etc/sleep-inhibitor.conf
+    sudo sed -i 's/*HandleSuspendKey=*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
+    sudo cp /usr/local/share/sleep-inhibitor/sleep-inhibitor.service /etc/systemd/system/.
+    reboot_required=1
+}
+
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -355,6 +383,7 @@ prepare_required_scripts
 setup_sof
 ubu_install_swtpm
 ubu_update_bt_fw
+set_sleep_inhibitor
 
 ask_reboot
 
