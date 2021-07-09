@@ -34,7 +34,7 @@ keyfile_group_t g_group[] = {
 	{ "mediation", { "battery_med", "thermal_med", NULL }},
 	{ "aaf",      { "path", "support_suspend", NULL } },
 	{ "guest_control", { "time_keep", "pm_control", NULL }},
-	{ "extra",    { "cmd", NULL } },
+	{ "extra",    { "cmd", "service", NULL } },
 };
 
 int load_form_data(char *name)

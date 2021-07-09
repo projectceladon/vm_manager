@@ -190,6 +190,7 @@ enum {
 
 	/* Sub key of group vgpu */
 	EXTRA_CMD = 0,
+	EXTRA_SERVICE,
 
 
 };
