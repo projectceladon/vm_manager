@@ -286,28 +286,24 @@ int generate_keyfile(void)
 	}
 
 	get_field_data(FORM_INDEX_VTPM_BIN_PATH, temp, sizeof(temp) - 1);
-	if (0 != check_field(g_group[GROUP_VTPM].key[VTPM_BIN_PATH], temp)) {
-		goto exit;
+	if (0 == check_field(g_group[GROUP_VTPM].key[VTPM_BIN_PATH], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_VTPM].name, g_group[GROUP_VTPM].key[VTPM_BIN_PATH], temp);
 	}
-	g_key_file_set_string(out, g_group[GROUP_VTPM].name, g_group[GROUP_VTPM].key[VTPM_BIN_PATH], temp);
 
 	get_field_data(FORM_INDEX_VTPM_DATA_DIR, temp, sizeof(temp) - 1);
-	if (0 != check_field(g_group[GROUP_VTPM].key[VTPM_DATA_DIR], temp)) {
-		goto exit;
+	if (0 == check_field(g_group[GROUP_VTPM].key[VTPM_DATA_DIR], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_VTPM].name, g_group[GROUP_VTPM].key[VTPM_DATA_DIR], temp);
 	}
-	g_key_file_set_string(out, g_group[GROUP_VTPM].name, g_group[GROUP_VTPM].key[VTPM_DATA_DIR], temp);
 
 	get_field_data(FORM_INDEX_RPMB_BIN_PATH, temp, sizeof(temp) - 1);
-	if (0 != check_field(g_group[GROUP_RPMB].key[RPMB_BIN_PATH], temp)) {
-		goto exit;
+	if (0 == check_field(g_group[GROUP_RPMB].key[RPMB_BIN_PATH], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_RPMB].name, g_group[GROUP_RPMB].key[RPMB_BIN_PATH], temp);
 	}
-	g_key_file_set_string(out, g_group[GROUP_RPMB].name, g_group[GROUP_RPMB].key[RPMB_BIN_PATH], temp);
 
 	get_field_data(FORM_INDEX_RPMB_DATA_DIR, temp, sizeof(temp) - 1);
-	if (0 != check_field(g_group[GROUP_RPMB].key[RPMB_DATA_DIR], temp)) {
-		goto exit;
+	if (0 == check_field(g_group[GROUP_RPMB].key[RPMB_DATA_DIR], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_RPMB].name, g_group[GROUP_RPMB].key[RPMB_DATA_DIR], temp);
 	}
-	g_key_file_set_string(out, g_group[GROUP_RPMB].name, g_group[GROUP_RPMB].key[RPMB_DATA_DIR], temp);
 
 	get_field_data(FORM_INDEX_AAF_PATH, temp, sizeof(temp) - 1);
 	if (0 == check_field(g_group[GROUP_AAF].key[AAF_PATH], temp)) {

@@ -465,49 +465,33 @@ int start_guest(char *name)
 	 */
 	g = &g_group[GROUP_RPMB];
 	val = g_key_file_get_string(gkf, g->name, g->key[RPMB_BIN_PATH], NULL);
-	if (val == NULL) {
-		g_warning("cannot find key rpmb_bin_path from group rpmb\n");
-		return -1;
+	if (val) {
+		if (0 == set_rpmb_bin_path(val)) {
+			val = g_key_file_get_string(gkf, g->name, g->key[RPMB_DATA_DIR], NULL);
+			if (val) {
+				if (0 == set_rpmb_data_dir(val)) {
+					cx = snprintf(p, size, " -device virtio-serial,addr=1 -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1 -chardev socket,id=rpmb0,path=%s/%s",
+							val, RPMB_SOCK);
+					p += cx; size -= cx;
+				}
+			}
+		}
 	}
-	if (set_rpmb_bin_path(val)) {
-		fprintf(stderr, "Failed to set rpmb bin path! val=%s\n", val);
-		return -1;
-	}
-
-	val = g_key_file_get_string(gkf, g->name, g->key[RPMB_DATA_DIR], NULL);
-	if (val == NULL) {
-		g_warning("cannot find key rpmb_data_dir from group rpmb\n");
-		return -1;
-	}
-	if (set_rpmb_data_dir(val)) {
-		fprintf(stderr, "Failed to set rpmb data dir! val=%s\n", val);
-		return -1;
-	}
-	cx = snprintf(p, size, " -device virtio-serial,addr=1 -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1 -chardev socket,id=rpmb0,path=%s/%s", val, RPMB_SOCK);
-	p += cx; size -= cx;
 
 	g = &g_group[GROUP_VTPM];
 	val = g_key_file_get_string(gkf, g->name, g->key[VTPM_BIN_PATH], NULL);
-	if (val == NULL) {
-		g_warning("cannot find key vtpm_bin_path from group vtpm\n");
-		return -1;
+	if (val) {
+		if (0 == set_vtpm_bin_path(val)) {
+			val = g_key_file_get_string(gkf, g->name, g->key[VTPM_DATA_DIR], NULL);
+			if (val) {
+				if (0 == set_vtpm_data_dir(val)) {
+					cx = snprintf(p, size, " -chardev socket,id=chrtpm,path=%s/%s -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0",
+							val, SWTPM_SOCK);
+					p += cx; size -= cx;
+				}
+			}
+		}
 	}
-	if (set_vtpm_bin_path(val)) {
-		fprintf(stderr, "Failed to set vtpm bin path! val=%s\n", val);
-		return -1;
-	}
-
-	val = g_key_file_get_string(gkf, g->name, g->key[VTPM_DATA_DIR], NULL);
-	if (val == NULL) {
-		g_warning("cannot find key vtpm_data_dir from group vtpm\n");
-		return -1;
-	}
-	if (set_vtpm_data_dir(val)) {
-		fprintf(stderr, "Failed to set vtpm data dir! val=%s\n", val);
-		return -1;
-	}
-	cx = snprintf(p, size, " -chardev socket,id=chrtpm,path=%s/%s -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0", val, SWTPM_SOCK);
-	p += cx; size -= cx;
 
 	g = &g_group[GROUP_AAF];
 	val = g_key_file_get_string(gkf, g->name, g->key[AAF_PATH], NULL);
@@ -723,16 +707,10 @@ SKIP_PT:
 	cx = snprintf(p, size, "%s", fixed_cmd);
 	p += cx; size -= cx;
 
-	if (run_vtpm_daemon()) {
-		fprintf(stderr, "Failed to run VTPM daemon!\n");
-		return -1;
-	}
+	run_vtpm_daemon();
 
 	cleanup_rpmb();
-	if (run_rpmb_daemon()) {
-		fprintf(stderr, "Failed to run RPMB daemon!\n");
-		return -1;
-	}
+	run_rpmb_daemon();
 
 	flush_aaf_config();
 
