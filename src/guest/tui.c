@@ -256,6 +256,9 @@ static void set_opts_buffer(FIELD *f, const char *in)
 
 int set_field_data(form_index_t index, const char *in)
 {
+	if (!in)
+		return -1;
+
 	switch (index) {
 	case FORM_INDEX_FIRM:
 		if (strcmp(in, FIRM_OPTS_UNIFIED_STR) == 0) {
