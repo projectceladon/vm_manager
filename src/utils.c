@@ -118,7 +118,7 @@ int execute_cmd(const char *cmd, const char *arg, size_t arg_len, int daemonize)
 			return 0;
 		}
 
-		wait(&wst);
+		waitpid(pid, &wst, 0);
 		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
 			fprintf(stderr, "%s: Failed to execute %s %s\n Exit status: %d\n", __func__, cmd, arg ? arg : "", WEXITSTATUS(wst));
 			return -1;
