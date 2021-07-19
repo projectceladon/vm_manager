@@ -296,7 +296,7 @@ function ubu_update_bt_fw() {
 }
 
 function set_sleep_inhibitor() {
-    sudo apt-get install python3-pip
+    sudo apt-get -y install python3-pip
     sudo pip3 install -U sleep-inhibitor
     sudo sed -i 's/\/usr\/bin\/%p/\/usr\/local\/bin\/%p/' /usr/local/share/sleep-inhibitor/sleep-inhibitor.service
     #Download the plugin if not already
