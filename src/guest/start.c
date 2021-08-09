@@ -46,7 +46,7 @@ static const char *fixed_cmd =
 	" -device intel-hda -device hda-duplex"
 	" -audiodev id=android_spk,timer-period=5000,driver=pa"
 	" -device e1000,netdev=net0"
-	" -device intel-iommu,device-iotlb=off,caching-mode=on"
+	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
 
 /* Used to keep track of pcis that are passed through */
