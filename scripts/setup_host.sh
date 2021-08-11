@@ -13,6 +13,7 @@ QEMU_REL="qemu-4.2.0"
 CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
 CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
+CIV_VERTICAl_PROD_DIR=$CIV_WORK_DIR/vertical_prod_patches/host
 
 #---------      Functions    -------------------
 function error() {
@@ -58,6 +59,14 @@ function ubu_install_qemu_gvt(){
             patch -p1 < $i
         done
     fi
+    
+    vertical_prod_qemu_patch_num=$(ls $CIV_VERTICAl_PROD_DIR/qemu/*.patch 2> /dev/null | wc -l)
+    if [ "$vertical_prod_qemu_patch_num" != "0" ]; then
+        for i in $CIV_VERTICAl_PROD_DIR/qemu/*.patch; do
+            echo "applying qemu patch $i"
+            patch -p1 < $i
+        done
+    fi
 
     ./configure --prefix=/usr \
         --enable-kvm \
@@ -92,6 +101,14 @@ function ubu_build_ovmf_gvt(){
     vertical_ovmf_patch_num=$(ls $CIV_VERTICAl_DIR/ovmf/*.patch 2> /dev/null | wc -l)
     if [ "$vertical_ovmf_patch_num" != "0" ]; then
         for i in $CIV_VERTICAl_DIR/ovmf/*.patch; do
+            echo "applying ovmf patch $i"
+            patch -p1 < $i
+        done
+    fi
+    
+    vertical_prod_ovmf_patch_num=$(ls $CIV_VERTICAl_PROD_DIR/ovmf/*.patch 2> /dev/null | wc -l)
+    if [ "$vertical_prod_ovmf_patch_num" != "0" ]; then
+        for i in $CIV_VERTICAl_PROD_DIR/ovmf/*.patch; do
             echo "applying ovmf patch $i"
             patch -p1 < $i
         done
