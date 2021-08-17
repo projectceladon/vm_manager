@@ -201,6 +201,43 @@ function setup_power_button(){
     reboot_required=1
 }
 
+# This is for lg setup
+function ubu_install_lg_client(){
+    if [[ $1 == "PGP" ]]; then
+      LG_VER=B1
+      LG_LIB=lg_b1
+      sudo apt install -y git binutils-dev cmake fonts-freefont-ttf libsdl2-dev libsdl2-ttf-dev libspice-protocol-dev libfontconfig1-dev libx11-dev nettle-dev daemon
+      touch /dev/shm/looking-glass0 && chmod 660 /dev/shm/looking-glass0
+      touch /dev/shm/looking-glass1 && chmod 660 /dev/shm/looking-glass1
+      touch /dev/shm/looking-glass2 && chmod 660 /dev/shm/looking-glass2
+      touch /dev/shm/looking-glass3 && chmod 660 /dev/shm/looking-glass3
+      if [ -d "$LG_LIB" ]; then
+        sudo rm -rf $LG_LIB
+      fi
+      git clone https://github.com/gnif/LookingGlass.git $LG_LIB
+      cd $CIV_WORK_DIR/$LG_LIB
+      git checkout 163a2e5d0a11
+      git apply $CIV_WORK_DIR/patches/lg/*.patch
+      cd client
+      mkdir build
+      cd build
+      cmake ../
+      make
+      if [ ! -d "/opt/lg" ]; then
+        sudo mkdir /opt/lg
+      fi
+      if [ ! -d "/opt/lg/bin" ]; then
+        sudo mkdir /opt/lg/bin
+      fi
+      sudo cp looking-glass-client /opt/lg/bin/LG_B1_Client
+      cp looking-glass-client $CIV_WORK_DIR/scripts/LG_B1_Client
+      cd $CIV_WORK_DIR
+    else
+        echo "$0: Unsupported mode: $1"
+        return -1
+    fi
+}
+
 function set_host_ui() {
     if [[ $1 == "headless" ]]; then
         setup_power_button
@@ -341,6 +378,11 @@ function parse_arg() {
 
             -u)
                 set_host_ui $2 || return -1
+                shift
+                ;;
+
+            -p)
+                ubu_install_lg_client $2 || return -1
                 shift
                 ;;
 
