@@ -251,6 +251,7 @@ function set_default_aaf_config() {
     rm -rf $GUEST_AAF_CONFIG
     touch $GUEST_AAF_CONFIG
     echo "suspend:false" >> $GUEST_AAF_CONFIG
+    echo ipaddr:$(hostname -I) >> $GUEST_AAF_CONFIG
 }
 
 function allow_guest_suspend() {
