@@ -50,6 +50,7 @@ GUEST_AAF_DIR=$WORK_DIR/aaf
 GUEST_AAF_CONFIG=$GUEST_AAF_DIR/mixins.spec
 GUEST_POWER_BUTTON=
 GUEST_GRAPHIC_MODE=
+GUEST_LG_INPUT_DEVICES=
 GUEST_USB_XHCI_OPT="\
  -device qemu-xhci,id=xhci,p2=8,p3=8 \
  -usb \
@@ -601,11 +602,27 @@ function set_guest_pwr_vol_button() {
     cd -
 }
 
+function create_lg_virtual_input_devices() {
+    cd $SCRIPTS_DIR
+    sudo ./lg-input-manager
+    GUEST_LG_INPUT_DEVICES="
+                -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass0 \
+                -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass1 \
+                -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass2 \
+                -device virtio-input-host-pci,evdev=/dev/input/by-id/input-looking-glass3"
+    cd -
+}
+
+function cleanup_lg_virtual_input_devices() {
+    sudo killall lg-input-manager
+}
+
 function cleanup() {
     cleanup_rpmb_dev
     cleanup_thermal_mediation
     cleanup_battery_mediation
     cleanup_pt_pci
+    cleanup_lg_virtual_input_devices
 }
 
 function error() {
@@ -630,7 +647,8 @@ function launch_guest() {
     "
 
     # Expand new introduced device here.
-    EXE_CMD+="$GUEST_DISP_TYPE \
+    EXE_CMD+="$GUEST_LG_INPUT_DEVICES \
+              $GUEST_DISP_TYPE \
               $GUEST_VGA_DEV \
               $GUEST_DISK \
               $GUEST_FIRMWARE \
@@ -809,6 +827,10 @@ function parse_arg() {
             --host-thermal-control)
                 start_thermal_daemon
                 ;;
+
+	    --virtual-lg-input-devices)
+		create_lg_virtual_input_devices
+		;;
 
             -?*)
                 echo "Error: Invalid option $1"
