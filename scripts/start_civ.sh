@@ -69,6 +69,7 @@ GUEST_STATIC_OPTION="\
  -smbios type=2,serial=$GUEST_SMBIOS_SERIAL \
  -nodefaults"
 
+GUEST_PARTITION=
 
 #------------------------------------------------------         Functions       ----------------------------------------------------------
 function check_non_graphical_target() {
@@ -192,6 +193,21 @@ function setup_battery_mediation() {
         GUEST_BATTERY_DAEMON_PID=$!
     fi
 }
+
+function set_user() {
+    [ ! -d "$WORK_DIR/userdata" ] && mkdir $WORK_DIR/userdata
+    if [ $(id -u) = 0 ]; then
+        data_image=$WORK_DIR/userdata/$SUDO_USER.img
+    else
+        data_image=$WORK_DIR/userdata/$USER.img
+    fi
+    [ ! -f $data_image ] && qemu-img create -f qcow2 $data_image 16G
+    GUEST_PARTITION="\
+         -drive file=$data_image,if=none,id=disk2 \
+         -device virtio-blk-pci,drive=disk2,bootindex=2 \
+    "
+}
+
 
 function cleanup_battery_mediation() {
     kill_daemon_proc "$GUEST_BATTERY_DAEMON_PID" "batsys"
@@ -654,6 +670,7 @@ function launch_guest() {
               $GUEST_USB_XHCI_OPT \
               $GUEST_STATIC_OPTION \
               $GUEST_EXTRA_QCMD \
+              $GUEST_PARTITION \
     "
 
     echo $EXE_CMD
@@ -808,6 +825,10 @@ function parse_arg() {
 
             --host-thermal-control)
                 start_thermal_daemon
+                ;;
+
+            --dedicated-data)
+                set_user
                 ;;
 
             -?*)
