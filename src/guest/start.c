@@ -45,6 +45,7 @@ static const char *fixed_cmd =
 	" -device usb-kbd"
 	" -device intel-hda -device hda-duplex"
 	" -audiodev id=android_spk,timer-period=5000,driver=pa"
+	" -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3"
 	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
