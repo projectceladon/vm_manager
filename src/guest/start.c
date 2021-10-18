@@ -430,6 +430,7 @@ int start_guest(char *name)
 	int cx;
 	GKeyFile *gkf;
 	g_autofree gchar *val = NULL;
+	g_autofree gchar *val1 = NULL;
 	char cfg_file[MAX_PATH] = { 0 };
 	char emu_path[MAX_PATH] = { 0 };
 	char cmd_str[MAX_CMDLINE_LEN] = { 0 };
@@ -473,11 +474,17 @@ int start_guest(char *name)
 	p += cx; size -= cx;
 
 	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_ADB_PORT], NULL);
-	cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5555", val);
-	p += cx; size -= cx;
-
-	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_FASTBOOT_PORT], NULL);
-	cx = snprintf(p, size, ",hostfwd=tcp::%s-:5554", val);
+	val1 = g_key_file_get_string(gkf, g->name, g->key[GLOB_FASTBOOT_PORT], NULL);
+	cx = 0;
+	if (val && val1) {
+		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5555,hostfwd=tcp::%s-:5554", val, val1);
+	} else if (val) {
+		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5555", val);
+	} else if (val1) {
+		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5554", val1);
+	} else {
+		cx = snprintf(p, size, " -netdev user,id=net0");
+	}
 	p += cx; size -= cx;
 
 	/*
