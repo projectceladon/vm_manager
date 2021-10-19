@@ -425,6 +425,35 @@ static int run_extra_service(char *str)
 	return ret;
 }
 
+/* strip parameters if it is already set in previouly set cmd */
+static void strip_duplicate(gchar *val, const gchar *inner_cmd)
+{
+	gchar *to_split = NULL;
+	gchar **sub_str = NULL;
+	guint i;
+
+	if ((!val) || (!inner_cmd))
+		return;
+
+	to_split = g_strconcat(" ", val, NULL);
+	sub_str = g_strsplit(val, " -", 0);
+
+	for (i = 0; sub_str[i]; i++) {
+		gchar *find = g_strstr_len(inner_cmd, -1, sub_str[i]);
+		if (find) {
+			gchar *start = g_strstr_len(val, -1, sub_str[i]);
+			memset(start, ' ', strlen(sub_str[i]));
+			*(start - 1) = ' '; //set '-' to ' '
+			g_strstrip(start - 1);
+		}
+	}
+
+	if (sub_str)
+		g_strfreev(sub_str);
+	if (to_split)
+		g_free(to_split);
+}
+
 int start_guest(char *name)
 {
 	int ret = 0;
@@ -732,6 +761,8 @@ SKIP_PT:
 	/* extra cmds */
 	val = g_key_file_get_string(gkf, g->name, g->key[EXTRA_CMD], NULL);
 	if (val != NULL && (strcmp("", val) != 0)) {
+		strip_duplicate(val, fixed_cmd);
+		strip_duplicate(val, cmd_str);
 		cx = snprintf(p, size, " %s", val);
 		printf("%s: %s\n", g->key[EXTRA_CMD], val);
 		p += cx; size -= cx;
