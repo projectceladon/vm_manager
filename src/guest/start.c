@@ -377,9 +377,9 @@ static int run_thermal_mediation_daemon(char *path) {
 static int run_guest_timekeep(char *path, char *p, size_t size, char *pipe_name) {
 	int cx = 0; 
 	const char *pipe = pipe_name ? pipe_name : "qmp-time-keep-pipe";
-	char buffer[1024] = {0}, dirn[1024] = {0};
-	strncpy(dirn, path, 1023);
-	snprintf(buffer, 1023, "%s/%s", dirname(dirn), pipe);
+	char buffer[1024] = {0};
+	g_strstrip(path);
+	snprintf(buffer, 1023, "/tmp/%s", pipe);
 	fprintf(stderr, "Timekeep: %s %s\n", path, buffer);
 	int ret = execute_cmd(path, buffer, strlen(buffer), 1);
 	if (ret == 0) {
@@ -391,12 +391,23 @@ static int run_guest_timekeep(char *path, char *p, size_t size, char *pipe_name)
 static int run_guest_pm(char *path, char *p, size_t size, char *socket_name) {
 	int cx = 0; 
 	const char *socket = socket_name ? socket_name : "qmp-pm-sock";
-	char buffer[1024] = {0}, dirn[1024] = {0};
-	snprintf(buffer, 1023, "%s/%s", dirname(dirn), socket);
-	fprintf(stderr, "PM: %s %s\n", path, buffer);
-	int ret = execute_cmd(path, buffer, strlen(buffer), 1);
+	char sock_path[1024] = {0};
+	char buffer[2048] = {0};
+	gchar **cmd = NULL;
+
+	if (!path || !p)
+		return 0;
+
+	g_strstrip(path);
+	cmd = g_strsplit(path, " ", 2);
+
+	snprintf(sock_path, 1023, "/tmp/%s", socket);
+	snprintf(buffer, 2047, "%s %s", sock_path, cmd[1]);
+
+	fprintf(stderr, "PM Control: %s %s\n", cmd[0], buffer);
+	int ret = execute_cmd(cmd[0], buffer, strlen(buffer), 1);
 	if (ret == 0) {
-		cx = snprintf(p, size, " -qmp unix:%s,server,nowait -no-reboot", buffer);
+		cx = snprintf(p, size, " -qmp unix:%s,server,nowait -no-reboot", sock_path);
 	}
 	return cx;
 }
