@@ -180,9 +180,11 @@ static int passthrough_gpu(void)
 	snprintf(buf, sizeof(buf), "8086 %x", dev_id);
 	n = strlen(buf);
 	if (write(fd, buf, n) != n) {
-		fprintf(stderr, "write %s failed, errno=%d\n", PCI_DRIVER_PATH"vfio-pci/new_id", errno);
-		close(fd);
-		return -1;
+		if (errno != EEXIST) {
+			fprintf(stderr, "write %s failed, errno=%d\n", PCI_DRIVER_PATH"vfio-pci/new_id", errno);
+			close(fd);
+			return -1;
+		}
 	}
 
 	close(fd);
