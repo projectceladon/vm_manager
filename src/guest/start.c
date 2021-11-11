@@ -94,6 +94,37 @@ static int create_vgpu(GKeyFile *gkf)
 	return 0;
 }
 
+static int is_vfio_driver(const char *driver)
+{
+	ssize_t nbytes;
+	ssize_t bufsiz = PATH_MAX;
+	struct stat st;
+	char *buf;
+	char *driver_name;
+	if (!driver)
+		return -1;
+
+	if (lstat(driver, &st) == -1)
+		return -1;
+
+	if (st.st_size != 0)
+		bufsiz = st.st_size + 1;
+
+	buf = calloc(bufsiz, 1);
+	if (buf == NULL)
+		return -1;
+
+	nbytes = readlink(driver, buf, bufsiz);
+	if (nbytes == -1)
+		return -1;
+
+	driver_name = basename(buf);
+	if (strncmp(driver_name, "vfio-pci", 8) == 0)
+		return 0;
+
+	return -1;
+}
+
 static int passthrough_gpu(void)
 {
 	int fd = 0;
@@ -103,6 +134,7 @@ static int passthrough_gpu(void)
 	struct stat st;
 	int pid;
 	int wst;
+	int ret = 0;
 
 	pid = fork();
 	if (pid == -1) {
@@ -151,43 +183,37 @@ static int passthrough_gpu(void)
 
 	close(fd);
 
-	if (stat(INTEL_GPU_DEV_PATH"/driver", &st) == 0) {
-		/* Unbind original driver */
-		fd = open(INTEL_GPU_DEV_PATH"/driver/unbind", O_WRONLY);
-		if (fd == -1) {
-			fprintf(stderr, "open %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/driver/unbind", errno);
-			return -1;
-		}
-
-		n = strlen(INTEL_GPU_BDF);
-		if (write(fd, INTEL_GPU_BDF, n) != n) {
-			fprintf(stderr, "write %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/driver/unbind", errno);
-			close(fd);
-			return -1;
-		}
-
-		close(fd);
-	}
-
-	/* Create new vfio id for GPU */
-	fd = open(PCI_DRIVER_PATH"vfio-pci/new_id", O_WRONLY);
-	if (fd == -1) {
-		fprintf(stderr, "open %s failed, errno=%d\n", PCI_DRIVER_PATH"vfio-pci/new_id", errno);
-		return -1;
-	}
-
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "8086 %x", dev_id);
-	n = strlen(buf);
-	if (write(fd, buf, n) != n) {
-		if (errno != EEXIST) {
-			fprintf(stderr, "write %s failed, errno=%d\n", PCI_DRIVER_PATH"vfio-pci/new_id", errno);
-			close(fd);
-			return -1;
+
+	if (stat(INTEL_GPU_DEV_PATH"/driver", &st) == 0) {
+		if (is_vfio_driver(INTEL_GPU_DEV_PATH"/driver") == 0) {
+			if (write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buf)) {
+				fprintf(stderr, "Cannot remove original GPU vfio id\n");
+				return -1;
+			}
+		}
+		/* Unbind original driver */
+		if (write_to_file(INTEL_GPU_DEV_PATH"/driver/unbind", INTEL_GPU_BDF)) {
+			fprintf(stderr, "%s: Cannot unbind original driver!\n", __func__);
 		}
 	}
 
-	close(fd);
+
+	/* Create new vfio id for GPU */
+	ret = write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf);
+	if (ret == EEXIST) {
+		if (write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buf)) {
+			fprintf(stderr, "Cannot remove original GPU vfio id\n");
+			return -1;
+		}
+		if (write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf)) {
+			fprintf(stderr, "Cannot add new GPU vfio id\n");
+			return -1;
+		}
+	} else if (ret != 0) {
+		return -1;
+	}
 
 	return 0;
 }
