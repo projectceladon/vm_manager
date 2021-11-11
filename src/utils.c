@@ -345,20 +345,21 @@ static int spc_pclose(SPC_PIPE *p)
 int write_to_file(const char *path, const char *buffer)
 {
 	int n, fd;
+	int ret = 0;
 
 	fd = open(path, O_WRONLY);
-	if (fd == -1)
-	{
+	if (fd == -1) {
+		ret = errno;
 		fprintf(stderr, "open %s failed, errno=%d, %s\n", path, errno, strerror(errno));
-		return -1;
+		return ret;
 	}
 
 	n = strlen(buffer);
-	if (write(fd, buffer, n) != n)
-	{
+	if (write(fd, buffer, n) != n) {
+		ret = errno;
 		fprintf(stderr, "write %s failed, errno=%d, %s\n", path, errno, strerror(errno));
 		close(fd);
-		return -1;
+		return ret;
 	}
 
 	close(fd);
