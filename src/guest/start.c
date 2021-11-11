@@ -97,26 +97,22 @@ static int create_vgpu(GKeyFile *gkf)
 static int is_vfio_driver(const char *driver)
 {
 	ssize_t nbytes;
-	ssize_t bufsiz = PATH_MAX;
 	struct stat st;
-	char *buf;
+	char buf[PATH_MAX] = { 0 };
 	char *driver_name;
 	if (!driver)
 		return -1;
 
-	if (lstat(driver, &st) == -1)
+	if (lstat(driver, &st) == -1) {
+		printf("%s: lstat failed, errno=%d!\n", __func__, errno);
 		return -1;
+	}
 
-	if (st.st_size != 0)
-		bufsiz = st.st_size + 1;
-
-	buf = calloc(bufsiz, 1);
-	if (buf == NULL)
+	nbytes = readlink(driver, buf, PATH_MAX);
+	if (nbytes == -1) {
+		printf("%s: readlink fail! errno=%d\n", __func__, errno);
 		return -1;
-
-	nbytes = readlink(driver, buf, bufsiz);
-	if (nbytes == -1)
-		return -1;
+	}
 
 	driver_name = basename(buf);
 	if (strncmp(driver_name, "vfio-pci", 8) == 0)
@@ -215,6 +211,10 @@ static int passthrough_gpu(void)
 		return -1;
 	}
 
+	pci_pt_record[pci_count] = malloc(PT_MAX);
+	strncpy(pci_pt_record[pci_count], INTEL_GPU_BDF, PT_MAX-1);
+	pci_count++;
+
 	return 0;
 }
 
@@ -240,7 +240,7 @@ void system_call(const char *process, const char *args) {
 static int setup_passthrough(char *pci_device, int unset);
 
 static void cleanup_passthrough(void) {
-	for (int i=0; i<1; i++) {
+	for (int i=0; i < pci_count; i++) {
 		fprintf(stderr, "pci unset: %s\n", pci_pt_record[i]);
 		setup_passthrough(pci_pt_record[i], 1);
 		free(pci_pt_record[i]);
@@ -272,7 +272,7 @@ static int check_driver_unbinded(const char *driver) {
 
 static int setup_passthrough(char *pci_device, int unset) {
 
-	char iommu_grp_dev[64] = {0};
+	char iommu_grp_dev[128] = {0};
 	DIR *dp;
 	struct dirent *ep;
 
@@ -286,79 +286,74 @@ static int setup_passthrough(char *pci_device, int unset) {
 
 	/* Iterate through devices in iommu group directory */
 	while ((ep = readdir (dp))) {
-		char *pci_device = ep->d_name;
-		if (strcmp(pci_device, ".") == 0 || strcmp(pci_device, "..") == 0) {
+		char *grp_dev = ep->d_name;
+		if (strcmp(grp_dev, ".") == 0 || strcmp(grp_dev, "..") == 0) {
 			continue;
 		}
 		char buffer[512] = {0}, device[64] = {0}, vendor[64] = {0};
-		char *rp = NULL;
 			
 		/* Get device_id and vendor_id */
-		snprintf(buffer, 512, "%s/%s/device", iommu_grp_dev, pci_device);
-		fprintf(stderr, "%s\n", buffer);
-		rp = canonicalize_file_name(buffer);
-		if (!rp)
-			continue;
-		FILE *f = fopen(rp, "r");
+		snprintf(buffer, 512, "%s/%s/device", iommu_grp_dev, grp_dev);
+		FILE *f = fopen(buffer, "r");
 		if (f == NULL)
 			continue;
 		if (!fgets(device, sizeof(device), f)) {
-			fprintf(stderr, "Cannot get device name for device %s.", pci_device);
+			fprintf(stderr, "Cannot get device name for device %s.", grp_dev);
 			fclose(f);
 			continue;
 		}
 		fclose(f);
-		free(rp); rp = NULL;
 
 		memset(buffer, 0, sizeof(buffer));
-		snprintf(buffer, 512, "%s/%s/vendor", iommu_grp_dev, pci_device);
-		rp = canonicalize_file_name(buffer);
-		if (!rp)
-			continue;
-		f = fopen(rp, "r");
+		snprintf(buffer, 512, "%s/%s/vendor", iommu_grp_dev, grp_dev);
+		f = fopen(buffer, "r");
 		if (f == NULL)
 			continue;
 		if (!fgets(vendor, sizeof(vendor), f)) {
-			fprintf(stderr, "Cannot get vendor name for device %s.", pci_device);
+			fprintf(stderr, "Cannot get vendor name for device %s.", grp_dev);
 			fclose(f);
 			continue;
 		}
 		fclose(f);
-		free(rp); rp = NULL;
 
 		if (unset) {
 			memset(buffer, 0, sizeof(buffer));
-			snprintf(buffer, 512, "%s/%s/driver", iommu_grp_dev, pci_device);
+			snprintf(buffer, 512, "%s/%s/driver", iommu_grp_dev, grp_dev);
 
-			char *driver_in_use = basename(canonicalize_file_name(buffer));
-			fprintf(stderr, "driverinuse %s %d\n", driver_in_use, strcmp(driver_in_use, "vfio-pci"));
-			if (strcmp(driver_in_use, "vfio-pci") == 0) {
-				fprintf(stderr, "unbind %s\n", pci_device);
-				write_to_file("/sys/bus/pci/drivers/vfio-pci/unbind", pci_device);
+			if (is_vfio_driver(buffer) == 0) {
+				memset(buffer, 0, sizeof(buffer));
 				snprintf(buffer, sizeof(buffer), "%.6s %.6s", vendor, device);
-				// "echo %s %s > /sys/bus/pci/drivers/vfio-pci/remove_id"
-				fprintf(stderr, "remove_id %s\n", buffer);
-				write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buffer);
+				if (write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buffer)) {
+					fprintf(stderr, "Cannot remove original GPU vfio id\n");
+					return -1;
+				}
+				/* Unbind original driver */
+				if (write_to_file("/sys/bus/pci/drivers/vfio-pci/unbind", grp_dev)) {
+					fprintf(stderr, "%s: Cannot unbind original driver!\n", __func__);
+				}
 			}
-			// free(driver_in_use);
-			if (check_driver_unbinded(pci_device) == 0) {
-				fprintf(stderr, "drivers_probe reset %s\n", pci_device);
-				write_to_file("/sys/bus/pci/drivers_probe", pci_device);
+
+			if (check_driver_unbinded(grp_dev) == 0) {
+				fprintf(stderr, "drivers_probe reset %s\n", grp_dev);
+				write_to_file("/sys/bus/pci/drivers_probe", grp_dev);
 			} else {
 				fprintf(stderr, "Failed to unbind driver or did not finish in the given time frame.\n");
 			}
 		} else {
 			/* Check if driver exists, unbind if it exists */
 			memset(buffer, 0, sizeof(buffer));
-			snprintf(buffer, 512, "%s/%s/driver", iommu_grp_dev, pci_device);
-			rp = canonicalize_file_name(buffer);
-			if (!rp)
-				continue;
-			DIR* dir = opendir(rp);
+			snprintf(buffer, 512, "%s/%s/driver", iommu_grp_dev, grp_dev);
+			DIR* dir = opendir(buffer);
 			if (dir) {
 				/* Driver directory exists. */
-				snprintf(buffer, 512, "%s/%s/driver/unbind", iommu_grp_dev, pci_device);
-				write_to_file(buffer, pci_device);
+				if (is_vfio_driver(buffer) == 0) {
+					memset(buffer, 0, sizeof(buffer));
+					snprintf(buffer, sizeof(buffer), "%.6s %.6s", vendor, device);
+					write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buffer);
+				}
+				memset(buffer, 0, sizeof(buffer));
+				snprintf(buffer, 512, "%s/%s/driver/unbind", iommu_grp_dev, grp_dev);
+				write_to_file(buffer, grp_dev);
 
 				closedir(dir);
 			} else if (ENOENT == errno) {
@@ -370,11 +365,9 @@ static int setup_passthrough(char *pci_device, int unset) {
 				// fprintf(stderr, "%s pci device could not unbind from current driver. Driver directory does not exist. ", pci_device);
 				// continue;
 			}
-			free(rp); rp = NULL;
 
 			memset(buffer, 0, sizeof(buffer));
 			snprintf(buffer, sizeof(buffer), "%s %s", vendor, device);
-
 			write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buffer);
 		}
 	}
@@ -725,7 +718,6 @@ int start_guest(char *name)
 	}
 
 	int res_count = find_pci("", PT_MAX, temp);
-	pci_count = 0;
 
 	if (res_count > 0) {
 		/* Add vfio-pci kernel module, needs sudo privilege */	
