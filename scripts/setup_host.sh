@@ -314,7 +314,6 @@ function ubu_update_bt_fw() {
         kill $qemu_pid > /dev/null
         sleep 5
     fi
-
     if [ "$(hciconfig)" != "" ]; then
         if [ "$(hciconfig | grep "UP")" == "" ]; then
             if [ "$(rfkill list bluetooth | grep "Soft blocked: no" )" == "" ]; then
