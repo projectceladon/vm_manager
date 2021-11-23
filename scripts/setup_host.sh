@@ -303,7 +303,6 @@ function ubu_update_bt_fw() {
                 sudo rfkill unblock bluetooth
             fi
         fi
-        hciconfig hci0 up
         if [ -d "linux-firmware" ] ; then
             rm -rf linux-firmware
         fi
@@ -321,6 +320,7 @@ function ubu_update_bt_fw() {
         hcitool cmd 3f 01 01 01 00 00 00 00 00 > /dev/null 2>&1 &
         sleep 5
         echo "BT FW in the host got updated"
+        hciconfig hci0 up
         reboot_required=1
     else
         usb_devices="/sys/kernel/debug/usb/devices"
