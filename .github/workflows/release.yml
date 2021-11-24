@@ -2,7 +2,7 @@ name: VM Manager Release
 
 on:
   release:
-    types: [published, created, edited]
+    types: [published, edited]
 
 jobs:
   build_ubuntu_gcc:
@@ -44,18 +44,8 @@ jobs:
             *.buildinfo
             *.changes
 
-      - name: Get release URL
-        id: get_release_url
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        uses: bruceadams/get-release@v1.2.0
-
       - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        uses: softprops/action-gh-release@v1
         with:
-          upload_url: ${{ steps.get_release_url.outputs.upload_url }}
-          asset_path: vm-manager/vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
-          asset_name: vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
-          asset_content_type: application/vnd.debian.binary-package
+          files: |
+            vm-manager/vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
