@@ -44,6 +44,19 @@ fi
 [ -d "./flashfiles_decompress" ] && rm -rf "./flashfiles_decompress"
 mkdir ./flashfiles_decompress
 unzip $1 -d ./flashfiles_decompress
+
+G_size=$((1<<32))
+for i in `ls ./flashfiles_decompress`;do
+	if [ -f "./flashfiles_decompress/"$i ] && [ "`grep $i ./flashfiles_decompress/installer.cmd`" ]; then
+		size=$(stat -c %s "./flashfiles_decompress/"$i)
+		if [[ $size -gt $G_size ]]; then
+			echo "Split $i due to its size bigger than 4G\n"
+			split --bytes=$((G_size-1)) --numeric-suffixes "./flashfiles_decompress/"$i "./flashfiles_decompress/"$i.part
+			rm "./flashfiles_decompress/"$i
+		fi
+	fi
+done
+
 dd if=/dev/zero of=./flash.vfat bs=63M count=160
 mkfs.vfat ./flash.vfat
 mcopy -i flash.vfat flashfiles_decompress/* ::
