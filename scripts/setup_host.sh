@@ -341,22 +341,24 @@ function set_sleep_inhibitor() {
     sudo echo "#! /bin/sh
 if adb get-state 1>/dev/null 2>&1
 then
-        state=\$(adb shell dumpsys display | grep mScreenState= | grep -oE '(ON|OFF)')
-        if [ \"\$state\" = \"ON\" ]; then
+        state=\$(adb shell dumpsys power | grep -oE 'WAKE_LOCK')
+	if echo \"\$state\" | grep 'WAKE_LOCK'; then
                 exit 254
         else
                 exit 0
         fi
 else
         exit 0
-fi" > /usr/local/share/sleep-inhibitor/plugins/is-screen-on
-    sudo chmod a+x /usr/local/share/sleep-inhibitor/plugins/is-screen-on
+fi" > /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
+    sudo chmod a+x /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
     sudo cp /usr/local/share/sleep-inhibitor/sleep-inhibitor.conf /etc/.
-    sudo sed -i 's/plex-media-server/is-screen-on/' /etc/sleep-inhibitor.conf
-    sudo sed -i 's/Plex Media Server/Aandroid Screen On/' /etc/sleep-inhibitor.conf
-    sudo sed -i 's/<your-plex-token>/sleep/' /etc/sleep-inhibitor.conf
-    sudo sed -i 's/period: 5/period: 0\.01/' /etc/sleep-inhibitor.conf
-    sudo sed -i 's/*HandleSuspendKey=*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
+    sudo echo "plugins:
+    #Inhibit sleep if wakelock is held
+    - path: is-wakelock-active
+      name: Wakelock active
+      what: sleep
+      period: 0.01" > /etc/sleep-inhibitor.conf
+    sudo sed -i 's/#*HandleSuspendKey=\w*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
     sudo cp /usr/local/share/sleep-inhibitor/sleep-inhibitor.service /etc/systemd/system/.
     reboot_required=1
 }
