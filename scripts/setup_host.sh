@@ -212,6 +212,15 @@ function check_kernel_version() {
     fi
 }
 
+function set_mem_sleep_mode() {
+    local exist=$(sed -En "/^GRUB_CMDLINE_LINUX=.*mem_sleep_default=s2idle.*$/p" /etc/default/grub)
+    if [[ -z "${exist}" ]]; then
+        sed -in "s/^\(GRUB_CMDLINE_LINUX=.*\)\"$/\1 mem_sleep_default=s2idle\"/g" /etc/default/grub
+        update-grub
+        reboot_required=1
+    fi
+}
+
 function ask_reboot(){
     if [ $reboot_required -eq 1 ];then
         read -p "Reboot is required, do you want to reboot it NOW? [y/N]" res
@@ -475,6 +484,7 @@ parse_arg "$@"
 check_os
 check_network
 check_kernel_version
+set_mem_sleep_mode
 
 ubu_changes_require
 ubu_install_qemu_gvt
