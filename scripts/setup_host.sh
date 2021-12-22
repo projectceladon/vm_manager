@@ -47,6 +47,8 @@ function ubu_install_qemu_gvt(){
     patch -p1 < $CIV_WORK_DIR/patches/qemu/Disable-EDID-auto-generation-in-QEMU.patch
     patch -p1 < $CIV_WORK_DIR/patches/qemu/0001-Revert-Revert-vfio-pci-quirks.c-Disable-stolen-memor.patch
     patch -p1 < $CIV_WORK_DIR/patches/qemu/0002-qemu-change-fence-poll-time-by-current-workload.patch
+    patch -p1 < $CIV_WORK_DIR/patches/qemu/0003-mc146818rtc-add-RTC_ALARM-QMP-event.patch
+    patch -p1 < $CIV_WORK_DIR/patches/qemu/0004-mc146818rtc-add-rtc-refresh-timer-QMP-command.patch
     if [ -d $CIV_GOP_DIR ]; then
         for i in $CIV_GOP_DIR/qemu/*.patch; do patch -p1 < $i; done
     fi
@@ -213,6 +215,8 @@ function prepare_required_scripts(){
     chmod +x $CIV_WORK_DIR/scripts/findall.py
     chmod +x $CIV_WORK_DIR/scripts/thermsys
     chmod +x $CIV_WORK_DIR/scripts/batsys
+    sudo chown root $CIV_WORK_DIR/scripts/guest_rtc_monitor
+    sudo chmod u+s $CIV_WORK_DIR/scripts/guest_rtc_monitor
 }
 
 function install_auto_start_service(){
