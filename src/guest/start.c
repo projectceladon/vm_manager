@@ -45,7 +45,6 @@ static const char *fixed_cmd =
 	" -device usb-kbd"
 	" -device intel-hda -device hda-duplex"
 	" -audiodev id=android_spk,timer-period=5000,driver=pa,in.fixed-settings=off,out.fixed-settings=off"
-	" -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3"
 	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
@@ -546,6 +545,14 @@ int start_guest(char *name)
 		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5554", val1);
 	} else {
 		cx = snprintf(p, size, " -netdev user,id=net0");
+	}
+	p += cx; size -= cx; cx = 0;
+
+	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_VSOCK_CID], NULL);
+	if (val) {
+		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=%s", val);
+	} else {
+		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3");
 	}
 	p += cx; size -= cx;
 

@@ -21,7 +21,7 @@
 #include "guest.h"
 
 keyfile_group_t g_group[] = {
-	{ "global",   { "name", "flashfiles", "adb_port", "fastboot_port", NULL } },
+	{ "global",   { "name", "flashfiles", "adb_port", "fastboot_port", "vsock_cid", NULL } },
 	{ "emulator", { "path", NULL } },
 	{ "memory",   { "size", NULL } },
 	{ "vcpu",     { "num",  NULL } },
