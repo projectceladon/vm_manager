@@ -140,6 +140,7 @@ enum {
 	GLOB_FLASHFILES,
 	GLOB_ADB_PORT,
 	GLOB_FASTBOOT_PORT,
+	GLOB_VSOCK_CID,
 
 	/* Sub key of group emul */
 	EMUL_PATH = 0,
