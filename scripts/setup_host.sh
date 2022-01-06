@@ -355,6 +355,7 @@ function ubu_update_bt_fw() {
         sudo cp linux-firmware/intel/ibt-19-0-4* /lib/firmware/intel
         sudo cp linux-firmware/intel/ibt-18-16-1* /lib/firmware/intel
         sudo cp linux-firmware/intel/ibt-0040-0041* /lib/firmware/intel
+        sudo cp linux-firmware/intel/ibt-0040-4150* /lib/firmware/intel
         ln -sf /lib/firmware/intel/ibt-19-0-4.sfi /lib/firmware/intel/ibt-19-16-0.sfi
         ln -sf /lib/firmware/intel/ibt-19-0-4.ddc /lib/firmware/intel/ibt-19-16-0.ddc
         hcitool cmd 3f 01 01 01 00 00 00 00 00 > /dev/null 2>&1 &
@@ -372,6 +373,15 @@ function ubu_update_bt_fw() {
         fi
     fi
 }
+
+function ubu_update_wifi_fw(){
+    if [ -d "linux-firmware" ] ; then
+            rm -rf linux-firmware
+    fi
+    git clone https://kernel.googlesource.com/pub/scm/linux/kernel/git/firmware/linux-firmware
+    sudo cp linux-firmware/iwlwifi-so-a0-hr-b0-64.ucode /lib/firmware
+}
+
 
 function set_sleep_inhibitor() {
     sudo apt-get -y install python3-pip
