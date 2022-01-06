@@ -352,6 +352,8 @@ int set_field_data(form_index_t index, const char *in)
 		for (int i=0; i < res_count; i++) {
 			if (pt_selected[i]) {
 				cx = snprintf(p, size, "%s,", temp[i]);
+				if ((cx < 0) || (cx >= size))
+					break;
 				p += cx; size -= cx; tot += cx;
 			}
 		}
@@ -588,6 +590,8 @@ static int form_key_enter(void)
 			for (int i=0; i<res_count; i++) {
 				if (pt_selected[i]) {
 					cx = snprintf(p, size, "%s,", temp[i]);
+					if ((cx < 0) || (cx >= size))
+						break;
 					p += cx; size -= cx; tot += cx;
 				}
 			}
