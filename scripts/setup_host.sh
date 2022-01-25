@@ -9,7 +9,7 @@ set -eE
 
 #---------      Global variable     -------------------
 reboot_required=0
-QEMU_REL="qemu-4.2.0"
+QEMU_REL="qemu-6.0.0"
 CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
 CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
@@ -39,15 +39,16 @@ function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
     sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
+    sudo apt install -y ninja-build libcap-ng-dev
 
     [ ! -f $CIV_WORK_DIR/$QEMU_REL.tar.xz ] && wget https://download.qemu.org/$QEMU_REL.tar.xz -P $CIV_WORK_DIR
     [ -d $CIV_WORK_DIR/$QEMU_REL ] && rm -rf $CIV_WORK_DIR/$QEMU_REL
     tar -xf $CIV_WORK_DIR/$QEMU_REL.tar.xz
 
     cd $CIV_WORK_DIR/$QEMU_REL/
-    patch -p1 < $CIV_WORK_DIR/patches/qemu/Disable-EDID-auto-generation-in-QEMU.patch
     patch -p1 < $CIV_WORK_DIR/patches/qemu/0001-Revert-Revert-vfio-pci-quirks.c-Disable-stolen-memor.patch
     patch -p1 < $CIV_WORK_DIR/patches/qemu/0002-qemu-change-fence-poll-time-by-current-workload.patch
+    patch -p1 < $CIV_WORK_DIR/patches/qemu/0003-Disable-EDID-auto-generation-in-QEMU.patch
     if [ -d $CIV_GOP_DIR ]; then
         for i in $CIV_GOP_DIR/qemu/*.patch; do patch -p1 < $i; done
     fi
@@ -92,7 +93,7 @@ function ubu_build_ovmf_gvt(){
     sudo apt install -y uuid-dev nasm acpidump iasl
     cd $CIV_WORK_DIR/$QEMU_REL/roms/edk2
 
-    patch -p4 < $CIV_WORK_DIR/patches/ovmf/OvmfPkg-add-IgdAssgingmentDxe-for-qemu-4_2_0.patch
+    patch -p1 < $CIV_WORK_DIR/patches/ovmf/0001-OvmfPkg-add-IgdAssignmentDxe.patch
     if [ -d $CIV_GOP_DIR ]; then
         for i in $CIV_GOP_DIR/ovmf/*.patch; do patch -p1 < $i; done
         cp $CIV_GOP_DIR/ovmf/Vbt.bin OvmfPkg/Vbt/Vbt.bin
@@ -116,7 +117,7 @@ function ubu_build_ovmf_gvt(){
 
     source ./edksetup.sh
     make -C BaseTools/
-    build -b DEBUG -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_IP4_ENABLE -D NETWORK_ENABLE  -D SECURE_BOOT_ENABLE -DTPM2_ENABLE=TRUE
+    build -b DEBUG -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_IP4_ENABLE -D NETWORK_ENABLE  -D SECURE_BOOT_ENABLE -D TPM_ENABLE
     cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF.fd ../../../OVMF.fd
 
     if [ -d $CIV_GOP_DIR ]; then
@@ -180,6 +181,28 @@ function ubu_enable_host_gvt(){
         update-initramfs -u -k all
 
         reboot_required=1
+    fi
+}
+
+function ubu_enable_host_sriov(){
+   if [[ ! `cat /etc/default/grub` =~ "i915.enable_guc=0x7" ]]; then
+        read -p "The grub entry in '/etc/default/grub' will be updated for enabling SRIOV, do you want to continue?     [Y/n]" res
+        if [ x$res = xn ]; then
+            exit 0
+        fi
+	sed -i "s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"i915.enable_guc=0x7 udmabuf.list_limit=8192  /g" /etc/default/grub
+        update-grub
+
+        echo -e "\nkvmgt\nvfio-iommu-type1\nvfio-mdev\n" >> /etc/initramfs-tools/modules
+        update-initramfs -u -k all
+
+        # Switch to Xorg for Ubuntu 21.04
+        if [[ $(lsb_release -rs) == "21.04" ]]; then
+            sed -i "s/\#WaylandEnable=false/WaylandEnable=false/g" /etc/gdm3/custom.conf
+        fi
+
+        reboot_required=1
+
     fi
 }
 
@@ -305,6 +328,7 @@ function ubu_install_lg_client(){
 }
 
 function set_host_ui() {
+    setup_power_button
     if [[ $1 == "headless" ]]; then
         setup_power_button
         [[ $(systemctl get-default) == "multi-user.target" ]] && return 0
@@ -390,8 +414,8 @@ function ubu_update_bt_fw() {
         reboot_required=1
     else
         usb_devices="/sys/kernel/debug/usb/devices"
-        cat $usb_devices | grep  -q "Cls=e0(wlcon) Sub=01 Prot=01 Driver=btusb"
-        if [ $? != 0 ]; then
+        count="$(grep -c 'Cls=e0(wlcon) Sub=01 Prot=01 Driver=btusb' $usb_devices || true)"
+        if [ $count -eq 0 ]; then
             echo " Skip the host BT firmware update as BT controller is not present"
         else
             echo "Host Bluetooth firmware update failed. Run the setup again after cold reboot"
@@ -490,6 +514,7 @@ ubu_changes_require
 ubu_install_qemu_gvt
 ubu_build_ovmf_gvt
 ubu_enable_host_gvt
+ubu_enable_host_sriov
 
 install_vm_manager
 
