@@ -87,7 +87,7 @@ qemu-system-x86_64 \
   -k en-us \
   -vga qxl \
   -machine kernel_irqchip=on \
-  -chardev socket,id=charserial0,path=./kernel-console,server,nowait \
+  -chardev socket,id=charserial0,path=./kernel-console,server=on,wait=off \
   -device isa-serial,chardev=charserial0,id=serial0 \
   -device qemu-xhci,id=xhci,addr=0x5 \
   -drive file=./flash.vfat,id=udisk1,format=raw,if=none \
