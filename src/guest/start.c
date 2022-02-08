@@ -136,6 +136,20 @@ static int passthrough_gpu(void)
 		fprintf(stderr, "%s: Failed to fork.", __func__);
 		return -1;
 	} else if (pid == 0) {
+		execlp("rmmod", "rmmod", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	}else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: vfio\n");
+			return -1;
+		}
+	}
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
 		execlp("modprobe", "modprobe", "vfio", NULL);
 		return -1;
 	} else {
@@ -376,7 +390,24 @@ static int setup_passthrough(char *pci_device, int unset) {
 }
 
 static int setup_passthrough_pci(char *pci_device, char *p, size_t size) {
-
+	int pid;
+	int wst;
+	printf("No sleep now\n\n\n\n");
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("modprobe", "modprobe", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	} else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: vfio\n");
+			return -1;
+		}
+	}
+	printf("Entered passthrough\n");
 	int cx = 0;
 
 	if (setup_passthrough(pci_device, 0) == 0) {
