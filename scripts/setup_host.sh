@@ -45,9 +45,15 @@ function ubu_install_qemu_gvt(){
     tar -xf $CIV_WORK_DIR/$QEMU_REL.tar.xz
 
     cd $CIV_WORK_DIR/$QEMU_REL/
-    patch -p1 < $CIV_WORK_DIR/patches/qemu/0001-Revert-Revert-vfio-pci-quirks.c-Disable-stolen-memor.patch
-    patch -p1 < $CIV_WORK_DIR/patches/qemu/0002-qemu-change-fence-poll-time-by-current-workload.patch
-    patch -p1 < $CIV_WORK_DIR/patches/qemu/0003-Disable-EDID-auto-generation-in-QEMU.patch
+
+    qemu_patch_num=$(ls $CIV_WORK_DIR/patches/qemu/*.patch 2> /dev/null | wc -l)
+    if [ "$qemu_patch_num" != "0" ]; then
+        for i in $CIV_WORK_DIR/patches/qemu/*.patch; do
+            echo "applying qemu patch $i"
+            patch -p1 < $i
+        done
+    fi
+
     if [ -d $CIV_GOP_DIR ]; then
         for i in $CIV_GOP_DIR/qemu/*.patch; do patch -p1 < $i; done
     fi
