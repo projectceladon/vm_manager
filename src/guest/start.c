@@ -36,7 +36,8 @@
 extern keyfile_group_t g_group[];
 
 static const char *fixed_cmd =
-	" -machine type=q35,kernel_irqchip=off"
+	" -M q35"
+	" -machine kernel_irqchip=on"
 	" -k en-us"
 	" -cpu host"
 	" -enable-kvm"
@@ -550,11 +551,12 @@ int start_guest(char *name)
 
 	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_VSOCK_CID], NULL);
 	if (val) {
-		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=%s", val);
+		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=%s,bus=pcie.0,addr=0x4", val);
 	} else {
-		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3");
+		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=3,bus=pcie.0,addr=0x4");
 	}
 	p += cx; size -= cx;
+
 
 	/*
 	 * Please keep RPMB device option to be the first virtio device in QEMU command line. Since secure
