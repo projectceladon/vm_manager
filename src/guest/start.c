@@ -39,7 +39,7 @@ static const char *fixed_cmd =
 	" -M q35"
 	" -machine kernel_irqchip=on"
 	" -k en-us"
-	" -cpu host"
+	" -cpu host,-waitpkg"
 	" -enable-kvm"
 	" -device qemu-xhci,id=xhci,p2=8,p3=8"
 	" -device usb-mouse"
