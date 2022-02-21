@@ -659,6 +659,9 @@ int start_guest(char *name)
 	} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
 		cx = snprintf(p, size, " -display gtk,gl=on -device ramfb");
 		p += cx; size -= cx;
+	} else if (strcmp(val, VGPU_OPTS_SWIFTRENDER_STR) == 0) {
+		cx = snprintf(p, size, " -display none -device virtio-gpu-pci");
+		p += cx; size -= cx;
 	} else {
 		g_warning("Invalid Graphics config\n");
 		return -1;
