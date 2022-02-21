@@ -429,6 +429,7 @@ int import_guest(char *in_path)
 			} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
+			} else if (strcmp(val, VGPU_OPTS_VIRTIO2D_STR) == 0) {
 			} else {
 				g_warning("cannot find graphics sub-key\n");
 				return -1;

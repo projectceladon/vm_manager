@@ -74,13 +74,15 @@ enum {
 	VGPU_OPTS_VIRTIO = 0,
 	VGPU_OPTS_RAMFB,
 	VGPU_OPTS_GVTG,
-	VGPU_OPTS_GVTD
+	VGPU_OPTS_GVTD,
+	VGPU_OPTS_VIRTIO2D
 };
 
-#define VGPU_OPTS_VIRTIO_STR   "virtio"
-#define VGPU_OPTS_RAMFB_STR    "ramfb"
-#define VGPU_OPTS_GVTG_STR     "GVT-g"
-#define VGPU_OPTS_GVTD_STR     "GVT-d"
+#define VGPU_OPTS_VIRTIO_STR      "virtio"
+#define VGPU_OPTS_RAMFB_STR       "ramfb"
+#define VGPU_OPTS_GVTG_STR        "GVT-g"
+#define VGPU_OPTS_GVTD_STR        "GVT-d"
+#define VGPU_OPTS_VIRTIO2D_STR    "virtio2d"
 
 enum {
 	GVTG_OPTS_V5_1 = 0,
