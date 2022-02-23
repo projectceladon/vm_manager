@@ -138,6 +138,8 @@ int load_form_data(char *name)
 	set_field_data(FORM_INDEX_AAF_PATH, val);
 	val = g_key_file_get_string(in, g->name, g->key[AAF_SUSPEND], NULL);
 	set_field_data(FORM_INDEX_AAF_SUSPEND, val);
+	val = g_key_file_get_string(in, g->name, g->key[AAF_CIV], NULL);
+	set_field_data(FORM_INDEX_AAF_CIV, val);
 
 	g = &g_group[GROUP_GUEST_SERVICE];
 	val = g_key_file_get_string(in, g->name, g->key[GUEST_TIME_KEEP], NULL);
@@ -315,6 +317,11 @@ int generate_keyfile(void)
 		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_SUSPEND], temp);
 	}
 	
+	get_field_data(FORM_INDEX_AAF_CIV, temp, sizeof(temp) - 1);
+	if (0 == check_field(g_group[GROUP_AAF].key[AAF_CIV], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_CIV], temp);
+	}
+
 	get_field_data(FORM_INDEX_PCI_PT, temp, sizeof(temp) - 1);
 	g_key_file_set_string(out, g_group[GROUP_PCI_PT].name, g_group[GROUP_PCI_PT].key[PCI_PT], temp);
 

@@ -363,6 +363,7 @@ int set_field_data(form_index_t index, const char *in)
 		set_field_buffer(g_form_field_data[index].input.f, 0, buf);
 		break;
 	case FORM_INDEX_AAF_SUSPEND:
+	case FORM_INDEX_AAF_CIV:
 		set_opts_buffer(g_form_field_data[index].input.f, in);
 		break;
 	default:
