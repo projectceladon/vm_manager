@@ -1,0 +1,3 @@
+KERNEL=="renderD128", SUBSYSTEM=="drm", MODE="0666"
+KERNEL=="vhost-vsock", SUBSYSTEM=="misc", MODE="0666"
+KERNEL=="kvm", SUBSYSTEM=="misc", MODE="0666"
