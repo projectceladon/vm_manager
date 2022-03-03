@@ -121,7 +121,26 @@ static int is_vfio_driver(const char *driver)
 
 	return -1;
 }
-
+static int remove_Soundcard()
+{
+	int pid;
+	int wst;
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("rmmod", "rmmod", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	}else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: snd-sof-pci-intel-tgl\n");
+			return -1;
+		}
+	}
+	return 0;
+}
 static int passthrough_gpu(void)
 {
 	int fd = 0;
@@ -512,7 +531,25 @@ static void cleanup_passthrough(void) {
 		free(pci_pt_record[i]);
 	}
 }
-
+static int insert_Soundcard() {
+	int pid;
+	int wst;
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("modprobe", "modprobe", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	}else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: snd-sof-pci-intel-tgl\n");
+			return -1;
+		}
+	}
+	return 0;
+}
 static void cleanup(int num)
 {
 	(void)num;
@@ -520,6 +557,7 @@ static void cleanup(int num)
 	cleanup_child_proc();
 	cleanup_rpmb();
 	cleanup_passthrough();
+	insert_Soundcard();
 
 	exit(130);
 }
@@ -643,7 +681,6 @@ static int setup_passthrough(char *pci_device, int unset) {
 }
 
 static int setup_passthrough_pci(char *pci_device, char *p, size_t size) {
-
 	int cx = 0;
 
 	if (setup_passthrough(pci_device, 0) == 0) {
@@ -913,8 +950,10 @@ int start_guest(char *name)
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTG);
 	} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
-		if (passthrough_gpu())
+		remove_Soundcard();
+		if (passthrough_gpu()){
 			return -1;
+		}
 		cx = snprintf(p, size, " -vga none -nographic -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTD);
