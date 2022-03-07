@@ -1,0 +1,23 @@
+From 21bed8cb9315b7d8000162cbf56813e97930d227 Mon Sep 17 00:00:00 2001
+From: pmandri <padmashree.mandri@intel.com>
+Date: Mon, 7 Mar 2022 11:17:21 +0530
+Subject: [PATCH] Increase Latency to avoid popo noise issue
+
+Signed-off-by: pmandri <padmashree.mandri@intel.com>
+---
+ src/guest/start.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/guest/start.c b/src/guest/start.c
+index 6c4f045..9820e36 100644
+--- a/src/guest/start.c
++++ b/src/guest/start.c
+@@ -44,7 +44,7 @@ static const char *fixed_cmd =
+ 	" -device usb-mouse"
+ 	" -device usb-kbd"
+ 	" -device intel-hda -device hda-duplex"
+-	" -audiodev id=android_spk,timer-period=5000,driver=pa,in.fixed-settings=off,out.fixed-settings=off"
++	" -audiodev id=android_spk,timer-period=5000,driver=pa,in.latency=50000,out.latency=50000"
+ 	" -device e1000,netdev=net0"
+ 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
+ 	" -nodefaults ";

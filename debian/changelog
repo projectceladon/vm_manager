@@ -1,3 +1,9 @@
+vm-manager (0.4.3-audiofix) stable; urgency=medium
+
+  * Add audio fixes patch
+
+ -- Qi, Yadong <yadong.qi@intel.com>  Mon, 07 Mar 2022 14:45:34 +0800
+
 vm-manager (0.4.3) stable; urgency=medium
 
   * Bump version to 0.4.3
