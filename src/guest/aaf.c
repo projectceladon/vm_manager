@@ -96,7 +96,7 @@ int set_aaf_option(aaf_config_opt_t opt, unsigned int sub)
 
 	switch (opt) {
 		case AAF_CONFIG_SUSPEND:
-			if (sub > AAF_SUSPEND_DISABLE)
+			if (sub > AAF_SUSPEND_ENABLE)
 				return -1;
 			aaf_config_array[AAF_CONFIG_SUSPEND] = suspend_support[sub];
 			break;
