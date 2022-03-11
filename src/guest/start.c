@@ -752,6 +752,15 @@ static void strip_duplicate(gchar *val, const gchar *inner_cmd)
 		g_free(to_split);
 }
 
+int check_sensors_available()
+{
+	DIR *iiodir = opendir("/sys/bus/iio");
+	if (iiodir)
+		return 1;
+	else
+		return 0;
+}
+
 int start_guest(char *name)
 {
 	int ret = 0;
@@ -937,6 +946,11 @@ int start_guest(char *name)
 		g_warning("Invalid Graphics config\n");
 		return -1;
 	}
+
+	if(check_sensors_available())
+	   set_aaf_option(AAF_CONFIG_SENSORS, AAF_SENSORS_PRESENT);
+	else
+	   set_aaf_option(AAF_CONFIG_SENSORS, AAF_SENSORS_NOT_PRESENT);
 
 	g = &g_group[GROUP_MEM];
 	val = g_key_file_get_string(gkf, g->name, g->key[MEM_SIZE], NULL);
