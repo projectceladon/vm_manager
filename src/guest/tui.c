@@ -101,6 +101,7 @@ static field_sub_opts_t graphics_sub_opts = 	{ 6, -1, NULL, { VGPU_OPTS_VIRTIO_S
 static field_sub_opts_t gvtg_sub_opts =     	{ 4, -1, NULL, { GVTG_OPTS_V5_1_STR, GVTG_OPTS_V5_2_STR, GVTG_OPTS_V5_4_STR, GVTG_OPTS_V5_8_STR } };
 static field_sub_opts_t passthrough_sub_opts = 	{ 5, -1, pt_selected, {NULL} };
 static field_sub_opts_t suspend_opts =          { 2, -1, NULL, { SUSPEND_ENABLE_STR, SUSPEND_DISABLE_STR } };
+static field_sub_opts_t audio_sub_opts =          { 2, -1, NULL, { AUDIO_TYPE_HDA_STR, AUDIO_TYPE_SOF_STR } };
 
 static form_field_data_t g_form_field_data[FORM_NUM + 1] = {
 	{ { NULL, "name            :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
@@ -127,6 +128,7 @@ static form_field_data_t g_form_field_data[FORM_NUM + 1] = {
 	{ { NULL, "thermal mediation :" }, { NULL, FIELD_TYPE_NORMAL,  { 				               }, NULL				 } },
 	{ { NULL, "aaf path        :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },
 	{ { NULL, "suspend support :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, &suspend_opts      } },
+	{ { NULL, "audio type :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, &audio_sub_opts      } },
 	{ { NULL, "guest timekeep  :" }, { NULL, FIELD_TYPE_NORMAL,  { 							   }, NULL				 } },
 	{ { NULL, "guest pm        :" }, { NULL, FIELD_TYPE_NORMAL,  { 							   }, NULL				 } },
 	{ { NULL, "extra cmd(qemu) :" }, { NULL, FIELD_TYPE_NORMAL,  {                                 }, NULL               } },

@@ -33,7 +33,7 @@
 #include "vtpm.h"
 #include "aaf.h"
 
-
+static sof_enabled = 0;
 extern keyfile_group_t g_group[];
 
 static const char *fixed_cmd =
@@ -120,6 +120,27 @@ static int is_vfio_driver(const char *driver)
 		return 0;
 
 	return -1;
+}
+
+static int remove_Soundcard()
+{
+	int pid;
+	int wst;
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("rmmod", "rmmod", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	}else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: snd-sof-pci-intel-tgl\n");
+			return -1;
+		}
+	}
+	return 0;
 }
 
 static int passthrough_gpu(void)
@@ -216,6 +237,26 @@ static int passthrough_gpu(void)
 	strncpy(pci_pt_record[pci_count], INTEL_GPU_BDF, PT_MAX-1);
 	pci_count++;
 
+	return 0;
+}
+
+static int insert_Soundcard() {
+	int pid;
+	int wst;
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("modprobe", "modprobe", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	}else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: snd-sof-pci-intel-tgl\n");
+			return -1;
+		}
+	}
 	return 0;
 }
 
@@ -520,7 +561,8 @@ static void cleanup(int num)
 	cleanup_child_proc();
 	cleanup_rpmb();
 	cleanup_passthrough();
-
+	if(sof_enabled)
+		insert_Soundcard();
 	exit(130);
 }
 
@@ -880,6 +922,16 @@ int start_guest(char *name)
 			else
 				g_warning("Invalid setting of AAF Allow suspend option, it should be either true or false\n");
 		}
+		val = g_key_file_get_string(gkf, g->name, g->key[AAF_AUDIO_TYPE], NULL);
+		if (val) {
+			if (0 == strcmp(val, AUDIO_TYPE_HDA_STR))
+				set_aaf_option(AAF_CONFIG_AUDIO,  AAF_AUDIO_TYPE_HDA);
+			else if (0 == strcmp(val, AUDIO_TYPE_SOF_STR)) {
+				sof_enabled = 1;
+				set_aaf_option(AAF_CONFIG_AUDIO,  AAF_AUDIO_TYPE_SOF);
+			} else
+				g_warning("Invalid setting of AAF set audio type option, it should be either true or false\n");
+			}
 	}
 
 	g = &g_group[GROUP_VGPU];
@@ -913,6 +965,8 @@ int start_guest(char *name)
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTG);
 	} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
+		if (sof_enabled)
+			remove_Soundcard();
 		if (passthrough_gpu())
 			return -1;
 		cx = snprintf(p, size, " -vga none -nographic -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
