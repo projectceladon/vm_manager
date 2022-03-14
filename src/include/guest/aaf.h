@@ -11,12 +11,18 @@
 typedef enum {
     AAF_CONFIG_GPU_TYPE = 0,
     AAF_CONFIG_SUSPEND,
+    AAF_CONFIG_AUDIO,
     AAF_CONFIG_NUM
 } aaf_config_opt_t;
 
 enum {
     AAF_SUSPEND_DISABLE = 0,
     AAF_SUSPEND_ENABLE
+};
+
+enum {
+    AAF_AUDIO_TYPE_HDA =0,
+    AAF_AUDIO_TYPE_SOF
 };
 
 enum {

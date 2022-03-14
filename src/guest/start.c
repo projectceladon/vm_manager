@@ -33,7 +33,6 @@
 #include "vtpm.h"
 #include "aaf.h"
 
-
 extern keyfile_group_t g_group[];
 
 static const char *fixed_cmd =
@@ -120,6 +119,27 @@ static int is_vfio_driver(const char *driver)
 		return 0;
 
 	return -1;
+}
+
+static int remove_sof_tgl_snd_module()
+{
+	int pid;
+	int wst;
+	pid = fork();
+	if (pid == -1) {
+		fprintf(stderr, "%s: Failed to fork.", __func__);
+		return -1;
+	} else if (pid == 0) {
+		execlp("rmmod", "rmmod", "snd-sof-pci-intel-tgl", NULL);
+		return -1;
+	}else {
+		wait(&wst);
+		if (!(WIFEXITED(wst) && !WEXITSTATUS(wst))) {
+			fprintf(stderr, "Failed to load module: snd-sof-pci-intel-tgl\n");
+			return -1;
+		}
+	}
+	return 0;
 }
 
 static int passthrough_gpu(void)
@@ -513,13 +533,26 @@ static void cleanup_passthrough(void) {
 	}
 }
 
-static void cleanup(int num)
+static int check_soundcard_on_host(){
+        int ret = system("cat /proc/asound/cards | grep sof");
+        return ret;
+}
+
+static void insert_sof_tgl_snd_module() {
+	int ret = 0;
+	if ((ret = load_kernel_module("snd-sof-pci-intel-tgl")) != 0)
+		fprintf(stderr, "errro loading snd-sof module\n");
+}
+
+static void cleanup(int num, int removed_sof_tgl_snd_module)
 {
 	(void)num;
 	fprintf(stderr, "Cleaning up...\n");
 	cleanup_child_proc();
 	cleanup_rpmb();
 	cleanup_passthrough();
+	if(removed_sof_tgl_snd_module)
+		insert_sof_tgl_snd_module();
 
 	exit(130);
 }
@@ -755,6 +788,7 @@ static void strip_duplicate(gchar *val, const gchar *inner_cmd)
 int start_guest(char *name)
 {
 	int ret = 0;
+	int removed_sof_tgl_snd_module = 0;
 	int cx;
 	GKeyFile *gkf;
 	g_autofree gchar *val = NULL;
@@ -880,8 +914,16 @@ int start_guest(char *name)
 			else
 				g_warning("Invalid setting of AAF Allow suspend option, it should be either true or false\n");
 		}
+		val = g_key_file_get_string(gkf, g->name, g->key[AAF_AUDIO_TYPE], NULL);
+		if (val) {
+			if (0 == strcmp(val, AUDIO_TYPE_HDA_STR))
+				set_aaf_option(AAF_CONFIG_AUDIO,  AAF_AUDIO_TYPE_HDA);
+			else if (0 == strcmp(val, AUDIO_TYPE_SOF_STR)) {
+				set_aaf_option(AAF_CONFIG_AUDIO,  AAF_AUDIO_TYPE_SOF);
+			} else
+				g_warning("Invalid setting of AAF set audio type option, it should be either hda or sof\n");
+		}
 	}
-
 	g = &g_group[GROUP_VGPU];
 	val = g_key_file_get_string(gkf, g->name, g->key[VGPU_TYPE], NULL);
 	if (val == NULL) {
@@ -913,6 +955,10 @@ int start_guest(char *name)
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTG);
 	} else if (strcmp(val, VGPU_OPTS_GVTD_STR) == 0) {
+		if (!check_soundcard_on_host()) {
+			remove_sof_tgl_snd_module();
+			removed_sof_tgl_snd_module = 1;
+                }
 		if (passthrough_gpu())
 			return -1;
 		cx = snprintf(p, size, " -vga none -nographic -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
@@ -1110,7 +1156,7 @@ SKIP_PT:
 
 	ret = execute_cmd(emu_path, cmd_str, strlen(cmd_str), 0);
 	
-	cleanup(0);
+	cleanup(0, removed_sof_tgl_snd_module);
 
 	if (ret != 0) {
 		err(1, "%s:Failed to execute emulator command, err=%d\n", __func__, errno);
