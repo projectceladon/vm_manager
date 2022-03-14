@@ -33,6 +33,11 @@ static const char *suspend_support[] = {
 	[AAF_SUSPEND_ENABLE]  = "suspend:true"
 };
 
+static const char *audio_type[] = {
+	[AAF_AUDIO_TYPE_HDA] = "audio-type:hda",
+	[AAF_AUDIO_TYPE_SOF] = "audio-type:sof"
+};
+
 static char *aaf_file = NULL;
 
 static const char *aaf_config_array[AAF_CONFIG_NUM] = { NULL };
@@ -99,6 +104,11 @@ int set_aaf_option(aaf_config_opt_t opt, unsigned int sub)
 			if (sub > AAF_SUSPEND_ENABLE)
 				return -1;
 			aaf_config_array[AAF_CONFIG_SUSPEND] = suspend_support[sub];
+			break;
+		case AAF_CONFIG_AUDIO:
+			if (sub > AAF_AUDIO_TYPE_SOF)
+				return -1;
+			aaf_config_array[AAF_CONFIG_AUDIO] = audio_type[sub];
 			break;
 		case AAF_CONFIG_GPU_TYPE:
 			if (sub > AAF_GPU_TYPE_GVTD)

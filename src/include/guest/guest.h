@@ -57,6 +57,7 @@ typedef enum {
 	FORM_INDEX_THERMAL_MED,
 	FORM_INDEX_AAF_PATH,
 	FORM_INDEX_AAF_SUSPEND,
+	FORM_INDEX_AAF_AUDIO_TYPE,
 	FORM_INDEX_GUEST_TIME_KEEP,
 	FORM_INDEX_PM_CONTROL,
 	FORM_INDEX_EXTRA_CMD,
@@ -70,6 +71,14 @@ enum {
 
 #define FIRM_OPTS_UNIFIED_STR "unified"
 #define FIRM_OPTS_SPLITED_STR "splited"
+
+enum {
+	AUDIO_TYPE_HDA = 0,
+	AUDIO_TYPE_SOF
+};
+
+#define AUDIO_TYPE_HDA_STR "hda"
+#define AUDIO_TYPE_SOF_STR "sof"
 
 enum {
 	VGPU_OPTS_VIRTIO = 0,
@@ -190,6 +199,7 @@ enum {
   	/* Sub key of group aaf */
 	AAF_PATH = 0,
 	AAF_SUSPEND,
+	AAF_AUDIO_TYPE,
 	
 	/* Guest services */
 	GUEST_TIME_KEEP = 0,

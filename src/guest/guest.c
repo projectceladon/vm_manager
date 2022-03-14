@@ -32,7 +32,7 @@ keyfile_group_t g_group[] = {
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
 	{ "passthrough", { "passthrough_pci", NULL}},
 	{ "mediation", { "battery_med", "thermal_med", NULL }},
-	{ "aaf",      { "path", "support_suspend", NULL } },
+	{ "aaf",      { "path", "support_suspend", "audio_type", NULL } },
 	{ "guest_control", { "time_keep", "pm_control", NULL }},
 	{ "extra",    { "cmd", "service", NULL } },
 };
@@ -138,6 +138,9 @@ int load_form_data(char *name)
 	set_field_data(FORM_INDEX_AAF_PATH, val);
 	val = g_key_file_get_string(in, g->name, g->key[AAF_SUSPEND], NULL);
 	set_field_data(FORM_INDEX_AAF_SUSPEND, val);
+	val = g_key_file_get_string(in, g->name, g->key[AAF_AUDIO_TYPE], NULL);
+	set_field_data(FORM_INDEX_AAF_AUDIO_TYPE, val);
+
 
 	g = &g_group[GROUP_GUEST_SERVICE];
 	val = g_key_file_get_string(in, g->name, g->key[GUEST_TIME_KEEP], NULL);
@@ -308,11 +311,23 @@ int generate_keyfile(void)
 	get_field_data(FORM_INDEX_AAF_PATH, temp, sizeof(temp) - 1);
 	if (0 == check_field(g_group[GROUP_AAF].key[AAF_PATH], temp)) {
 		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_PATH], temp);
-	}
+	} else {
+		show_msg("Error: Invalid Field [aaf path]");
+		goto exit;
+        }
+
 
 	get_field_data(FORM_INDEX_AAF_SUSPEND, temp, sizeof(temp) - 1);
 	if (0 == check_field(g_group[GROUP_AAF].key[AAF_SUSPEND], temp)) {
 		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_SUSPEND], temp);
+	}
+
+	get_field_data(FORM_INDEX_AAF_AUDIO_TYPE, temp, sizeof(temp) - 1);
+	if (0 == check_field(g_group[GROUP_AAF].key[AAF_AUDIO_TYPE], temp)) {
+		g_key_file_set_string(out, g_group[GROUP_AAF].name, g_group[GROUP_AAF].key[AAF_AUDIO_TYPE], temp);
+	} else {
+		show_msg("Error: Invalid Field [audio_type]");
+		goto exit;
 	}
 	
 	get_field_data(FORM_INDEX_PCI_PT, temp, sizeof(temp) - 1);
