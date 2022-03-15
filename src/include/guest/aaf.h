@@ -8,10 +8,12 @@
 #ifndef __AAF_H__
 #define __AAF_H__
 
+
 typedef enum {
     AAF_CONFIG_GPU_TYPE = 0,
     AAF_CONFIG_SUSPEND,
-    AAF_CONFIG_NUM
+    AAF_CONFIG_SENSORS,
+    AAF_CONFIG_NUM,
 } aaf_config_opt_t;
 
 enum {
@@ -25,8 +27,12 @@ enum {
     AAF_GPU_TYPE_GVTD
 };
 
+enum {
+    AAF_SENSORS_PRESENT = 0,
+    AAF_SENSORS_NOT_PRESENT
+};
+
 int set_aaf_path(const char *bin_path);
 int set_aaf_option(aaf_config_opt_t opt, unsigned int sub);
 int flush_aaf_config(void);
-
 #endif /* __AAF_H__ */

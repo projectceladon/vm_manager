@@ -33,6 +33,11 @@ static const char *suspend_support[] = {
 	[AAF_SUSPEND_ENABLE]  = "suspend:true"
 };
 
+static const char *sensor_support[] = {
+	[AAF_SENSORS_PRESENT] = "sensor_available:true",
+	[AAF_SENSORS_NOT_PRESENT]  = "sensor_available:false"
+};
+
 static char *aaf_file = NULL;
 
 static const char *aaf_config_array[AAF_CONFIG_NUM] = { NULL };
@@ -104,6 +109,11 @@ int set_aaf_option(aaf_config_opt_t opt, unsigned int sub)
 			if (sub > AAF_GPU_TYPE_GVTD)
 				return -1;
 			aaf_config_array[AAF_CONFIG_GPU_TYPE] = gpu_type[sub];
+			break;
+		case AAF_CONFIG_SENSORS:
+			if (sub > AAF_CONFIG_SENSORS)
+				return -1;
+			aaf_config_array[AAF_CONFIG_SENSORS] = sensor_support[sub];
 			break;
 		default:
 			fprintf(stderr, "%s: Invalid AAF config option!\n", __func__);
