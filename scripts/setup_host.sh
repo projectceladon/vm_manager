@@ -319,7 +319,11 @@ function set_host_ui() {
 }
 
 function setup_sof() {
-    $CIV_WORK_DIR/sof_audio/configure_sof.sh "install" $CIV_WORK_DIR
+    if [[ $1 == "enable-sof" ]]; then
+        $CIV_WORK_DIR/sof_audio/configure_sof.sh "install" $CIV_WORK_DIR
+    elif [[ $1 == "disable-sof" ]]; then
+        $CIV_WORK_DIR/sof_audio/configure_sof.sh "uninstall" $CIV_WORK_DIR
+    fi
     $CIV_WORK_DIR/scripts/setup_audio_host.sh
 }
 
@@ -463,6 +467,11 @@ function parse_arg() {
                 shift
                 ;;
 
+            -a)
+                setup_sof $2 || return -1
+                shift
+                ;;
+
             --auto-start)
                 install_auto_start_service "$2" || return -1
                 shift
@@ -502,7 +511,6 @@ ubu_enable_host_sriov
 install_vm_manager
 
 prepare_required_scripts
-setup_sof
 ubu_install_swtpm
 ubu_update_bt_fw
 set_sleep_inhibitor
