@@ -231,7 +231,6 @@ function ask_reboot(){
 
 function prepare_required_scripts(){
     chmod +x $CIV_WORK_DIR/scripts/*.sh
-    cp -R $CIV_WORK_DIR/scripts/sof_audio/ $CIV_WORK_DIR/
     chmod +x $CIV_WORK_DIR/scripts/guest_pm_control
     chmod +x $CIV_WORK_DIR/scripts/findall.py
     chmod +x $CIV_WORK_DIR/scripts/thermsys
@@ -319,6 +318,7 @@ function set_host_ui() {
 }
 
 function setup_sof() {
+    cp -R $CIV_WORK_DIR/scripts/sof_audio/ $CIV_WORK_DIR/
     if [[ $1 == "enable-sof" ]]; then
         $CIV_WORK_DIR/sof_audio/configure_sof.sh "install" $CIV_WORK_DIR
     elif [[ $1 == "disable-sof" ]]; then
