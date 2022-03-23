@@ -44,12 +44,22 @@ static const char *fixed_cmd =
 	" -device qemu-xhci,id=xhci,p2=8,p3=8"
 	" -device usb-mouse"
 	" -device usb-kbd"
-	" -device intel-hda -device hda-duplex,audiodev=android_spk"
-	" -audiodev id=android_spk,timer-period=5000,driver=pa,in.fixed-settings=off,out.fixed-settings=off"
 	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
 
+static int get_uid() {
+	char *suid = NULL;
+	int real_uid;
+	suid = getenv("SUDO_UID");
+	printf ("suid=%s\n", suid);
+	if (suid) {
+		real_uid = atoi(suid);
+	} else {
+		real_uid = getuid();
+	}
+	return real_uid;
+}
 /* Used to keep track of pcis that are passed through */
 #define PT_LEN 16
 static char *pci_pt_record[PT_MAX] = { 0 };
@@ -789,7 +799,7 @@ int start_guest(char *name)
 {
 	int ret = 0;
 	int removed_sof_tgl_snd_module = 0;
-	int cx;
+	int cx, uid;
 	GKeyFile *gkf;
 	g_autofree gchar *val = NULL;
 	g_autofree gchar *val1 = NULL;
@@ -1116,6 +1126,9 @@ SKIP_PT:
 		p += cx; size -= cx;
 	}
 
+	uid = get_uid();
+	cx = snprintf(p, size," -device intel-hda -device hda-duplex,audiodev=android_spk -audiodev id=android_spk,timer-period=5000,driver=pa,server=/run/user/%d/pulse/native,in.fixed-settings=off,out.fixed-settings=off" , uid);
+	p += cx; size -= cx;
 	/* extra GROUP */
 	g = &g_group[GROUP_EXTRA];
 	/* extra cmds */
@@ -1127,6 +1140,7 @@ SKIP_PT:
 		printf("%s: %s\n", g->key[EXTRA_CMD], val);
 		p += cx; size -= cx;
 	}
+
 	/* extra services */
 	gchar **srv_list = NULL;
 	gsize n_extra_srv = 0;
@@ -1141,7 +1155,6 @@ SKIP_PT:
 		}
 		g_strfreev(srv_list);
 	}
-
 	cx = snprintf(p, size, "%s", fixed_cmd);
 	p += cx; size -= cx;
 
