@@ -45,7 +45,7 @@ static const char *fixed_cmd =
 	" -device usb-mouse"
 	" -device usb-kbd"
 	" -device intel-hda -device hda-duplex,audiodev=android_spk"
-	" -audiodev id=android_spk,timer-period=5000,driver=pa,in.fixed-settings=off,out.fixed-settings=off"
+	" -audiodev id=android_spk,timer-period=5000,driver=pa,server=/run/user/1000/pulse/native,in.fixed-settings=off,out.fixed-settings=off"
 	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
