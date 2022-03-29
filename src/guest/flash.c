@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <string.h>
+#include <ftw.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "vm_manager.h"
@@ -20,6 +21,8 @@
 #include "utils.h"
 #include "rpmb.h"
 #include "vtpm.h"
+
+#define GIGABYTE *1024L*1024L*1024L
 
 extern keyfile_group_t g_group[];
 
@@ -39,10 +42,30 @@ static char flashing_arg[] =
 	" -nographic -display none -serial mon:stdio"
 	" -boot menu=on,splash-time=5000,strict=on ";
 
+static int split_large_image(const char *fpath, const struct stat *st, int tflag)
+{
+        char cmd[MAX_CMDLINE_LEN] = { 0 };
+
+        if (tflag != FTW_F)
+                return 0;
+
+        if (st->st_size < (4 GIGABYTE))
+                return 0;
+
+        snprintf(cmd, 1024, "split --bytes=%ld --numeric-suffixes %s %s.part", (4 GIGABYTE) -  1, fpath, fpath);
+        printf("%s\n", cmd);
+        if(system(cmd) != 0) {
+                return -1;
+        }
+        remove(fpath);
+        return 0;
+}
+
 static int create_vusb(GKeyFile *gkf)
 {
 	char *p = NULL;
 	char cmd[MAX_CMDLINE_LEN] = { 0 };
+	char buf[PATH_MAX] = { 0 };
 	char *fname = NULL;
 	keyfile_group_t *g = NULL;
 	g_autofree gchar *file = NULL;
@@ -67,6 +90,12 @@ static int create_vusb(GKeyFile *gkf)
 	printf("%s\n", cmd);
 	if (system(cmd))
 		return -1;
+
+	snprintf(buf, PATH_MAX, "/tmp/%s", fname);
+	if (ftw(buf, split_large_image, 10) == -1) {
+		fprintf(stderr, "failed to tree walk");
+		return -1;
+	}
 
 	snprintf(cmd, MAX_CMDLINE_LEN, "dd if=/dev/zero of="VUSB_FLASH_DISK" bs=63M count=160");
 	printf("%s\n", cmd);
