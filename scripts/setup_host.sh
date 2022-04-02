@@ -195,6 +195,31 @@ function ubu_enable_host_sriov(){
     fi
 }
 
+function ubu_update_fw(){
+    FW_REL="linux-firmware-20220310"
+    GUC_REL="70.0.3"
+    HUC_REL="7.9.3"
+    S_DMC_REL="2_01"
+    P_DMC_REL="2_12"
+
+    [ ! -f $CIV_WORK_DIR/$FW_REL.tar.xz ] && wget "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/snapshot/linux-firmware-20220310.tar.gz" -P $CIV_WORK_DIR
+
+    [ -d $CIV_WORK_DIR/$FW_REL ] && rm -rf $CIV_WORK_DIR/$FW_REL
+    tar -xf $CIV_WORK_DIR/$FW_REL.tar.gz
+
+    cd $CIV_WORK_DIR/$FW_REL/i915/
+    wget https://github.com/intel/intel-linux-firmware/raw/main/adlp_guc_$GUC_REL.bin
+    wget https://github.com/intel/intel-linux-firmware/raw/main/tgl_guc_$GUC_REL.bin
+    cp adlp_guc_$GUC_REL.bin tgl_guc_$GUC_REL.bin adlp_dmc_ver$P_DMC_REL.bin adls_dmc_ver$S_DMC_REL.bin tgl_huc_$HUC_REL.bin /lib/firmware/i915/
+
+    cd $CIV_WORK_DIR
+    rm -rf $CIV_WORK_DIR/$FW_REL*
+
+    update-initramfs -u -k all
+
+    reboot_required=1
+}
+
 function check_os() {
     local version=`cat /proc/version`
 
@@ -513,6 +538,7 @@ ubu_install_qemu_gvt
 ubu_build_ovmf_gvt
 ubu_enable_host_gvt
 ubu_enable_host_sriov
+ubu_update_fw
 
 install_vm_manager
 
