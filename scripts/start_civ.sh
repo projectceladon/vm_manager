@@ -61,7 +61,7 @@ GUEST_STATIC_OPTION="\
  -M q35 \
  -enable-kvm \
  -k en-us \
- -cpu host \
+ -cpu host,-waitpkg \
  -chardev socket,id=charserial0,path=$WORK_DIR/kernel-console,server,nowait,logfile=$WORK_DIR/civ_serial.log \
  -serial chardev:charserial0 \
  -device virtio-blk-pci,drive=disk1,bootindex=1 \
