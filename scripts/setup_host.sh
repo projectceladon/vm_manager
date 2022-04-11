@@ -359,10 +359,10 @@ function setup_sof() {
 }
 
 function ubu_install_swtpm() {
-    TPMS_VER=v0.7.3
-    TPMS_LIB=libtpms-0.7.3
-    SWTPM_VER=v0.3.3
-    SWTPM=swtpm-0.3.3
+    TPMS_VER=v0.9.0
+    TPMS_LIB=libtpms-0.9.0
+    SWTPM_VER=v0.7.0
+    SWTPM=swtpm-0.7.0
 
     #install libtpms
     apt-get -y install automake autoconf gawk
@@ -377,7 +377,7 @@ function ubu_install_swtpm() {
     cd -
 
     #install swtpm
-    apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect
+    apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect libjson-glib-dev
     [ ! -f $SWTPM_VER.tar.gz ] && wget https://github.com/stefanberger/swtpm/archive/$SWTPM_VER.tar.gz -P $CIV_WORK_DIR
     [ -d $CIV_WORK_DIR/$SWTPM ] && rm -rf  $CIV_WORK_DIR/$SWTPM
     tar zxvf $CIV_WORK_DIR/$SWTPM_VER.tar.gz
