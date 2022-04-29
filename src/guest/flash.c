@@ -22,7 +22,10 @@
 #include "rpmb.h"
 #include "vtpm.h"
 
+#define MEGABYTE *1024L*1024L
 #define GIGABYTE *1024L*1024L*1024L
+
+#define DD_BS (63 MEGABYTE)
 
 extern keyfile_group_t g_group[];
 
@@ -42,6 +45,8 @@ static char flashing_arg[] =
 	" -nographic -display none -serial mon:stdio"
 	" -boot menu=on,splash-time=5000,strict=on ";
 
+static size_t total_images_size = 0; // total size in Bytes
+
 static int split_large_image(const char *fpath, const struct stat *st, int tflag)
 {
         char cmd[MAX_CMDLINE_LEN] = { 0 };
@@ -49,8 +54,10 @@ static int split_large_image(const char *fpath, const struct stat *st, int tflag
         if (tflag != FTW_F)
                 return 0;
 
-        if (st->st_size < (4 GIGABYTE))
+	total_images_size += st->st_size;
+        if (st->st_size < (4 GIGABYTE)) {
                 return 0;
+	}
 
         snprintf(cmd, 1024, "split --bytes=%ld --numeric-suffixes %s %s.part", (4 GIGABYTE) -  1, fpath, fpath);
         printf("%s\n", cmd);
@@ -86,6 +93,11 @@ static int create_vusb(GKeyFile *gkf)
 		return -1;
 	}
 
+	snprintf(cmd, MAX_CMDLINE_LEN, "rm -rf /tmp/%s", fname);
+	printf("%s\n", cmd);
+	if (system(cmd))
+		fprintf(stderr, "Warning: Failed to remove old tmp files: /tmp/%s\n", fname);
+
 	snprintf(cmd, MAX_CMDLINE_LEN, "unzip -o %s -d /tmp/%s", file, fname);
 	printf("%s\n", cmd);
 	if (system(cmd))
@@ -97,11 +109,13 @@ static int create_vusb(GKeyFile *gkf)
 		return -1;
 	}
 
-	snprintf(cmd, MAX_CMDLINE_LEN, "dd if=/dev/zero of="VUSB_FLASH_DISK" bs=63M count=160");
+	snprintf(cmd, MAX_CMDLINE_LEN, "dd if=/dev/zero of="VUSB_FLASH_DISK" bs=%ld count=%ld",
+					DD_BS, (total_images_size + DD_BS - 1)/DD_BS);
 	printf("%s\n", cmd);
 	if (system(cmd))
 		return -1;
 
+	memset(cmd, 0, sizeof(cmd));
 	snprintf(cmd, MAX_CMDLINE_LEN, "mkfs.vfat /tmp/flash.vfat");
 	printf("%s\n", cmd);
 	if (system(cmd))
@@ -112,6 +126,7 @@ static int create_vusb(GKeyFile *gkf)
 	if (system(cmd))
 		return -1;
 
+	memset(cmd, 0, sizeof(cmd));
 	snprintf(cmd, MAX_CMDLINE_LEN, "rm -r /tmp/%s", fname);
 	if (system(cmd))
 		return -1;
