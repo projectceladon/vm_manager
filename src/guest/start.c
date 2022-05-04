@@ -44,7 +44,6 @@ static const char *fixed_cmd =
 	" -device qemu-xhci,id=xhci,p2=8,p3=8"
 	" -device usb-mouse"
 	" -device usb-kbd"
-	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
 
