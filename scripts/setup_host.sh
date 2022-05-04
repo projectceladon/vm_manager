@@ -268,6 +268,14 @@ function prepare_required_scripts(){
     chmod +x $CIV_WORK_DIR/scripts/batsys
 }
 
+function start_thermal_daemon() {
+    sudo systemctl stop thermald.service
+    sudo cp $CIV_WORK_DIR/scripts/intel-thermal-conf.xml /etc/thermald
+    sudo cp $CIV_WORK_DIR/scripts/thermald.service  /lib/systemd/system
+    sudo systemctl daemon-reload
+    sudo systemctl start thermald.service
+}
+
 function install_auto_start_service(){
     service_file=civ.service
     touch $service_file
@@ -543,6 +551,7 @@ ubu_update_fw
 install_vm_manager
 
 prepare_required_scripts
+start_thermal_daemon
 ubu_install_swtpm
 ubu_update_bt_fw
 set_sleep_inhibitor
