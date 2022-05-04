@@ -268,6 +268,14 @@ function prepare_required_scripts(){
     chmod +x $CIV_WORK_DIR/scripts/batsys
 }
 
+function start_thermal_daemon() {
+    sudo systemctl stop thermald.service
+    sudo cp $CIV_WORK_DIR/scripts/intel-thermal-conf.xml /etc/thermald
+    sudo cp $CIV_WORK_DIR/scripts/thermald.service  /lib/systemd/system
+    sudo systemctl daemon-reload
+    sudo systemctl start thermald.service
+}
+
 function install_auto_start_service(){
     service_file=civ.service
     touch $service_file
@@ -501,6 +509,10 @@ function parse_arg() {
             -a)
                 setup_sof $2 || return -1
                 shift
+                ;;
+
+            -t)
+                start_thermal_daemon || return -1
                 ;;
 
             --auto-start)
