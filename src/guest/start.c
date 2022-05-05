@@ -44,7 +44,6 @@ static const char *fixed_cmd =
 	" -device qemu-xhci,id=xhci,p2=8,p3=8"
 	" -device usb-mouse"
 	" -device usb-kbd"
-	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
 
@@ -696,6 +695,54 @@ static int setup_passthrough_pci(char *pci_device, char *p, size_t size) {
 	return cx;
 } 
 
+static void setup_vnet(GKeyFile *gkf, char **p, size_t *size) {
+	int cx = 0;
+	keyfile_group_t *g = NULL;
+	g_autofree gchar *val = NULL;
+	g_autofree gchar *val1 = NULL;
+	char buf[512] = { 0 };
+	int bs = sizeof(buf);
+
+	g = &g_group[GROUP_VNET];
+
+	val = g_key_file_get_string(gkf, g->name, g->key[VNET_ADB_PORT], NULL);
+	val1 = g_key_file_get_string(gkf, g->name, g->key[VNET_FASTBOOT_PORT], NULL);
+	if (val && val1) {
+		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::%s-:5555,hostfwd=tcp::%s-:5554", val, val1);
+	} else if (val) {
+		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::%s-:5555,hostfwd=tcp::5554-:5554", val);
+	} else if (val1) {
+		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=tcp::%s-:5554", val1);
+	} else {
+		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=tcp::5554-:5554");
+	}
+
+	if (cx < 0 || cx >= bs)
+		return;
+
+	bs -= cx;
+
+	val = g_key_file_get_string(gkf, g->name, g->key[VNET_MODEL], NULL);
+	if (val == NULL) {
+		cx = snprintf(buf + cx, bs, " -device e1000,netdev=net0,bus=pcie.0,addr=0xA");
+	} else {
+		if (strcmp(val, "none") == 0) {
+			fprintf(stderr, "Disable ethernet emulation!\n");
+			return;
+		} else {
+			cx = snprintf(buf + cx, bs, " -device %s,netdev=net0,bus=pcie.0,addr=0xA", val);
+		}
+	}
+	if (cx < 0 || cx >= bs)
+		return;
+
+	bs -= cx;
+
+	strncpy(*p, buf, sizeof(buf) - bs);
+	*p += (sizeof(buf) - bs);
+	*size -= (sizeof(buf) - bs);
+}
+
 static int run_battery_mediation_daemon(char *path) {
 	return execute_cmd(path, NULL, 0, 1);
 }
@@ -802,7 +849,6 @@ int start_guest(char *name)
 	int cx, uid;
 	GKeyFile *gkf;
 	g_autofree gchar *val = NULL;
-	g_autofree gchar *val1 = NULL;
 	char cfg_file[MAX_PATH] = { 0 };
 	char emu_path[MAX_PATH] = { 0 };
 	char cmd_str[MAX_CMDLINE_LEN] = { 0 };
@@ -845,20 +891,6 @@ int start_guest(char *name)
 	cx = snprintf(p, size, " -qmp unix:%s/.%s"CIV_GUEST_QMP_SUFFIX",server,nowait", civ_config_path, val);
 	p += cx; size -= cx;
 
-	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_ADB_PORT], NULL);
-	val1 = g_key_file_get_string(gkf, g->name, g->key[GLOB_FASTBOOT_PORT], NULL);
-	cx = 0;
-	if (val && val1) {
-		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5555,hostfwd=tcp::%s-:5554", val, val1);
-	} else if (val) {
-		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5555", val);
-	} else if (val1) {
-		cx = snprintf(p, size, " -netdev user,id=net0,hostfwd=tcp::%s-:5554", val1);
-	} else {
-		cx = snprintf(p, size, " -netdev user,id=net0");
-	}
-	p += cx; size -= cx; cx = 0;
-
 	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_VSOCK_CID], NULL);
 	if (val) {
 		cx = snprintf(p, size, " -device vhost-vsock-pci,id=vhost-vsock-pci0,guest-cid=%s,bus=pcie.0,addr=0x4", val);
@@ -867,6 +899,7 @@ int start_guest(char *name)
 	}
 	p += cx; size -= cx;
 
+	setup_vnet(gkf, &p, &size);
 
 	/*
 	 * Please keep RPMB device option to be the first virtio device in QEMU command line. Since secure
