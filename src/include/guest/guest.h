@@ -85,8 +85,7 @@ enum {
 	VGPU_OPTS_RAMFB,
 	VGPU_OPTS_GVTG,
 	VGPU_OPTS_GVTD,
-	VGPU_OPTS_VIRTIO2D,
-	VGPU_OPTS_SRIOV
+	VGPU_OPTS_VIRTIO2D
 };
 
 #define VGPU_OPTS_VIRTIO_STR      "virtio"
@@ -94,7 +93,6 @@ enum {
 #define VGPU_OPTS_GVTG_STR        "GVT-g"
 #define VGPU_OPTS_GVTD_STR        "GVT-d"
 #define VGPU_OPTS_VIRTIO2D_STR    "virtio2d"
-#define VGPU_OPTS_SRIOV_STR       "SRIOV"
 
 enum {
 	GVTG_OPTS_V5_1 = 0,
@@ -179,7 +177,6 @@ enum {
 	VGPU_TYPE = 0,
 	VGPU_GVTG_VER,
 	VGPU_UUID,
-	VGPU_MON_ID,
 
 	/* Sub key of group vtpm */
 	VTPM_BIN_PATH = 0,

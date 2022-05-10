@@ -27,7 +27,7 @@ keyfile_group_t g_group[] = {
 	{ "vcpu",     { "num",  NULL } },
 	{ "firmware", { "type", "path", "code", "vars", NULL } },
 	{ "disk",     { "path", "size", NULL } },
-	{ "graphics", { "type", "gvtg_version", "vgpu_uuid", "monitor", NULL } },
+	{ "graphics", { "type", "gvtg_version", "vgpu_uuid", NULL } },
 	{ "vtpm",     { "bin_path", "data_dir", NULL } },
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
 	{ "passthrough", { "passthrough_pci", NULL}},
@@ -433,7 +433,6 @@ int import_guest(char *in_path)
 			} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
 			} else if (strcmp(val, VGPU_OPTS_VIRTIO2D_STR) == 0) {
-			} else if (strcmp(val, VGPU_OPTS_SRIOV_STR) == 0) {
 			} else {
 				g_warning("cannot find graphics sub-key\n");
 				return -1;

@@ -25,7 +25,6 @@
 #include <libgen.h>
 #include <regex.h>
 #include <string.h>
-#include <ctype.h>
 #include "vm_manager.h"
 #include "guest.h"
 #include "utils.h"
@@ -44,6 +43,8 @@ static const char *fixed_cmd =
 	" -device qemu-xhci,id=xhci,p2=8,p3=8"
 	" -device usb-mouse"
 	" -device usb-kbd"
+	" -device intel-hda -device hda-duplex"
+	" -audiodev id=android_spk,timer-period=5000,driver=pa,in.fixed-settings=off,out.fixed-settings=off"
 	" -device e1000,netdev=net0"
 	" -device intel-iommu,device-iotlb=on,caching-mode=on"
 	" -nodefaults ";
@@ -245,271 +246,6 @@ static int passthrough_gpu(void)
 	pci_pt_record[pci_count] = malloc(PT_MAX);
 	strncpy(pci_pt_record[pci_count], INTEL_GPU_BDF, PT_MAX-1);
 	pci_count++;
-
-	return 0;
-}
-
-static int setup_hugepages(GKeyFile *gkf)
-{
-	int fd = 0;
-	ssize_t n = 0;
-	int required_hugepg = 0;
-	int free_hugepg = 0;
-	int nr_hugepg = 0;
-	char buf[64] = { 0 };
-	keyfile_group_t *g = NULL;
-	g_autofree gchar *val = NULL;
-	size_t len = 0;
-	char ch;
-	char *pEnd = NULL;
-	int memsize_M;
-	int wait_cnt = 0;
-
-	g = &g_group[GROUP_MEM];
-	val = g_key_file_get_string(gkf, g->name, g->key[MEM_SIZE], NULL);
-	if (val == NULL) {
-		g_warning("cannot find key name from group memory\n");
-		return 0;
-	}
-	len = strlen(val);
-	if (len == 0) {
-		fprintf(stderr, "Memory size for guest not specified!\n");
-		return 0;
-	}
-	if (isdigit(val[len - 1])) {
-		memsize_M = strtoul(val, &pEnd, 10);
-		if (pEnd != &val[len - 1]) {
-			fprintf(stderr, "Invalid memory size format!\n");
-			return 0;
-		}
-	} else {
-		memsize_M = strtoul(val, &pEnd, 10);
-		if (pEnd != &val[len - 1]) {
-			fprintf(stderr, "Invalid memory size format!\n");
-			return 0;
-		}
-
-		ch = toupper(val[len - 1]);
-		switch(ch) {
-		case 'G':
-			memsize_M *= 1024;
-			break;
-		case 'M':
-			break;
-		default:
-			fprintf(stderr, "Invalid suffix for memory size!\n");
-			return 0;
-		}
-	}
-
-	/* Get free hugepages */
-	fd = open("/sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages", O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "open /sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages failed, errno=%d\n", errno);
-		return 0;
-	}
-
-	n = read(fd, buf, sizeof(buf));
-	if (n == -1) {
-		fprintf(stderr, "read /sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages failed, errno=%d\n", errno);
-		close(fd);
-		return 0;
-	}
-	close(fd);
-	free_hugepg = strtoul(buf, NULL, 10);
-	if (free_hugepg >= memsize_M/2)
-		return memsize_M;
-
-	/* Get nr hugepages */
-	fd = open("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages", O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "open /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages failed, errno=%d\n", errno);
-		return 0;
-	}
-
-	n = read(fd, buf, sizeof(buf));
-	if (n == -1) {
-		fprintf(stderr, "read /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages failed, errno=%d\n", errno);
-		close(fd);
-		return 0;
-	}
-	close(fd);
-	nr_hugepg = strtoul(buf, NULL, 10);
-
-	required_hugepg = nr_hugepg - free_hugepg + (memsize_M/2);
-
-	snprintf(buf, sizeof(buf), "%d", required_hugepg);
-	if (write_to_file("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages", buf)) {
-		fprintf(stderr, "Failed to write /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages!\n");
-		return 0;
-	}
-
-
-	while (nr_hugepg != required_hugepg) {
-		fd = open("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages", O_RDONLY);
-		if (fd == -1) {
-			fprintf(stderr, "open /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages failed, errno=%d\n", errno);
-			return 0;
-		}
-
-		n = read(fd, buf, sizeof(buf));
-		if (n == -1) {
-			fprintf(stderr, "read /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages failed, errno=%d\n", errno);
-			close(fd);
-			return 0;
-		}
-		close(fd);
-		nr_hugepg = strtoul(buf, NULL, 10);
-		if (wait_cnt < 200) {
-			usleep(10000);
-			wait_cnt++;
-		} else {
-			fprintf(stderr, "Hugepage cannot achieve required size!\n");
-			return 0;
-		}
-	}
-	return memsize_M;
-}
-
-static int set_available_vf(void)
-{
-	int fd = 0;
-	int total_vfs = 0;
-	int dev_id = 0;
-	ssize_t n = 0;
-	char buf[64] = { 0 };
-	int i;
-	int ret = 0;
-
-	fd = open(INTEL_GPU_DEV_PATH"/sriov_totalvfs", O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "open %s/sriov_totalvfs failed, errno=%d\n", INTEL_GPU_DEV_PATH, errno);
-		return 0;
-	}
-
-	n = read(fd, buf, sizeof(buf));
-	if (n == -1) {
-		fprintf(stderr, "read %s/sriov_totalvfs failed, errno=%d\n", INTEL_GPU_DEV_PATH, errno);
-		close(fd);
-		return 0;
-	}
-	close(fd);
-	total_vfs = strtoul(buf, NULL, 10);
-	/* Limit total VFs to conserve memory */
-	total_vfs = total_vfs > 4 ? 4 : total_vfs;
-
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%d", total_vfs);
-
-	if (write_to_file(INTEL_GPU_DEV_PATH"/sriov_drivers_autoprobe", "0")) {
-		fprintf(stderr, "Unable to de-probe sriov drivers");
-		return -1;
-	}
-
-	if (write_to_file("/sys/class/drm/card0/device/sriov_numvfs", buf)) {
-		fprintf(stderr, "Unable to de-probe sriov drivers");
-		return -1;
-	}
-
-	if (write_to_file(INTEL_GPU_DEV_PATH"/sriov_drivers_autoprobe", "1")) {
-		fprintf(stderr, "Unable to auto-probe sriov drivers");
-		return -1;
-	}
-
-	/* Get device ID */
-	fd = open(INTEL_GPU_DEV_PATH"/device", O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "open %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/device", errno);
-		return -1;
-	}
-
-	n = read(fd, buf, sizeof(buf));
-	if (n == -1) {
-		fprintf(stderr, "read %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/device", errno);
-		close(fd);
-		return -1;
-	}
-	close(fd);
-	dev_id = strtol(buf, NULL, 16);
-
-
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "8086 %x", dev_id);
-
-	/* Create new vfio id for GPU */
-	ret = write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf);
-	if (ret == EEXIST) {
-		if (write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buf)) {
-			fprintf(stderr, "Cannot remove original GPU vfio id\n");
-			return -1;
-		}
-		if (write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf)) {
-			fprintf(stderr, "Cannot add new GPU vfio id\n");
-			return -1;
-		}
-	} else if (ret != 0) {
-		return -1;
-	}
-
-	for (i = 1; i < total_vfs; i++) {
-		memset(buf, 0, sizeof(buf));
-		snprintf(buf, sizeof(buf), "/sys/bus/pci/devices/0000:00:02.%d/enable", i);
-		fd = open(buf, O_RDONLY);
-		if (fd == -1) {
-			fprintf(stderr, "open %s failed, errno=%d\n", buf, errno);
-			return -1;
-		}
-
-		memset(buf, 0, sizeof(buf));
-		n = read(fd, buf, sizeof(buf));
-		if (n == -1) {
-			fprintf(stderr, "read %s failed, errno=%d\n", buf, errno);
-			close(fd);
-			return -1;
-		}
-		close(fd);
-		if (strtol(buf, NULL, 10) == 0) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-static int setup_sriov(GKeyFile *gkf, char **p, size_t *size)
-{
-	int cx = 0;
-	int monitor_id = -1;
-	int vf = 0;
-	int mem = 0;
-	GError *error = NULL;
-	keyfile_group_t *g = NULL;
-
-	g = &g_group[GROUP_VGPU];
-	monitor_id = g_key_file_get_integer(gkf, g->name, g->key[VGPU_MON_ID], &error);
-	if (error) {
-		if (error->code == G_KEY_FILE_ERROR_KEY_NOT_FOUND) {
-			cx = snprintf(*p, *size, " -display gtk,gl=on");
-		} else {
-			fprintf(stderr, "Invalid monitor id!\n");
-			return -1;
-		}
-	} else {
-		cx = snprintf(*p, *size, " -display gtk,gl=on,monitor=%d", monitor_id);
-	}
-	*p += cx; *size -= cx;
-
-	mem = setup_hugepages(gkf);
-	if (mem == 0)
-		return -1;
-	vf = set_available_vf();
-
-	cx = snprintf(*p, *size, " -device virtio-vga,max_outputs=1,blob=true"
-				 " -device vfio-pci,host=0000:00:02.%d"
-				 " -object memory-backend-memfd,hugetlb=on,id=mem_sriov,size=%dM"
-				 " -machine memory-backend=mem_sriov",
-				 vf, mem);
-	*p += cx; *size -= cx;
 
 	return 0;
 }
@@ -737,7 +473,7 @@ static int run_guest_pm(char *path, char *p, size_t size, char *socket_name) {
 	fprintf(stderr, "PM Control: %s %s\n", cmd[0], buffer);
 	int ret = execute_cmd(cmd[0], buffer, strlen(buffer), 1);
 	if (ret == 0) {
-		cx = snprintf(p, size, " -qmp unix:%s,server=on,wait=off -no-reboot", sock_path);
+		cx = snprintf(p, size, " -qmp unix:%s,server,nowait -no-reboot", sock_path);
 	}
 	return cx;
 }
@@ -984,10 +720,6 @@ int start_guest(char *name)
 	} else if (strcmp(val, VGPU_OPTS_VIRTIO2D_STR) == 0) {
 		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-vga");
 		p += cx; size -= cx;
-		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
-	} else if (strcmp(val, VGPU_OPTS_SRIOV_STR) == 0) {
-		if (setup_sriov(gkf, &p, &size))
-			return -1;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
 	} else {
 		g_warning("Invalid Graphics config\n");
