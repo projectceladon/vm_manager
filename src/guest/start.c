@@ -717,10 +717,6 @@ int start_guest(char *name)
 	} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
 		cx = snprintf(p, size, " -display gtk,gl=on -device ramfb");
 		p += cx; size -= cx;
-	} else if (strcmp(val, VGPU_OPTS_VIRTIO2D_STR) == 0) {
-		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-vga");
-		p += cx; size -= cx;
-		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
 	} else {
 		g_warning("Invalid Graphics config\n");
 		return -1;
