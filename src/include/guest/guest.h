@@ -56,6 +56,8 @@ typedef enum {
 	FORM_INDEX_THERMAL_MED,
 	FORM_INDEX_AAF_PATH,
 	FORM_INDEX_AAF_SUSPEND,
+	FORM_INDEX_AAF_AUDIO_TYPE,
+
 	FORM_INDEX_GUEST_TIME_KEEP,
 	FORM_INDEX_PM_CONTROL,
 	FORM_INDEX_EXTRA_CMD,
@@ -82,17 +84,13 @@ enum {
 	VGPU_OPTS_VIRTIO = 0,
 	VGPU_OPTS_RAMFB,
 	VGPU_OPTS_GVTG,
-	VGPU_OPTS_GVTD,
-	VGPU_OPTS_VIRTIO2D,
-	VGPU_OPTS_SRIOV
+	VGPU_OPTS_GVTD
 };
 
-#define VGPU_OPTS_VIRTIO_STR      "virtio"
-#define VGPU_OPTS_RAMFB_STR       "ramfb"
-#define VGPU_OPTS_GVTG_STR        "GVT-g"
-#define VGPU_OPTS_GVTD_STR        "GVT-d"
-#define VGPU_OPTS_VIRTIO2D_STR    "virtio2d"
-#define VGPU_OPTS_SRIOV_STR       "SRIOV"
+#define VGPU_OPTS_VIRTIO_STR   "virtio"
+#define VGPU_OPTS_RAMFB_STR    "ramfb"
+#define VGPU_OPTS_GVTG_STR     "GVT-g"
+#define VGPU_OPTS_GVTD_STR     "GVT-d"
 
 enum {
 	GVTG_OPTS_V5_1 = 0,
@@ -136,7 +134,6 @@ enum {
 	GROUP_FIRM,
 	GROUP_DISK,
 	GROUP_VGPU,
-	GROUP_VNET,
 	GROUP_VTPM,
 	GROUP_RPMB,
 	GROUP_PCI_PT,
@@ -151,6 +148,8 @@ enum {
 	/* Sub key of group glob */
 	GLOB_NAME = 0,
 	GLOB_FLASHFILES,
+	GLOB_ADB_PORT,
+	GLOB_FASTBOOT_PORT,
 	GLOB_VSOCK_CID,
 
 	/* Sub key of group emul */
@@ -176,12 +175,6 @@ enum {
 	VGPU_TYPE = 0,
 	VGPU_GVTG_VER,
 	VGPU_UUID,
-	VGPU_MON_ID,
-
-	/* Sub key of group net */
-	VNET_MODEL = 0,
-	VNET_ADB_PORT,
-	VNET_FASTBOOT_PORT,
 
 	/* Sub key of group vtpm */
 	VTPM_BIN_PATH = 0,
