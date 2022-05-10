@@ -21,14 +21,13 @@
 #include "guest.h"
 
 keyfile_group_t g_group[] = {
-	{ "global",   { "name", "flashfiles", "vsock_cid", NULL } },
+	{ "global",   { "name", "flashfiles", "adb_port", "fastboot_port", "vsock_cid", NULL } },
 	{ "emulator", { "path", NULL } },
 	{ "memory",   { "size", NULL } },
 	{ "vcpu",     { "num",  NULL } },
 	{ "firmware", { "type", "path", "code", "vars", NULL } },
 	{ "disk",     { "path", "size", NULL } },
 	{ "graphics", { "type", "gvtg_version", "vgpu_uuid", "monitor", NULL } },
-	{ "net",      { "model", "adb_port", "fastboot_port", NULL } },
 	{ "vtpm",     { "bin_path", "data_dir", NULL } },
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
 	{ "passthrough", { "passthrough_pci", NULL}},
@@ -60,11 +59,9 @@ int load_form_data(char *name)
 	set_field_data(FORM_INDEX_NAME, name);
 	val = g_key_file_get_string(in, g->name, g->key[GLOB_FLASHFILES], NULL);
 	set_field_data(FORM_INDEX_FLASHFILES, val);
-
-	g = &g_group[GROUP_VNET];
-	val = g_key_file_get_string(in, g->name, g->key[VNET_ADB_PORT], NULL);
+	val = g_key_file_get_string(in, g->name, g->key[GLOB_ADB_PORT], NULL);
 	set_field_data(FORM_INDEX_ADB_PORT, val);
-	val = g_key_file_get_string(in, g->name, g->key[VNET_FASTBOOT_PORT], NULL);
+	val = g_key_file_get_string(in, g->name, g->key[GLOB_FASTBOOT_PORT], NULL);
 	set_field_data(FORM_INDEX_FASTBOOT_PORT, val);
 
 	g = &g_group[GROUP_EMUL];
@@ -141,6 +138,9 @@ int load_form_data(char *name)
 	set_field_data(FORM_INDEX_AAF_PATH, val);
 	val = g_key_file_get_string(in, g->name, g->key[AAF_SUSPEND], NULL);
 	set_field_data(FORM_INDEX_AAF_SUSPEND, val);
+	val = g_key_file_get_string(in, g->name, g->key[AAF_AUDIO_TYPE], NULL);
+	set_field_data(FORM_INDEX_AAF_AUDIO_TYPE, val);
+
 
 	g = &g_group[GROUP_GUEST_SERVICE];
 	val = g_key_file_get_string(in, g->name, g->key[GUEST_TIME_KEEP], NULL);
@@ -198,13 +198,13 @@ int generate_keyfile(void)
 	if (0 != check_field("adb port", temp)) {
 		goto exit;
 	}
-	g_key_file_set_string(out, g_group[GROUP_VNET].name, g_group[GROUP_VNET].key[VNET_ADB_PORT], temp);
+	g_key_file_set_string(out, g_group[GROUP_GLOB].name, g_group[GROUP_GLOB].key[GLOB_ADB_PORT], temp);
 
 	get_field_data(FORM_INDEX_FASTBOOT_PORT, temp, sizeof(temp) - 1);
 	if (0 != check_field("fastboot port", temp)) {
 		goto exit;
 	}
-	g_key_file_set_string(out, g_group[GROUP_VNET].name, g_group[GROUP_VNET].key[VNET_FASTBOOT_PORT], temp);
+	g_key_file_set_string(out, g_group[GROUP_GLOB].name, g_group[GROUP_GLOB].key[GLOB_FASTBOOT_PORT], temp);
 
 	get_field_data(FORM_INDEX_EMUL, temp, sizeof(temp) - 1);
 	if (0 != check_field(g_group[GROUP_EMUL].key[EMUL_PATH], temp)) {
@@ -396,6 +396,8 @@ int import_guest(char *in_path)
 		case GROUP_GLOB:
 			import_field(i, GLOB_NAME, in, out);
 			import_field(i, GLOB_FLASHFILES, in, out);
+			import_field(i, GLOB_ADB_PORT, in, out);
+			import_field(i, GLOB_FASTBOOT_PORT, in, out);
 
 			val = g_key_file_get_string(in, group->name, group->key[GLOB_NAME], NULL);
 			if (val == NULL) {
@@ -437,7 +439,6 @@ int import_guest(char *in_path)
 				return -1;
 			}		
 			break;
-
 		default:
 			j = 0;
 			while (g_group[i].key[j]) {
