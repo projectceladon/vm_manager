@@ -1,3 +1,9 @@
+vm-manager (0.6.1) stable; urgency=medium
+
+  * Bum version to 0.6.1
+
+ -- Qi, Yadong <yadong.qi@intel.com>  Mon, 30 May 2022 14:05:14 +0800
+
 vm-manager (0.6.0) stable; urgency=medium
 
   * Bump version to 0.6.0
