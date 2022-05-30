@@ -710,11 +710,11 @@ static void setup_vnet(GKeyFile *gkf, char **p, size_t *size) {
 	if (val && val1) {
 		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::%s-:5555,hostfwd=tcp::%s-:5554", val, val1);
 	} else if (val) {
-		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::%s-:5555,hostfwd=tcp::5554-:5554", val);
+		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::%s-:5555", val);
 	} else if (val1) {
-		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=tcp::%s-:5554", val1);
+		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::%s-:5554", val1);
 	} else {
-		cx = snprintf(buf, bs, " -netdev user,id=net0,hostfwd=tcp::5555-:5555,hostfwd=tcp::5554-:5554");
+		cx = snprintf(buf, bs, " -netdev user,id=net0");
 	}
 
 	if (cx < 0 || cx >= bs)
