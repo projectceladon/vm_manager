@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+genrule {
+    name: "VmHostProtoStub_h",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "vm_host.proto",
+    ],
+    out: [
+        "vm_host.pb.h",
+        "vm_host.grpc.pb.h",
+    ],
+}
+
+genrule {
+    name: "VmHostProtoStub_cc",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "vm_host.proto",
+    ],
+    out: [
+        "vm_host.pb.cc",
+        "vm_host.grpc.pb.cc",
+    ],
+}

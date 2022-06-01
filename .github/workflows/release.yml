@@ -1,0 +1,51 @@
+name: VM Manager Release
+
+on:
+  release:
+    types: [published, edited]
+
+jobs:
+  build_ubuntu_gcc:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04]
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          path: vm-manager
+
+      - name: setup
+        run: |
+          sudo apt-get --quiet update --yes
+          sudo apt-get --quiet install --yes make devscripts build-essential lintian debhelper
+
+      - name: Set release version
+        run: echo "REL_VER=${GITHUB_REF##*/}" >> $GITHUB_ENV
+
+      - name: build
+        run: |
+          cd vm-manager/
+          debuild --preserve-env -b -uc -us --lintian-opts --profile debian
+          cp $(realpath ../*.deb) vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
+
+      - name: artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: vm-manager.${{ matrix.os }}.${{ github.run_id }}.${{ github.sha }}
+          path: |
+            vm-manager/debian/
+            *.deb
+            *.ddeb
+            *.build
+            *.buildinfo
+            *.changes
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            vm-manager/vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb

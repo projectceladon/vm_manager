@@ -1,0 +1,51 @@
+name: "CodeQL"
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        path: vm-manager
+
+    - run: |
+       export CC=/usr/bin/clang
+       export CXX=/usr/bin/clang++
+       mkdir vm-manager/build/
+       cd vm-manager/build/
+       cmake -DCMAKE_BUILD_TYPE=Release ..
+       cmake --build . --config Release
+       cd -
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        #queries: security-extended,security-and-quality
+
+    - run: |
+       cd vm-manager/build/
+       find src/CMakeFiles/vm-manager.dir/ -iname *.o |xargs rm
+       cmake --build . --config Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2

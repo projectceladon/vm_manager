@@ -1,0 +1,15 @@
+# C/C++ build outputs
+.build/
+bins
+gens
+libs
+objs
+*.bin
+*.o
+
+# cmake build files
+**/cmake/build/
+
+# Visual Studio Code artifacts
+.vscode/*
+.history/
