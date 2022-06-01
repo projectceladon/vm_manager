@@ -1008,14 +1008,14 @@ int start_guest(char *name)
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_GVTD);
 	} else if (strcmp(val, VGPU_OPTS_VIRTIO_STR) == 0) {
-		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-vga-gl");
+		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-gpu-pci");
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
 	} else if (strcmp(val, VGPU_OPTS_RAMFB_STR) == 0) {
 		cx = snprintf(p, size, " -display gtk,gl=on -device ramfb");
 		p += cx; size -= cx;
 	} else if (strcmp(val, VGPU_OPTS_VIRTIO2D_STR) == 0) {
-		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-vga");
+		cx = snprintf(p, size, " -display gtk,gl=on -device virtio-gpu-pci,virgl=off");
 		p += cx; size -= cx;
 		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
 	} else if (strcmp(val, VGPU_OPTS_SRIOV_STR) == 0) {

@@ -21,7 +21,7 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 6
-#define VERSION_MICRO 0
+#define VERSION_MICRO 1
 
 #define VERSION xstr(VERSION_MAJOR)"."xstr(VERSION_MINOR)"."xstr(VERSION_MICRO)
 
