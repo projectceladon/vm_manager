@@ -21,6 +21,115 @@ function error() {
     echo "$BASH_SOURCE Failed at line($line): $cmd"
 }
 
+
+function install_virtualcamera_service() {
+    service_file=virtualcamera.service
+    touch $service_file
+    cat /dev/null > $service_file
+
+    echo "[Unit]" > $service_file
+    echo -e "Description=Virtual Camera Auto Start\n" >> $service_file
+    echo -e "After=default.target\n" >> $service_file
+    echo "[Service]" >> $service_file
+    echo -e "ExecStartPre=/usr/sbin/modprobe v4l2loopback devices=2 video_nr=6,7 card_label=\"VCam0\",\"VCam1\" exclusive_caps=1,1\n" >> $service_file
+    echo -e "ExecStart=/usr/bin/IntelCameraService -i /dev/video0 -o /dev/video6 -o /dev/video7\n" >> $service_file
+    echo -e "SuccessExitStatus=255\n" >> $service_file
+    echo -e "Restart=always\n" >> $service_file
+    echo -e "RestartSec=10\n" >> $service_file
+    echo "[Install]" >> $service_file
+    echo -e "WantedBy=default.target\n" >> $service_file
+
+    cat $service_file
+    sudo mv $service_file /etc/systemd/system/
+    sudo systemctl enable virtualcamera.service
+    sudo systemctl restart virtualcamera.service
+}
+
+function install_virtual_camera() {
+    KERNELRELEASE=`uname -r`
+    KERNEL_DIR=/lib/modules/${KERNELRELEASE}/kernel/drivers/media/v4l2-core/
+    CURRENT_DIR=`pwd`
+
+    echo "Clean environment..."
+    if [ -x v4l2loopback ]; then
+        rm -rf v4l2loopback
+    fi
+    IS_SERVICE_RUNNING=`ps -fe | grep IntelCameraService | grep -v "grep" | wc -l`
+    if [ $IS_SERVICE_RUNNING == 1 ]; then
+        echo "Stop running IntelCameraService"
+        sudo systemctl stop virtualcamera.service
+    fi
+    IS_V4L2LOOPBACK_EXIST=`lsmod | grep "v4l2loopback" | wc -l`
+    if [ $IS_V4L2LOOPBACK_EXIST != 0 ]; then
+        echo "rmmod v4l2loopback..."
+        sudo rmmod v4l2loopback
+    fi
+
+    echo "Install v4l2loopback driver..."
+    git clone https://github.com/umlaeute/v4l2loopback.git
+    cd v4l2loopback
+    git checkout 81b8df79107d1fbf392fdcbaa051bd227a9c94c1
+
+    git apply ../scripts/cam_sharing/0001-Netlink-sync.patch
+    make
+
+    echo "cp " ${DRIVER} ${KERNEL_DIR}/v4l2loopback.ko
+    if [ -f ${KERNEL_DIR}/v4l2loopback.ko ]; then
+        echo "Backup original v4l2loopback.ko"
+        mv ${KERNEL_DIR}/v4l2loopback.ko ${KERNEL_DIR}/v4l2loopback.ko.orig
+    fi
+    sudo cp v4l2loopback.ko ${KERNEL_DIR}
+    depmod
+    cd ..
+    if [ -x v4l2loopback ]; then
+        rm -rf v4l2loopback
+    fi
+
+    echo "Install IntelCameraService in /usr/bin/ ..."
+    sudo cp ./scripts/cam_sharing/IntelCameraService /usr/bin/
+
+    echo "Install virtualcamera.service in /lib/systemd/system/ ..."
+    install_virtualcamera_service
+
+    echo "Complete virtual camera installation."
+
+}
+
+function install_host_service() {
+    wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
+    mkdir -p ffmpeg_sources
+    cd ffmpeg_sources && tar xjvf ../ffmpeg-snapshot.tar.bz2
+    cd ffmpeg && PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --extra-cflags="-I$HOME/ffmpeg_build/include" --extra-libs="-lpthread -lm" --enable-shared && PATH="$HOME/bin:$PATH"
+    make
+    make install
+    hash -r
+    sudo cp -r $HOME/ffmpeg_build/lib/*.* /usr/lib/
+    sudo cp -r $HOME/ffmpeg_build/lib/*.* /usr/local/lib
+    cd ../..
+    sudo rm -rf ffmpeg_sources
+    sudo rm -rf ffmpeg-snapshot.tar.bz2
+    sudo rm -rf $HOME/ffmpeg_build
+
+    sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
+    sudo apt-get install ffmpeg -y
+    sudo apt-get install build-essential clang -y
+
+    sudo apt-get install --yes cmake
+    mkdir -p host_camera
+    cd host_camera
+    git clone https://github.com/projectceladon/host-camera-server.git
+    cd host-camera-server
+    git checkout ba2707587e8f3ad03714d5e3ed47844e83cde7c0
+    mkdir build
+    cd build
+    cmake ..
+    cmake --build .
+    sudo cp source/libvhal-client.so* /usr/lib
+    sudo cp host_camera_service/stream /usr/local/bin/
+    cd ../../..
+    sudo rm -rf host_camera
+}
+
 function ubu_changes_require(){
     echo "Please make sure your apt is working"
     echo "If you run the installation first time, reboot is required"
@@ -546,6 +655,9 @@ check_network
 check_kernel_version
 
 ubu_changes_require
+install_host_service
+install_virtual_camera
+
 ubu_install_qemu_gvt
 ubu_build_ovmf_gvt
 ubu_enable_host_gvt

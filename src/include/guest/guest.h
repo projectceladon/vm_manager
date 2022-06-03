@@ -197,6 +197,7 @@ enum {
 	/* Sub key of group mediation */
 	BATTERY_MED = 0,
 	THERMAL_MED,
+	CAMERA_MED,
 
   	/* Sub key of group aaf */
 	AAF_PATH = 0,

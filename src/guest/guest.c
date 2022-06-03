@@ -32,7 +32,7 @@ keyfile_group_t g_group[] = {
 	{ "vtpm",     { "bin_path", "data_dir", NULL } },
 	{ "rpmb",     { "bin_path", "data_dir", NULL } },
 	{ "passthrough", { "passthrough_pci", NULL}},
-	{ "mediation", { "battery_med", "thermal_med", NULL }},
+	{ "mediation", { "battery_med", "thermal_med", "camera_med",NULL }},
 	{ "aaf",      { "path", "support_suspend", "audio_type", NULL } },
 	{ "guest_control", { "time_keep", "pm_control", NULL }},
 	{ "extra",    { "cmd", "service", NULL } },
