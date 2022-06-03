@@ -751,6 +751,10 @@ static int run_thermal_mediation_daemon(char *path) {
 	return execute_cmd(path, NULL, 0, 1);
 }
 
+static int run_camera_mediation_daemon(char *path) {
+	return execute_cmd(path, NULL, 0, 1);
+}
+
 static int run_guest_timekeep(char *path, char *p, size_t size, char *pipe_name) {
 	int cx = 0; 
 	const char *pipe = pipe_name ? pipe_name : "qmp-time-keep-pipe";
@@ -1142,6 +1146,11 @@ SKIP_PT:
 	if (val != NULL && (strcmp("", val) != 0))
 		run_thermal_mediation_daemon(val);
 
+	val = g_key_file_get_string(gkf, g->name, g->key[CAMERA_MED], NULL);
+	if (val != NULL && (strcasecmp("y", val) == 0)) {
+		run_camera_mediation_daemon("/usr/local/bin/stream");
+	}
+
 	/* run guest pm */
 	g = &g_group[GROUP_GUEST_SERVICE];
 
@@ -1191,7 +1200,7 @@ SKIP_PT:
 	cx = snprintf(p, size, "%s", fixed_cmd);
 	p += cx; size -= cx;
 
-	run_vtpm_daemon();
+        run_vtpm_daemon();
 
 	cleanup_rpmb();
 	run_rpmb_daemon();
