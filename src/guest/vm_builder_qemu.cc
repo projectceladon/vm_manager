@@ -606,7 +606,6 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
                 return false;
             }
 
-            emul_cmd_.append(" -display gtk,gl=on");
             emul_cmd_.append(" -device vfio-pci-nohotplug,ramfb=on,display=on,addr=2.0,x-igd-opregion=on,sysfsdev=" +
                              std::string(kIntelGpuDevPath) + vgpu_uuid);
             if (aaf_cfg_)
@@ -621,13 +620,18 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "gvtd");
         } else if (vgpu_type.compare(kVgpuVirtio) == 0) {
-            emul_cmd_.append(" -display gtk,gl=on -device virtio-vga-gl");
+            emul_cmd_.append(" -device virtio-vga-gl");
+            std::string outputs = cfg_.GetValue(kGroupVgpu, kVgpuOutputs);
+            std::size_t pos{};
+            int o = std::stoi(outputs, &pos, 10);
+            if (pos == outputs.size())
+                emul_cmd_.append(",max_outputs=" + outputs);
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
         } else if (vgpu_type.compare(kVgpuRamfb) == 0) {
-            emul_cmd_.append(" -display gtk,gl=on -device ramfb");
+            emul_cmd_.append(" -device ramfb");
         } else if (vgpu_type.compare(kVgpuVirtio2D)) {
-            emul_cmd_.append(" -display gtk,gl=on -device virtio-vga");
+            emul_cmd_.append(" -device virtio-vga");
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
         } else if (vgpu_type.compare(kVgpuSriov) == 0) {
@@ -641,6 +645,16 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
         }
     }
     return true;
+}
+
+void VmBuilderQemu::BuildDispCmd(void) {
+    std::string disp_op = cfg_.GetValue(kGroupDisplay, kDispOptions);
+    if (disp_op.empty()) {
+        emul_cmd_.append(" -display gtk,gl=on");
+        return;
+    }
+
+    emul_cmd_.append(" -display " + disp_op);
 }
 
 void VmBuilderQemu::BuildMemCmd(void) {
@@ -683,6 +697,8 @@ bool VmBuilderQemu::BuildVmArgs(void) {
         return false;
 
     BuildRpmbCmd();
+
+    BuildDispCmd();
 
     if (!BuildVgpuCmd())
         return false;

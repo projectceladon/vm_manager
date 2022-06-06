@@ -50,6 +50,7 @@ class VmBuilderQemu : public VmBuilder {
     void BuildVtpmCmd(void);
     void BuildAafCfg(void);
     bool BuildVgpuCmd(void);
+    void BuildDispCmd(void);
     void BuildMemCmd(void);
     void BuildVcpuCmd(void);
     bool BuildFirmwareCmd(void);

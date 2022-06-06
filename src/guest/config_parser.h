@@ -22,6 +22,7 @@ constexpr char kGroupVcpu[]    = "vcpu";
 constexpr char kGroupFirm[]    = "firmware";
 constexpr char kGroupDisk[]    = "disk";
 constexpr char kGroupVgpu[]    = "graphics";
+constexpr char kGroupDisplay[]    = "display";
 constexpr char kGroupNet[]     = "net";
 constexpr char kGroupVtpm[]    = "vtpm";
 constexpr char kGroupRpmb[]    = "rpmb";
@@ -56,6 +57,9 @@ constexpr char kVgpuType[]    = "type";
 constexpr char kVgpuGvtgVer[] = "gvtg_version";
 constexpr char kVgpuUuid[]    = "vgpu_uuid";
 constexpr char kVgpuMonId[]    = "monitor";
+constexpr char kVgpuOutputs[]    = "outputs";
+
+constexpr char kDispOptions[] = "options";
 
 constexpr char kNetModel[] = "model";
 constexpr char kNetAdbPort[] = "adb";
