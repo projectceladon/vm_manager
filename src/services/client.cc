@@ -50,14 +50,30 @@ void Client::PrepareStartGuestClientShm(const char *path) {
 }
 
 void Client::PrepareStopGuestClientShm(const char *vm_name) {
-    boost::process::environment env = boost::this_process::environment();
-
     client_shm_.destroy<bstring>("StopVmName");
     client_shm_.zero_free_memory();
 
     bstring *var_name = client_shm_.construct<bstring>
                 ("StopVmName")
                 (vm_name, client_shm_.get_segment_manager());
+}
+
+void Client::PrepareGetGuestInfoClientShm(const char *vm_name) {
+    client_shm_.destroy<bstring>("VmName");
+    client_shm_.zero_free_memory();
+
+    bstring *var_name = client_shm_.construct<bstring>
+                ("VmName")
+                (vm_name, client_shm_.get_segment_manager());
+}
+
+CivVmInfo Client::GetCivVmInfo(const char *vm_name) {
+    PrepareGetGuestInfoClientShm(vm_name);
+    Notify(kCivMsgGetVmInfo);
+    CivVmInfo *vm_info = client_shm_.find_or_construct<CivVmInfo>
+                ("VmInfo")
+                (0, VmBuilder::VmState::kVmUnknown);
+    return std::move(*vm_info);
 }
 
 bool Client::Notify(CivMsgType t) {

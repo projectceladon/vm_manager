@@ -25,6 +25,8 @@ class Client {
     std::vector<std::string> GetGuestLists(void);
     void PrepareStartGuestClientShm(const char *vm_name);
     void PrepareStopGuestClientShm(const char *vm_name);
+    void PrepareGetGuestInfoClientShm(const char *vm_name);
+    CivVmInfo GetCivVmInfo(const char *vm_name);
     bool Notify(CivMsgType t);
 
  private:

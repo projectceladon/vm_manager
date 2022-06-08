@@ -42,23 +42,23 @@ bool IsServerRunning() {
     }
 }
 
-static void ListGuest(void) {
+static bool ListGuest(void) {
     if (!IsServerRunning()) {
         LOG(info) << "server is not running! Please start server!";
-        return;
+        return false;
     }
 
     Client c;
     if (!c.Notify(kCivMsgListVm)) {
         LOG(error) << "List guest: " << " Failed!";
-        return;
+        return false;
     }
     auto vm_list = c.GetGuestLists();
     std::cout << "=====================" << std::endl;
     for (auto it : vm_list) {
         std::cout << it << std::endl;
     }
-    return;
+    return true;
 }
 
 static int GetGuestState(std::string name) {
@@ -90,10 +90,10 @@ static int GetGuestState(std::string name) {
     return VmBuilder::kVmUnknown;
 }
 
-static void StartGuest(std::string path) {
+static bool StartGuest(std::string path) {
     if (!IsServerRunning()) {
         LOG(info) << "server is not running! Please start server!";
-        return;
+        return false;
     }
 
     boost::system::error_code ec;
@@ -104,40 +104,57 @@ static void StartGuest(std::string path) {
         p.assign(GetConfigPath() + std::string("/") + path + ".ini");
         if (!boost::filesystem::exists(p, ec)) {
             LOG(error) << "CiV config not exists: " << path;
-            return;
+            return false;
         }
     }
 
     Client c;
     c.PrepareStartGuestClientShm(p.c_str());
-    if (c.Notify(kCivMsgStartVm)) {
-        LOG(info) << "Start guest: " << path << " Done.";
-    } else {
+    if (!c.Notify(kCivMsgStartVm)) {
         LOG(error) << "Start guest: " << path << " Failed!";
+        return false;
     }
-    return;
+    LOG(info) << "Start guest: " << path << " Done.";
+    return true;
 }
 
-static void StopGuest(std::string name) {
+static bool StopGuest(std::string name) {
     if (!IsServerRunning()) {
         LOG(info) << "server is not running! Please start server!";
-        return;
+        return false;
     }
 
     Client c;
     c.PrepareStopGuestClientShm(name.c_str());
     if (c.Notify(kCivMsgStopVm)) {
-        LOG(info) << "Stop guest: " << name << " Done.";
-    } else {
         LOG(error) << "Stop guest: " << name << " Failed!";
+        return false;
     }
-    return;
+    LOG(info) << "Stop guest: " << name << " Done.";
+    return true;
 }
 
-static void StartServer(bool daemon) {
+
+static bool GetGuestCid(std::string name) {
+    if (!IsServerRunning()) {
+        LOG(info) << "server is not running! Please start server first!";
+        return false;
+    }
+
+    Client c;
+    CivVmInfo vi = c.GetCivVmInfo(name.c_str());
+    if (vi.state == VmBuilder::VmState::kVmUnknown) {
+        LOG(error) << "Failed to get guest Cid: " << name;
+        return false;
+    }
+    std::cout << vi.cid << std::endl;
+    return true;
+}
+
+static bool StartServer(bool daemon) {
     if (IsServerRunning()) {
         LOG(info) << "Server already running!";
-        return;
+        return false;
     }
 
     if (daemon) {
@@ -146,10 +163,10 @@ static void StartServer(bool daemon) {
         if (ret > 0) {
             LOG(info) << "Starting service as daemon (PID=" << ret << ")";
             LOG(info) << "Log will be redirected to " << log_file;
-            return;
+            return true;
         } else if (ret < 0) {
             LOG(error) << "vm-manager: failed to Daemonize\n";
-            return;
+            return false;
         }
 
         logger::log2file(log_file);
@@ -164,17 +181,22 @@ static void StartServer(bool daemon) {
     LOG(info) << "Starting Server!";
     srv.Start();
 
-    return;
+    return true;
 }
 
-static void StopServer(void) {
+static bool StopServer(void) {
     if (!IsServerRunning()) {
         LOG(info) << "server is not running! Please start server first!";
-        return;
+        return false;
     }
 
     Client c;
-    c.Notify(kCiVMsgStopServer);
+    if (c.Notify(kCiVMsgStopServer)) {
+        if (IsServerRunning())
+            return false;
+        return true;
+    }
+    return false;
 }
 
 namespace po = boost::program_options;
@@ -189,6 +211,7 @@ class CivOptions final {
             ("stop,q",    po::value<std::string>(), "Stop a CiV guest")
             ("flash,f",   po::value<std::string>(), "Flash a CiV guest")
             ("update,u",  po::value<std::string>(), "Update an existing CiV guest")
+            ("get-cid", po::value<std::string>(), "Get cid of a guest")
             ("list,l",    "List existing CiV guest")
             ("version,v", "Show CiV vm-manager version")
             ("start-server",  "Start host server")
@@ -199,75 +222,76 @@ class CivOptions final {
     CivOptions(CivOptions &) = delete;
     CivOptions& operator=(const CivOptions &) = delete;
 
-    void ParseOptions(int argc, char* argv[]) {
+    bool ParseOptions(int argc, char* argv[]) {
         po::store(po::command_line_parser(argc, argv).options(cmdline_options_).run(), vm_);
         po::notify(vm_);
 
         if (vm_.empty()) {
             PrintHelp();
-            return;
+            return false;
         }
 
         if (vm_.count("help")) {
             PrintHelp();
-            return;
+            return true;
         }
 
         if (vm_.count("create")) {
             CivTui ct;
             ct.InitializeUi();
-            return;
+            return true;
         }
 
         if (vm_.count("delete")) {
-            return;
+            return true;
         }
 
         if (vm_.count("start")) {
-            StartGuest(vm_["start"].as<std::string>());
-            return;
+            return StartGuest(vm_["start"].as<std::string>());
         }
 
         if (vm_.count("stop")) {
-            StopGuest(vm_["stop"].as<std::string>());
-            return;
+            return StopGuest(vm_["stop"].as<std::string>());
         }
 
         if (vm_.count("flash")) {
-            return;
+            return false;
         }
 
         if (vm_.count("update")) {
-            return;
+            return false;
+        }
+
+        if (vm_.count("get-cid")) {
+            return GetGuestCid(vm_["get-cid"].as<std::string>());
         }
 
         if (vm_.count("list")) {
-            ListGuest();
-            return;
+            return ListGuest();
         }
 
         if (vm_.count("start-server")) {
             bool daemon = (vm_.count("daemon") == 0) ? false : true;
-            StartServer(daemon);
-            return;
+            return StartServer(daemon);
         }
 
         if (vm_.count("stop-server")) {
-            StopServer();
-            return;
+            return StopServer();
         }
 
         if (vm_.count("version")) {
             PrintVersion();
-            return;
+            return true;
         }
+
+        return false;
     }
 
  private:
     void PrintHelp(void) {
         std::cout << "Usage:\n";
         std::cout << "  vm-manager"
-                  << " [-c] [-d vm_name] [-b vm_name] [-q vm_name] [-f vm_name] [-u vm_name]"
+                  << " [-c] [-d vm_name] [-b vm_name] [-q vm_name] [-f vm_name] [-u vm_name] [--get-cid vm_name]"
                   << " [-l] [-v] [-h]\n";
         std::cout << "Options:\n";
 
@@ -298,7 +322,8 @@ int main(int argc, char *argv[]) {
 
     vm_manager::CivOptions co;
 
-    co.ParseOptions(argc, argv);
+    if (co.ParseOptions(argc, argv))
+        return 0;
 
-    return ret;
+    return -1;
 }

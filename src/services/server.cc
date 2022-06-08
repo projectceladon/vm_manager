@@ -248,6 +248,29 @@ int Server::StartVm(const char payload[]) {
     return -1;
 }
 
+int Server::GetVmInfo(const char payload[]) {
+    boost::interprocess::managed_shared_memory shm(
+        boost::interprocess::open_only,
+        payload);
+
+    std::pair<bstring *, int> vm_name;
+    vm_name = shm.find<bstring>("VmName");
+    size_t id = FindVmInstance(std::string(vm_name.first->c_str()));
+    if (id == -1UL)
+        return -1;
+
+    shm.destroy<bstring>("VmInfo");
+    shm.zero_free_memory();
+
+    CivVmInfo *vm_info = shm.construct<CivVmInfo>
+                ("VmInfo")
+                (0, VmBuilder::VmState::kVmUnknown);
+
+    vm_info->cid = vmis_[id]->GetCid();
+    vm_info->state = vmis_[id]->GetState();
+    return 0;
+}
+
 static void HandleSIG(int num) {
     LOG(info) << "Signal(" << num << ") received!";
     Server::Get().Stop();
@@ -316,6 +339,13 @@ void Server::Start(void) {
                     break;
                 case kCivMsgStopVm:
                     if (StopVm(data.first->payload) == 0) {
+                        data.first->type = kCivMsgRespondSuccess;
+                    } else {
+                        data.first->type = kCivMsgRespondFail;
+                    }
+                    break;
+                case kCivMsgGetVmInfo:
+                    if (GetVmInfo(data.first->payload) == 0) {
                         data.first->type = kCivMsgRespondSuccess;
                     } else {
                         data.first->type = kCivMsgRespondFail;

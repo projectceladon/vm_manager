@@ -16,6 +16,8 @@
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/containers/string.hpp>
 
+#include "guest/vm_builder.h"
+
 namespace vm_manager {
 
 typedef boost::interprocess::allocator<char, boost::interprocess::managed_shared_memory::segment_manager> CharAllocator;
@@ -32,9 +34,16 @@ enum CivMsgType {
     kCivMsgImportVm,
     kCivMsgStartVm,
     kCivMsgStopVm,
+    kCivMsgGetVmInfo,
     kCivMsgTest,
     kCivMsgRespondSuccess = 500U,
     kCivMsgRespondFail,
+};
+
+struct CivVmInfo {
+    unsigned int cid;
+    VmBuilder::VmState state;
+    CivVmInfo(unsigned int c, VmBuilder::VmState s) : cid(c), state(s){}
 };
 
 struct CivMsgSync {

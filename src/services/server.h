@@ -47,6 +47,7 @@ class Server final {
     int ImportVm(const char payload[]);
     int StartVm(const char payload[]);
     int StopVm(const char payload[]);
+    int GetVmInfo(const char payload[]);
 
     void VmThread(VmBuilder *vb, boost::latch *wait_continue);
 
