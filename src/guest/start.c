@@ -380,6 +380,16 @@ static int set_available_vf(void)
 	int i;
 	int ret = 0;
 
+        if ((ret = load_kernel_module("vfio")) != 0) {
+                fprintf(stderr, "errro loading vfio module\n");
+                return -1;
+        }
+
+        if ((ret = load_kernel_module("vfio_pci")) != 0) {
+                fprintf(stderr, "errro loading vfio_pci module\n");
+                return -1;
+        }
+
 	fd = open(INTEL_GPU_DEV_PATH"/sriov_totalvfs", O_RDONLY);
 	if (fd == -1) {
 		fprintf(stderr, "open %s/sriov_totalvfs failed, errno=%d\n", INTEL_GPU_DEV_PATH, errno);
