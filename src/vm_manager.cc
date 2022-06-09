@@ -127,7 +127,7 @@ static bool StopGuest(std::string name) {
 
     Client c;
     c.PrepareStopGuestClientShm(name.c_str());
-    if (c.Notify(kCivMsgStopVm)) {
+    if (!c.Notify(kCivMsgStopVm)) {
         LOG(error) << "Stop guest: " << name << " Failed!";
         return false;
     }

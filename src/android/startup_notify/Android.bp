@@ -65,9 +65,11 @@ cc_binary {
     ],
 
     generated_headers: [
-        "VmHostProtoStub_h",
+        "CivCommonProtoStub_h",
+        "CivVmHostProtoStub_h",
     ],
     generated_sources: [
-        "VmHostProtoStub_cc",
+        "CivCommonProtoStub_cc",
+        "CivVmHostProtoStub_cc",
     ],
 }

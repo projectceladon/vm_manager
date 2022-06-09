@@ -28,6 +28,7 @@
 
 #include "services/server.h"
 #include "services/message.h"
+#include "guest/vm_powerctl.h"
 #include "guest/vm_builder_qemu.h"
 #include "utils/log.h"
 #include "utils/utils.h"
@@ -60,10 +61,20 @@ int Server::StopVm(const char payload[]) {
     std::pair<bstring *, int> vm_name;
     vm_name = shm.find<bstring>("StopVmName");
     size_t id = FindVmInstance(std::string(vm_name.first->c_str()));
+
     if (id != -1UL) {
-        vmis_[id]->StopVm();
+        LOG(info) << "StopVm: " << vmis_[id]->GetName();
+        char listener_address[50] = { 0 };
+        snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u",
+                vmis_[id]->GetCid(),
+        vm_manager::kCivPowerCtlListenerPort);
+        CivVmPowerCtl pm(grpc::CreateChannel(listener_address, grpc::InsecureChannelCredentials()));
+        if (!pm.Shutdown()) {
+            vmis_[id]->StopVm();
+        }
     } else {
         LOG(warning) << "CiV: " << vm_name.first->c_str() << " is not running!";
+        return -1;
     }
     return 0;
 }
@@ -71,7 +82,7 @@ int Server::StopVm(const char payload[]) {
 bool Server::SetupStartupListenerService(void) {
     boost::latch listener_ready(1);
     char listener_address[50] = { 0 };
-    snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u", VMADDR_CID_ANY, kCiVStartupListenerPort);
+    snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u", VMADDR_CID_ANY, kCivStartupListenerPort);
 
     startup_listener_.thread =
         std::make_unique<boost::thread>(RunListenerService,
