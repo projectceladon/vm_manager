@@ -19,6 +19,8 @@ include(BoostCMake)
 include(FTXUICMake)
 include(gRPCFetchCMake)
 
+set(PROTOS_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/services/protos/gens/)
+include_directories(${PROTOS_GEN_DIR})
 add_subdirectory(services/protos)
 
 set(PROJECT_NAME "vm-manager")
@@ -38,7 +40,8 @@ file(GLOB services_src services/*.cc)
 file(GLOB utils_src utils/*.cc)
 
 add_executable(${PROJECT_NAME} vm_manager.cc ${guest_src} ${services_src} ${utils_src})
-add_dependencies(${PROJECT_NAME} vm_host_grpc_proto)
+add_dependencies(${PROJECT_NAME} vm_grpc_proto)
+
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE ftxui::screen
@@ -51,8 +54,7 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE ep_boost::filesystem
   PRIVATE ep_boost::chrono
 
-  #PRIVATE grpc++
-  vm_host_grpc_proto
+  vm_grpc_proto
   PRIVATE ${_REFLECTION}
   PRIVATE ${_GRPC_GRPCPP}
   PRIVATE ${_PROTOBUF_LIBPROTOBUF}

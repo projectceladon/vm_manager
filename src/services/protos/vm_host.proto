@@ -8,7 +8,7 @@ syntax = "proto3";
 
 package vm_manager;
 
-message EmptyMessage {}
+import "common.proto";
 
 // The Startup Listener service definition.
 service StartupListener {

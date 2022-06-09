@@ -11,7 +11,7 @@
 #include <map>
 #include <memory>
 
-#include "services/protos/gens/vm_host.grpc.pb.h"
+#include "vm_host.grpc.pb.h"
 
 namespace vm_manager {
 

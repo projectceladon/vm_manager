@@ -9,7 +9,8 @@
 #ifndef SRC_INCLUDE_CONSTANTS_VM_MANAGER_H_
 #define SRC_INCLUDE_CONSTANTS_VM_MANAGER_H_
 namespace vm_manager {
-    inline constexpr int kCiVStartupListenerPort = 9999U;
+    inline constexpr int kCivStartupListenerPort = 9999U;
+    inline constexpr int kCivPowerCtlListenerPort = 10000U;
 }  // namespace vm_manager
 
 #endif  // SRC_INCLUDE_CONSTANTS_VM_MANAGER_H_

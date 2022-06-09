@@ -46,8 +46,8 @@ int main() {
     char listener_address[50] = { 0 };
     snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u",
                 VMADDR_CID_HOST,
-                vm_manager::kCiVStartupListenerPort);
-    StartupNotify notify(grpc::CreateChannel("vsock:2:9999", grpc::InsecureChannelCredentials()));
+                vm_manager::kCivStartupListenerPort);
+    StartupNotify notify(grpc::CreateChannel(listener_address, grpc::InsecureChannelCredentials()));
     if (!notify.VmReady()) {
         std::cerr << "Failed to notify host that civ is ready!" << std::endl;
         return -1;

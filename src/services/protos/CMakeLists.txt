@@ -8,39 +8,39 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-get_filename_component(vm_host_proto "vm_host.proto" ABSOLUTE)
-get_filename_component(vm_host_proto_path "${vm_host_proto}" PATH)
+file(GLOB CIV_PROTOS "*.proto")
+list(APPEND PROTO_FLAGS -I${CMAKE_CURRENT_SOURCE_DIR})
 
-set(PROTOS_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gens)
+file(REMOVE_RECURSE ${PROTOS_GEN_DIR})
+file(MAKE_DIRECTORY ${PROTOS_GEN_DIR})
 
-set(vm_host_proto_srcs "${PROTOS_GEN_DIR}/vm_host.pb.cc")
-set(vm_host_proto_hdrs "${PROTOS_GEN_DIR}/vm_host.pb.h")
-set(vm_host_grpc_srcs "${PROTOS_GEN_DIR}/vm_host.grpc.pb.cc")
-set(vm_host_grpc_hdrs "${PROTOS_GEN_DIR}/vm_host.grpc.pb.h")
+foreach(FIL ${CIV_PROTOS})
+  get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
+  get_filename_component(FIL_WE ${FIL} NAME_WE)
 
-add_custom_command(
-      OUTPUT "${vm_host_proto_srcs}" "${vm_host_proto_hdrs}" "${vm_host_grpc_srcs}" "${vm_host_grpc_hdrs}"
-      COMMAND ${CMAKE_COMMAND} -E remove_directory ${PROTOS_GEN_DIR}
-      COMMAND ${CMAKE_COMMAND} -E make_directory ${PROTOS_GEN_DIR}
+  list(APPEND CIV_PROTOS_SRCS "${PROTOS_GEN_DIR}/${FIL_WE}.pb.cc")
+  list(APPEND CIV_PROTOS_HDRS "${PROTOS_GEN_DIR}/${FIL_WE}.pb.h")
+  list(APPEND CIV_GRPC_PROTOS_SRCS "${PROTOS_GEN_DIR}/${FIL_WE}.grpc.pb.cc")
+  list(APPEND CIV_GRPC_PROTOS_HDRS "${PROTOS_GEN_DIR}/${FIL_WE}.grpc.pb.h")
+
+  add_custom_command(
+      OUTPUT "${PROTOS_GEN_DIR}/${FIL_WE}.pb.cc"
+             "${PROTOS_GEN_DIR}/${FIL_WE}.pb.h"
+             "${PROTOS_GEN_DIR}/${FIL_WE}.grpc.pb.cc"
+             "${PROTOS_GEN_DIR}/${FIL_WE}.grpc.pb.h"
       COMMAND ${_PROTOBUF_PROTOC}
       ARGS --grpc_out "${PROTOS_GEN_DIR}"
         --cpp_out "${PROTOS_GEN_DIR}"
-        -I "${vm_host_proto_path}"
+        ${PROTO_FLAGS}
         --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
-        "${vm_host_proto}"
-      DEPENDS "${vm_host_proto}")
+        ${FIL})
+endforeach()
 
-# Include generated *.pb.h files
 include_directories("${PROTOS_GEN_DIR}")
+add_library(vm_grpc_proto ${CIV_PROTOS_SRCS} ${CIV_PROTOS_HDRS} ${CIV_GRPC_PROTOS_SRCS} ${CIV_GRPC_PROTOS_HDRS})
 
-# vm_host_grpc_proto
-add_library(vm_host_grpc_proto
-  ${vm_host_grpc_srcs}
-  ${vm_host_grpc_hdrs}
-  ${vm_host_proto_srcs}
-  ${vm_host_proto_hdrs})
-
-target_link_libraries(vm_host_grpc_proto
+target_link_libraries(vm_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
-  ${_PROTOBUF_LIBPROTOBUF})
+  ${_PROTOBUF_LIBPROTOBUF}
+)

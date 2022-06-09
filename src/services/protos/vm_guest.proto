@@ -1,0 +1,17 @@
+//
+// Copyright (c) 2022 Intel Corporation.
+// All rights reserved.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package vm_manager;
+
+import "common.proto";
+
+// The Power Control service definition.
+service CivPowerCtl {
+  // Called by Host to shutdown Guest.
+  rpc Shutdown (EmptyMessage) returns (EmptyMessage);
+}
