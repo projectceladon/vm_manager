@@ -7,7 +7,7 @@
  */
 #include <sys/syslog.h>
 #include <iostream>
-#include <filesystem>
+//#include <filesystem>
 #include <map>
 #include <string>
 
@@ -21,6 +21,7 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 #include "guest/vm_builder.h"
+#include "guest/vm_flash.h"
 #include "guest/tui.h"
 #include "services/server.h"
 #include "services/client.h"
@@ -255,7 +256,8 @@ class CivOptions final {
         }
 
         if (vm_.count("flash")) {
-            return false;
+            VmFlasher f;
+            return f.FlashGuest(vm_["flash"].as<std::string>());
         }
 
         if (vm_.count("update")) {

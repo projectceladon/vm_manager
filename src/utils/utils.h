@@ -17,4 +17,17 @@
 const char *GetConfigPath(void);
 int Daemonize(void);
 
+constexpr std::size_t operator""_KB(unsigned long long v) {
+    return 1024u * v;
+}
+
+constexpr std::size_t operator""_MB(unsigned long long v) {
+    return 1024u * 1024u * v;
+}
+
+constexpr std::size_t operator""_GB(unsigned long long v) {
+    return 1024u * 1024u * 1024u * v;
+}
+
+
 #endif  // SRC_UTILS_UTILS_H_

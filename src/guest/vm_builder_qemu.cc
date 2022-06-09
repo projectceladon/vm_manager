@@ -556,8 +556,8 @@ void VmBuilderQemu::BuildRpmbCmd(void) {
                          " -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1"
                          " -chardev socket,id=rpmb0,path=" +
                            rpmb_data + "/" + std::string(kRpmbSock));
+        co_procs_.emplace_back(std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data)));
     }
-    co_procs_.emplace_back(std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data)));
 }
 
 void VmBuilderQemu::BuildVtpmCmd(void) {
@@ -567,8 +567,9 @@ void VmBuilderQemu::BuildVtpmCmd(void) {
         emul_cmd_.append(" -chardev socket,id=chrtpm,path=" +
                          vtpm_data + "/" + kVtpmSock +
                          " -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0");
+        co_procs_.emplace_back(std::make_unique<VmCoProcVtpm>(std::move(vtpm_bin), std::move(vtpm_data)));
     }
-    co_procs_.emplace_back(std::make_unique<VmCoProcVtpm>(std::move(vtpm_bin), std::move(vtpm_data)));
+
 }
 
 void VmBuilderQemu::BuildAafCfg(void) {
