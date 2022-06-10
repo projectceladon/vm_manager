@@ -7,13 +7,11 @@
  */
 #include <sys/syslog.h>
 #include <iostream>
-//#include <filesystem>
 #include <map>
 #include <string>
 
 #include <boost/program_options.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
-
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <boost/process/environment.hpp>
@@ -205,7 +203,7 @@ class CivOptions final {
  public:
     CivOptions() {
         cmdline_options_.add_options()
-            ("help,h",    "Show ths help message")
+            ("help,h",    "Show this help message")
             ("create,c",  po::value<std::string>(), "Create a CiV guest")
             ("delete,d",  po::value<std::string>(), "Delete a CiV guest")
             ("start,b",   po::value<std::string>(), "Start a CiV guest")

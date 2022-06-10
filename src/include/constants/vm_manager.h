@@ -11,6 +11,7 @@
 namespace vm_manager {
     inline constexpr int kCivStartupListenerPort = 9999U;
     inline constexpr int kCivPowerCtlListenerPort = 10000U;
+    inline constexpr int kCivAppLauncherListenerPort = 10001U;
 }  // namespace vm_manager
 
 #endif  // SRC_INCLUDE_CONSTANTS_VM_MANAGER_H_
