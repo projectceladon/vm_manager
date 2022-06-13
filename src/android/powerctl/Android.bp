@@ -57,8 +57,6 @@ cc_binary {
 
     cflags: CFLAGS,
 
-    vendor: true,
-
     shared_libs: [
         "libgrpc++",
         "libprotobuf-cpp-full",

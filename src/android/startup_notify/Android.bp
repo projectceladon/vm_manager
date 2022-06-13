@@ -48,16 +48,14 @@ CFLAGS = [
 ]
 
 cc_binary {
-    name: "startup_notify",
+    name: "civ_startup_notify",
     srcs: [
-        "startup_notify.cc"
+        "civ_startup_notify.cc"
     ],
 
     include_dirs: INCLUDE_DIR,
 
     cflags: CFLAGS,
-
-    vendor: true,
 
     shared_libs: [
         "libgrpc++",
