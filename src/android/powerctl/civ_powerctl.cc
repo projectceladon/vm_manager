@@ -26,7 +26,7 @@ class CivPowerCtlImpl final : public vm_manager::CivPowerCtl::Service {
 
     grpc::Status Shutdown(grpc::ServerContext* ctx, const vm_manager::EmptyMessage* request, vm_manager::EmptyMessage* respond) override {
         std::cout << "Shutdown Signal from Host!" << std::endl;
-        system("reboot -p shutdown");
+        system("/system/bin/reboot -p shutdown");
         return grpc::Status::OK;
     }
 
