@@ -633,7 +633,7 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
         } else if (vgpu_type.compare(kVgpuRamfb) == 0) {
             emul_cmd_.append(" -device ramfb");
-        } else if (vgpu_type.compare(kVgpuVirtio2D)) {
+        } else if (vgpu_type.compare(kVgpuVirtio2D) == 0) {
             emul_cmd_.append(" -device virtio-vga");
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
