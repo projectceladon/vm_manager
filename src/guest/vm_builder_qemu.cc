@@ -242,8 +242,10 @@ bool VmBuilderQemu::SetupSriov(void) {
     std::string mem_size = cfg_.GetValue(kGroupMem, kMemSize);
     boost::trim(mem_size);
 
-    if (!SetupHugePages(mem_size))
+    if (!SetupHugePages(mem_size)) {
+        LOG(info) << "Failed to setup hugepage for SRIOV!";
         return false;
+    }
     int vf = SetAvailableVf();
     if (vf < 0)
         return false;
@@ -617,7 +619,7 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
                 return false;
             }
             emul_cmd_.append(" -vga none -nographic"
-                " -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on");
+                " -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on -display none");
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "gvtd");
         } else if (vgpu_type.compare(kVgpuVirtio) == 0) {
@@ -638,8 +640,10 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
         } else if (vgpu_type.compare(kVgpuSriov) == 0) {
-            if (!SetupSriov())
+            if (!SetupSriov()) {
+                LOG(error) << "Failed to setup SRIOV!";
                 return false;
+            }
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
         } else {
