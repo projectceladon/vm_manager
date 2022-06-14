@@ -623,10 +623,12 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
         } else if (vgpu_type.compare(kVgpuVirtio) == 0) {
             emul_cmd_.append(" -device virtio-vga-gl");
             std::string outputs = cfg_.GetValue(kGroupVgpu, kVgpuOutputs);
-            std::size_t pos{};
-            int o = std::stoi(outputs, &pos, 10);
-            if (pos == outputs.size())
-                emul_cmd_.append(",max_outputs=" + outputs);
+            if (!outputs.empty()) {
+                std::size_t pos{};
+                int o = std::stoi(outputs, &pos, 10);
+                if (pos == outputs.size())
+                    emul_cmd_.append(",max_outputs=" + outputs);
+            }
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "virtio");
         } else if (vgpu_type.compare(kVgpuRamfb) == 0) {
