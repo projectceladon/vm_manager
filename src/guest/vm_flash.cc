@@ -236,7 +236,7 @@ bool VmFlasher::FlashGuest(std::string path) {
     boost::system::error_code ec;
     boost::filesystem::path p(path);
 
-    if (!boost::filesystem::exists(p, ec)) {
+    if (!boost::filesystem::exists(p, ec) || !boost::filesystem::is_regular_file(p, ec)) {
         p.clear();
         p.assign(GetConfigPath() + std::string("/") + path + ".ini");
         if (!boost::filesystem::exists(p, ec)) {
