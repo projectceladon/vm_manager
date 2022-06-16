@@ -235,6 +235,37 @@ class CivOptions final {
             return true;
         }
 
+        if (vm_.count("version")) {
+            PrintVersion();
+            return true;
+        }
+
+        if (vm_.count("stop-server")) {
+            return StopServer();
+        }
+
+        if (vm_.count("start-server")) {
+            bool daemon = (vm_.count("daemon") == 0) ? false : true;
+            return StartServer(daemon);
+        } else {
+            if (!IsServerRunning()) {
+                LOG(info) << "command: " << boost::filesystem::canonical(argv[0]).c_str();
+                boost::filesystem::path cmd = boost::filesystem::canonical(argv[0]);
+                if (boost::process::system(cmd.c_str(), "--start-server", "--daemon")) {
+                    LOG(error) << "Failed to start server of vm-manager!";
+                    return false;
+                }
+                int wait_cnt = 0;
+                while (!IsServerRunning()) {
+                    if (wait_cnt++ > 100) {
+                        LOG(error) << "Cannot start server!";
+                        return false;
+                    }
+                    boost::this_thread::sleep_for(boost::chrono::microseconds(100));
+                }
+            }
+        }
+
         if (vm_.count("create")) {
             CivTui ct;
             ct.InitializeUi();
@@ -268,20 +299,6 @@ class CivOptions final {
 
         if (vm_.count("list")) {
             return ListGuest();
-        }
-
-        if (vm_.count("start-server")) {
-            bool daemon = (vm_.count("daemon") == 0) ? false : true;
-            return StartServer(daemon);
-        }
-
-        if (vm_.count("stop-server")) {
-            return StopServer();
-        }
-
-        if (vm_.count("version")) {
-            PrintVersion();
-            return true;
         }
 
         return false;
