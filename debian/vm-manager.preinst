@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    upgrade)
+        echo "Try to stop old server!"
+        vm-manager --stop-server || :
+    ;;
+
+    abort-upgrade|install)
+    ;;
+
+    *)
+        echo "preinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
