@@ -249,7 +249,11 @@ class CivOptions final {
             return StartServer(daemon);
         } else {
             if (!IsServerRunning()) {
-                if (boost::process::system(argv[0], "--start-server", "--daemon")) {
+                boost::filesystem::path cmd(argv[0]);
+                if (!boost::filesystem::exists(cmd)) {
+                    cmd.assign(boost::process::search_path(argv[0]));
+                }
+                if (boost::process::system(cmd, "--start-server", "--daemon")) {
                     LOG(error) << "Failed to start server of vm-manager!";
                     return false;
                 }
