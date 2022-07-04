@@ -12,8 +12,8 @@
 #include <map>
 #include <vector>
 #include <string_view>
-#include <filesystem>
 
+#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ini_parser.hpp>
 
@@ -68,12 +68,12 @@ bool CivConfig::SanitizeOpts(void) {
 }
 
 bool CivConfig::ReadConfigFile(std::string path) {
-    if (!std::filesystem::exists(path)) {
+    if (!boost::filesystem::exists(path)) {
         LOG(error) << "File not exists: " << path << std::endl;
         return false;
     }
 
-    if (!std::filesystem::is_regular_file(path)) {
+    if (!boost::filesystem::is_regular_file(path)) {
         LOG(error) << "File is not a regular file: " << path << std::endl;
         return false;
     }
@@ -89,12 +89,12 @@ bool CivConfig::ReadConfigFile(std::string path) {
 }
 
 bool CivConfig::WriteConfigFile(std::string path) {
-    if (!std::filesystem::exists(path)) {
+    if (!boost::filesystem::exists(path)) {
         LOG(error) << "File not exists: " << path << std::endl;
         return false;
     }
 
-    if (!std::filesystem::is_regular_file(path)) {
+    if (!boost::filesystem::is_regular_file(path)) {
         LOG(error) << "File is not a regular file: " << path << std::endl;
         return false;
     }
