@@ -389,14 +389,16 @@ bool VmBuilderQemu::CreateGvtgVgpu(void) {
 
 void VmBuilderQemu::RunMediationSrv(void) {
     std::string batt_med = cfg_.GetValue(kGroupMed, kMedBattery);
-    if (batt_med.empty())
-        return;
-    co_procs_.emplace_back(std::make_unique<VmProcSimple>(batt_med));
+    if (!batt_med.empty())
+        co_procs_.emplace_back(std::make_unique<VmProcSimple>(batt_med));
 
     std::string ther_med = cfg_.GetValue(kGroupMed, kMedThermal);
-    if (ther_med.empty())
-        return;
-    co_procs_.emplace_back(std::make_unique<VmProcSimple>(ther_med));
+    if (!ther_med.empty())
+        co_procs_.emplace_back(std::make_unique<VmProcSimple>(ther_med));
+
+    std::string cam_med = cfg_.GetValue(kGroupMed, kMedCamera);
+    if ((cam_med.size() == 1) && (std::tolower(cam_med[0]) == 'y'))
+        co_procs_.emplace_back(std::make_unique<VmProcSimple>("/usr/local/bin/stream"));
 }
 
 void VmBuilderQemu::BuildGuestTimeKeepCmd(void) {

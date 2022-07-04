@@ -79,6 +79,7 @@ constexpr char kPciPtDev[] = "passthrough_pci";
 
 constexpr char kMedBattery[] = "battery_med";
 constexpr char kMedThermal[] = "thermal_med";
+constexpr char kMedCamera[] = "camera_med";
 
 constexpr char kServTimeKeep[] = "time_keep";
 constexpr char kServPmCtrl[]   = "pm_control";
