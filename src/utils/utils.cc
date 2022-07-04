@@ -14,8 +14,9 @@
 #include <signal.h>
 #include <fcntl.h>
 
-#include <filesystem>
 #include <string>
+
+#include <boost/filesystem.hpp>
 
 #include "utils/utils.h"
 #include "utils/log.h"
@@ -54,8 +55,8 @@ const char *GetConfigPath(void) {
     civ_config_path = new char[MAX_PATH];
     memset(civ_config_path, 0, MAX_PATH);
     snprintf(civ_config_path, MAX_PATH, "%s%s", getpwuid(euid)->pw_dir, "/.intel/.civ");
-    if (!std::filesystem::exists(civ_config_path)) {
-        if (!std::filesystem::create_directories(civ_config_path)) {
+    if (!boost::filesystem::exists(civ_config_path)) {
+        if (!boost::filesystem::create_directories(civ_config_path)) {
             delete[] civ_config_path;
             civ_config_path = NULL;
         }
