@@ -133,7 +133,9 @@ int Server::ImportVm(const char payload[]) {
         return -1;
     }
 
-    std::string vm_name(cfg.GetValue(kGroupGlob, kGlobName));
+    std::vector<std::string> name_param;
+    boost::split(name_param, cfg.GetValue(kGroupGlob, kGlobName), boost::is_any_of(","));
+    const std::string &vm_name = name_param[0];
     if (vm_name.empty())
         return -1;
 
@@ -208,7 +210,9 @@ int Server::StartVm(const char payload[]) {
         return -1;
     }
 
-    std::string vm_name(cfg.GetValue(kGroupGlob, kGlobName));
+    std::vector<std::string> name_param;
+    boost::split(name_param, cfg.GetValue(kGroupGlob, kGlobName), boost::is_any_of(","));
+    const std::string &vm_name = name_param[0];
     if (vm_name.empty())
         return -1;
 
