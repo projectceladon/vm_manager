@@ -15,7 +15,7 @@
 
 namespace vm_manager {
 
-inline constexpr const uint32_t kCivMaxCidNum = 2000U;
+inline constexpr const uint32_t kCivMaxCidNum = 10000U;
 inline constexpr const uint32_t kCiVCidStart = 1000U;
 
 class VsockCidPool {
