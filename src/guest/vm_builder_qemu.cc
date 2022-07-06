@@ -504,7 +504,10 @@ bool VmBuilderQemu::BuildNameQmp(void) {
         return false;
     }
     emul_cmd_.append(" -name " + vm_name);
-    emul_cmd_.append(" -qmp unix:" + std::string(GetConfigPath()) + "/." + vm_name + ".qmp.unix.socket,server,nowait");
+    std::vector<std::string> name_param;
+    boost::split(name_param, vm_name, boost::is_any_of(","));
+    emul_cmd_.append(" -qmp unix:" + std::string(GetConfigPath()) + "/." + name_param[0] +
+                     ".qmp.unix.socket,server,nowait");
     return true;
 }
 
