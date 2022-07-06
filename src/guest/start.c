@@ -902,7 +902,8 @@ int start_guest(char *name)
 	cx = snprintf(p, size, " -name %s", val);
 	p += cx; size -= cx;
 
-	cx = snprintf(p, size, " -qmp unix:%s/.%s"CIV_GUEST_QMP_SUFFIX",server,nowait", civ_config_path, val);
+	char *qname = strtok(val, ",");
+	cx = snprintf(p, size, " -qmp unix:%s/.%s"CIV_GUEST_QMP_SUFFIX",server,nowait", civ_config_path, qname);
 	p += cx; size -= cx;
 
 	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_VSOCK_CID], NULL);
