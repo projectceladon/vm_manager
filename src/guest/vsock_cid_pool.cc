@@ -12,29 +12,29 @@ namespace vm_manager {
 
 uint32_t VsockCidPool::GetCid() {
     std::lock_guard<std::mutex> lock(mutex_);
-    size_t pos = bs_._Find_first();
-    if (pos == kCivMaxCidNum)
+    size_t pos = bs_._Find_next(kCiVCidStart - 1);
+    if (pos == bs_.size())
         return 0;
     bs_.reset(pos);
-    return kCiVCidStart + pos;
+    return pos;
 }
 
 uint32_t VsockCidPool::GetCid(uint32_t cid) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if ((cid < kCiVCidStart) || (cid >= (kCiVCidStart + kCivMaxCidNum)))
+    if ((cid < 3) || (cid >= kCivMaxCidNum))
         return 0;
-    if (!bs_[cid - kCiVCidStart])
+    if (!bs_[cid])
         return 0;
 
-    bs_.reset(cid - kCiVCidStart);
+    bs_.reset(cid);
     return cid;
 }
 
 bool VsockCidPool::ReleaseCid(uint32_t cid) {
-    if ((cid < kCiVCidStart) || (cid >= (kCiVCidStart + kCivMaxCidNum)))
+    if ((cid < 3) || (cid >= kCivMaxCidNum))
         return false;
     std::lock_guard<std::mutex> lock(mutex_);
-    bs_.set(cid - kCiVCidStart);
+    bs_.set(cid);
     return true;
 }
 
