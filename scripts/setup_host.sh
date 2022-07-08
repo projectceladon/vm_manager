@@ -96,20 +96,6 @@ function install_virtual_camera() {
 }
 
 function install_host_service() {
-    wget https://ffmpeg.org/releases/ffmpeg-snapshot.tar.bz2
-    mkdir -p ffmpeg_sources
-    cd ffmpeg_sources && tar xjvf ../ffmpeg-snapshot.tar.bz2
-    cd ffmpeg && PATH="$HOME/bin:$PATH" PKG_CONFIG_PATH="$HOME/ffmpeg_build/lib/pkgconfig" ./configure --prefix="$HOME/ffmpeg_build" --extra-cflags="-I$HOME/ffmpeg_build/include" --extra-libs="-lpthread -lm" --enable-shared && PATH="$HOME/bin:$PATH"
-    make
-    make install
-    hash -r
-    sudo cp -r $HOME/ffmpeg_build/lib/*.* /usr/lib/
-    sudo cp -r $HOME/ffmpeg_build/lib/*.* /usr/local/lib
-    cd ../..
-    sudo rm -rf ffmpeg_sources
-    sudo rm -rf ffmpeg-snapshot.tar.bz2
-    sudo rm -rf $HOME/ffmpeg_build
-
     sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
     sudo apt-get install ffmpeg -y
     sudo apt-get install build-essential clang -y
