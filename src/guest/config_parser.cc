@@ -123,4 +123,17 @@ std::string CivConfig::GetValue(std::string group, std::string key) {
     }
 }
 
+bool CivConfig::SetValue(const std::string group, const std::string key, const std::string value){
+    if (!value.empty()) {
+        try {
+            cfg_data_.put<std::string>(group + "." + key, value);
+        } catch(const std::exception& e) {
+            LOG(warning) << e.what();
+            return false;
+        }
+    }
+    return true;
+}
+
 }  // namespace vm_manager
+
