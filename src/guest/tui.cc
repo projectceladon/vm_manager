@@ -7,13 +7,22 @@
  */
 #include <vector>
 
-#include "guest/tui.h"
-#include "guest/config_parser.h"
-
 #include <boost/process.hpp>
+
+#include "guest/tui.h"
+#include "utils/utils.h"
 
 #define LAYOUT_MIN_WIDTH 60
 #define LAYOUT_MAX_WIDTH 120
+
+namespace vm_manager {
+
+void CivTui::InitName(const std::string& name) {
+    name_ = ftxui::Renderer([name] {
+        return ftxui::hbox(ftxui::hbox(ftxui::text("name") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 18),
+            ftxui::text(": "), ftxui::text(name))); 
+    });
+}
 
 void CivTui::InitCompDisk(void) {
     cdisk_ = ftxui::Renderer(ftxui::Container::Vertical({disk_size_.Get(), disk_path_.Get()}), [&] {
@@ -139,6 +148,7 @@ void CivTui::InitCompPciPt(void) {
 }
 
 void CivTui::InitializeForm(void) {
+    InitName(filename_);
     InitCompDisk();
     InitCompFirm();
     InitCompVgpu();
@@ -147,7 +157,7 @@ void CivTui::InitializeForm(void) {
     InitCompPciPt();
 
     form_ = ftxui::Container::Vertical({
-        name_.Get(),
+        name_,
         flashfiles_.Get(),
         emulator_.Get(),
         memory_.Get(),
@@ -176,8 +186,22 @@ void CivTui::InitializeForm(void) {
 
 void CivTui::InitializeButtons(void) {
     SaveOn = [&]() {
-        screen_.ExitLoopClosure();
-        status_bar_ += "called SaveOn!";
+        std::string configPath = GetConfigPath();
+        std::string filePath = configPath + "/" + filename_ +".ini";
+        if (!boost::filesystem::exists(filePath)) {
+            boost::filesystem::ofstream file(filePath) ;
+            SetConfToPtree();
+            bool writeConfigFile = civ_config_.WriteConfigFile(filePath);
+            if (writeConfigFile) {
+                screen_.ExitLoopClosure()();
+                LOG(info) << "Config saved!" << std::endl;
+            } else {
+                LOG(warning) << "Write config file failue!" << std::endl;
+            }
+            file.close();
+        } else {
+            status_bar_ = "File alreay exist!";
+        }
         screen_.Clear();
     };
 
@@ -189,7 +213,8 @@ void CivTui::InitializeButtons(void) {
     });
 }
 
-void CivTui::InitializeUi(void) {
+void CivTui::InitializeUi(std::string name) {
+    filename_ = name;
     InitializeForm();
     InitializeButtons();
 
@@ -210,4 +235,70 @@ void CivTui::InitializeUi(void) {
 
     screen_.Loop(layout_render);
 }
+
+void CivTui::SetConfToPtree() {
+    civ_config_.SetValue(kGroupGlob, kGlobName, filename_);
+    civ_config_.SetValue(kGroupGlob, kGlobFlashfiles, flashfiles_.GetContent()); 
+
+    civ_config_.SetValue(kGroupEmul, kEmulPath, emulator_.GetContent());
+
+    civ_config_.SetValue(kGroupMem, kMemSize, memory_.GetContent());
+
+    civ_config_.SetValue(kGroupVcpu, kVcpuNum, vcpu_.GetContent());
+
+    civ_config_.SetValue(kGroupDisk, kDiskSize, disk_size_.GetContent());
+    civ_config_.SetValue(kGroupDisk, kDiskPath, disk_path_.GetContent());
+
+    civ_config_.SetValue(kGroupFirm, kFirmType, firmware_type_.at(firmware_type_selected_));
+    if (firmware_type_selected_ == 0) {
+        civ_config_.SetValue(kGroupFirm, kFirmPath, firm_unified_.GetContent()); 
+    } else if (firmware_type_selected_ == 1) {
+        civ_config_.SetValue(kGroupFirm, kFirmCode, firm_splited_code_.GetContent());
+        civ_config_.SetValue(kGroupFirm, kFirmVars, firm_splited_data_.GetContent()); 
+    }
+
+    civ_config_.SetValue(kGroupVgpu, kVgpuType, vgpu_type_.at(vgpu_selected_));
+    if (vgpu_selected_ == 3) {
+        civ_config_.SetValue(kGroupVgpu, kVgpuGvtgVer, gvtg_ver_.at(gvtg_ver_selected_));
+        if (!gvtg_uuid_.GetContent().empty()) {
+            civ_config_.SetValue(kGroupVgpu, kVgpuUuid, gvtg_uuid_.GetContent());
+        }
+    }
+
+    civ_config_.SetValue(kGroupVtpm, kVtpmBinPath, swtpm_bin_.GetContent());
+    civ_config_.SetValue(kGroupVtpm, kVtpmDataDir, swtpm_data_.GetContent());
+
+    civ_config_.SetValue(kGroupRpmb, kVtpmBinPath, rpmb_bin_.GetContent());
+    civ_config_.SetValue(kGroupRpmb, kVtpmDataDir, rpmb_data_.GetContent());
+
+    std::string passthrough;
+    for (std::vector<std::string>::iterator iter = pt_pci_disp_.begin(); iter!=pt_pci_disp_.end(); iter++) {
+        std::string selectItem = *iter;
+        size_t pos = selectItem.find(" ");
+        passthrough += selectItem.substr(0, pos);
+        if (iter!=pt_pci_disp_.end()-1) {
+            passthrough += ',';
+        }
+    }
+
+    civ_config_.SetValue(kGroupPciPt, kPciPtDev, passthrough);
+
+    civ_config_.SetValue(kGroupNet, kNetAdbPort, adb_port_.GetContent());
+
+    civ_config_.SetValue(kGroupNet, kNetFastbootPort, fastboot_port_.GetContent());
+
+    civ_config_.SetValue(kGroupMed, kMedBattery, batt_med_.GetContent());
+    
+    civ_config_.SetValue(kGroupMed, kMedThermal, therm_med_.GetContent());
+
+    civ_config_.SetValue(kGroupAaf, kAafPath, aaf_.GetContent());
+
+    civ_config_.SetValue(kGroupService, kServTimeKeep, tkeep_.GetContent());
+        
+    civ_config_.SetValue(kGroupService, kServPmCtrl, pmctl_.GetContent());
+
+    civ_config_.SetValue(kGroupExtra, kExtraCmd, extra_.GetContent());
+}
+
+}  // namespace vm_manager
 

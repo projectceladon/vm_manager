@@ -13,7 +13,10 @@ int create_tui(void);
 #include <memory>
 #include <string>
 #include <vector>
+#include <fstream>
 
+#include <boost/filesystem.hpp> 
+#include <boost/filesystem/fstream.hpp>
 #include "ftxui/component/captured_mouse.hpp"
 #include "ftxui/component/component.hpp"
 #include "ftxui/component/component_base.hpp"
@@ -22,6 +25,9 @@ int create_tui(void);
 #include "ftxui/dom/elements.hpp"
 #include "ftxui/util/ref.hpp"
 #include "ftxui/screen/terminal.hpp"
+
+#include "config_parser.h"
+#include "utils/log.h"
 
 typedef struct {
     std::string name;
@@ -32,12 +38,16 @@ class InputField {
  public:
     InputField(const char *name, const char *hint)
         :name_(name) {
-        input_ = ftxui::Input(content_, std::string(hint));
+        input_ = ftxui::Input(&content_, std::string(hint));
         wrap_ = ftxui::Renderer(input_, RenderInput);
      }
 
      ftxui::Component Get() {
          return wrap_;
+     }
+     
+     std::string GetContent() {
+        return content_;
      }
 
  private:
@@ -52,18 +62,22 @@ class InputField {
     };
 };
 
+namespace vm_manager {
+
 class CivTui final {
  public:
-    void InitializeUi(void);
+    void InitializeUi(std::string filename);
 
  private:
+    std::string filename_;
     ftxui::ScreenInteractive screen_ = ftxui::ScreenInteractive::Fullscreen();
     ftxui::Component layout_;
     ftxui::Component form_, form_render_, form_main_;
     ftxui::Component buttons_;
 
     /* Field: name */
-    InputField name_ = InputField("name", "instance name");
+    ftxui::Component name_;
+    void InitName(const std::string& name);
 
     /* Field: flashfiles */
     InputField flashfiles_ = InputField("flashfiles", "flashfiles path");
@@ -145,13 +159,17 @@ class CivTui final {
     std::string status_bar_;
 
     /* Buttons */
+    vm_manager::CivConfig civ_config_;
     ftxui::Component save_;
     ftxui::Component exit_;
     std::function<void(void)> SaveOn;
 
     void InitializeForm(void);
     void InitializeButtons(void);
+    void SetConfToPtree();
 };
+
+}  // namespace vm_manager
 
 #endif  // SRC_GUEST_TUI_H_
 

@@ -113,7 +113,7 @@ constexpr char kSuspendDisable[] = "disable";
 class CivConfig final {
  public:
   std::string GetValue(const std::string group, const std::string key);
-  int SetValue(const std::string group, const std::string key, const std::string value);
+  bool SetValue(const std::string group, const std::string key, const std::string value);
   bool ReadConfigFile(const std::string path);
   bool WriteConfigFile(std::string path);
  private:
