@@ -50,6 +50,8 @@ function install_virtual_camera() {
     KERNEL_DIR=/lib/modules/${KERNELRELEASE}/kernel/drivers/media/v4l2-core/
     CURRENT_DIR=`pwd`
 
+    sudo -E apt install linux-headers-`uname -r`
+
     echo "Clean environment..."
     if [ -x v4l2loopback ]; then
         rm -rf v4l2loopback
