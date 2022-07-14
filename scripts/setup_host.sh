@@ -32,7 +32,7 @@ function install_virtualcamera_service() {
     echo -e "After=default.target\n" >> $service_file
     echo "[Service]" >> $service_file
     echo -e "ExecStartPre=/usr/sbin/modprobe v4l2loopback devices=2 video_nr=6,7 card_label=\"VCam0\",\"VCam1\" exclusive_caps=1,1\n" >> $service_file
-    echo -e "ExecStart=/usr/bin/IntelCameraService -i /dev/video0 -o /dev/video6 -o /dev/video7\n" >> $service_file
+    echo -e "ExecStart=/usr/bin/IntelCameraService -i /dev/video0 -o /dev/video6 -o /dev/video7 -w 1920 -h 1080 -f MJPG\n" >> $service_file
     echo -e "SuccessExitStatus=255\n" >> $service_file
     echo -e "Restart=always\n" >> $service_file
     echo -e "RestartSec=10\n" >> $service_file
@@ -86,6 +86,7 @@ function install_virtual_camera() {
     fi
 
     echo "Install IntelCameraService in /usr/bin/ ..."
+    sudo chmod 777 scripts/cam_sharing/IntelCameraService
     sudo cp ./scripts/cam_sharing/IntelCameraService /usr/bin/
 
     echo "Install virtualcamera.service in /lib/systemd/system/ ..."
