@@ -103,6 +103,8 @@ function install_host_service() {
     sudo apt-get install ffmpeg -y
     sudo apt-get install build-essential clang -y
 
+    sudo apt install git
+
     sudo apt-get install --yes cmake
     mkdir -p host_camera
     cd host_camera
