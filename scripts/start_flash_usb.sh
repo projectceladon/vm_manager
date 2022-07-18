@@ -7,7 +7,7 @@
 
 WORK_DIR=$PWD
 
-[ $# -lt 1 ] && echo "Usage: $0 caas-flashfiles-eng-<user>.zip" && exit -1
+[ $# -lt 1 ] && echo "Usage: $0 [caas-flashfiles-<variant>.zip] [caas-flashfile-<variant>.iso] [caas-flashfile-<variant>.iso.zip]" && exit -1
 
 if [ -f android.qcow2 ]
 then
@@ -41,25 +41,34 @@ else
 	qemu-img create -f qcow2 android.qcow2 32G
 fi
 
-[ -d "./flashfiles_decompress" ] && rm -rf "./flashfiles_decompress"
-mkdir ./flashfiles_decompress
-unzip $1 -d ./flashfiles_decompress
+decompress=flashfiles_decompress
+zip_file=$(file $1 | grep -i "Zip archive data")
+if [[ $zip_file != "" ]]; then
+	rm -rf "$decompress" && mkdir $decompress
+	unzip $1 -d $decompress
 
-G_size=$((1<<32))
-for i in `ls ./flashfiles_decompress`;do
-	if [ -f "./flashfiles_decompress/"$i ] && [ "`grep $i ./flashfiles_decompress/installer.cmd`" ]; then
-		size=$(stat -c %s "./flashfiles_decompress/"$i)
-		if [[ $size -gt $G_size ]]; then
-			echo "Split $i due to its size bigger than 4G\n"
-			split --bytes=$((G_size-1)) --numeric-suffixes "./flashfiles_decompress/"$i "./flashfiles_decompress/"$i.part
-			rm "./flashfiles_decompress/"$i
-		fi
+	if [[ -f $decompress/boot.img ]]; then
+		G_size=$((1<<32))
+		for i in `ls $decompress`; do
+			size=$(stat -c %s "$decompress/"$i)
+			if [[ $size -gt $G_size ]]; then
+				echo "Split $i due to its size bigger than 4G"
+				split --bytes=$((G_size-1)) --numeric-suffixes "$decompress/"$i "$decompress/"$i.part
+				rm "$decompress/"$i
+			fi
+		done
+
+		dd if=/dev/zero of=./flash.vfat bs=63M count=160
+		mkfs.vfat ./flash.vfat
+		mcopy -i flash.vfat $decompress/* ::
+
+		virt_disk=flash.vfat
+	else
+		virt_disk=$decompress/`ls $decompress`
 	fi
-done
-
-dd if=/dev/zero of=./flash.vfat bs=63M count=160
-mkfs.vfat ./flash.vfat
-mcopy -i flash.vfat flashfiles_decompress/* ::
+else
+	virt_disk=$1
+fi
 
 if [ "$support_dedicated_data" = true ]
 then
@@ -90,7 +99,7 @@ qemu-system-x86_64 \
   -chardev socket,id=charserial0,path=./kernel-console,server=on,wait=off \
   -device isa-serial,chardev=charserial0,id=serial0 \
   -device qemu-xhci,id=xhci,addr=0x5 \
-  -drive file=./flash.vfat,id=udisk1,format=raw,if=none \
+  -drive file=$virt_disk,id=udisk1,format=raw,if=none \
   -device usb-storage,drive=udisk1,bus=xhci.0 \
   -device virtio-scsi-pci,id=scsi0,addr=0x8 \
   -drive file=./android.qcow2,if=none,format=qcow2,id=scsidisk1 \
