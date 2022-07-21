@@ -110,7 +110,7 @@ function install_host_service() {
     cd host_camera
     git clone https://github.com/projectceladon/host-camera-server.git
     cd host-camera-server
-    git checkout b715695dc2e47eaf2a7d275093419394efe0a7c3
+    git checkout 915388bd22d1582d44fb22dc647bd46a6ab675bc
     mkdir build
     cd build
     cmake ..
