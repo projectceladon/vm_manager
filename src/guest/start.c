@@ -404,8 +404,6 @@ static int set_available_vf(void)
 	}
 	close(fd);
 	total_vfs = strtoul(buf, NULL, 10);
-	/* Limit total VFs to conserve memory */
-	total_vfs = total_vfs > 4 ? 4 : total_vfs;
 
 	memset(buf, 0, sizeof(buf));
 	snprintf(buf, sizeof(buf), "%d", total_vfs);
