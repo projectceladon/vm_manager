@@ -514,7 +514,7 @@ bool VmBuilderQemu::BuildNameQmp(void) {
 void VmBuilderQemu::BuildNetCmd(void) {
     std::string model = cfg_.GetValue(kGroupNet, kNetModel);
     if (model.empty())
-        return;
+        model = "e1000";
 
     std::string net_arg = " -netdev user,id=net0";
     std::string adb_port = cfg_.GetValue(kGroupNet, kNetAdbPort);
@@ -525,7 +525,7 @@ void VmBuilderQemu::BuildNetCmd(void) {
         net_arg.append(",hostfwd=tcp::" + fb_port + "-:5554");
 
     emul_cmd_.append(net_arg);
-    emul_cmd_.append(" -device e1000,netdev=net0,bus=pcie.0,addr=0xA");
+    emul_cmd_.append(" -device "+ model + ",netdev=net0,bus=pcie.0,addr=0xA");
 }
 
 bool VmBuilderQemu::BuildVsockCmd(void) {
