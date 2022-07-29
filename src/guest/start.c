@@ -373,7 +373,7 @@ static int setup_hugepages(GKeyFile *gkf)
 static int set_available_vf(void)
 {
 	int fd = 0;
-	int total_vfs = 0;
+	int total_vfs = 0, numvfs = 0;
 	int dev_id = 0;
 	ssize_t n = 0;
 	char buf[64] = { 0 };
@@ -405,57 +405,78 @@ static int set_available_vf(void)
 	close(fd);
 	total_vfs = strtoul(buf, NULL, 10);
 
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "%d", total_vfs);
+	if (total_vfs == 0) {
+		fprintf(stderr, "Error: total number of supported VFs is 0");
+		return -1;
+	}
 
-	if (write_to_file(INTEL_GPU_DEV_PATH"/sriov_drivers_autoprobe", "0")) {
+	fd = open("/sys/class/drm/card0/device/sriov_numvfs", O_RDONLY);
+        if (fd == -1) {
+                fprintf(stderr, "open /sys/class/drm/card0/device/sriov_numvfs, errno=%d\n", errno);
+                return 0;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        if (n == -1) {
+                fprintf(stderr, "read /sys/class/drm/card0/device//sriov_numvfs failed, errno=%d\n", errno);
+                close(fd);
+                return 0;
+        }
+        close(fd);
+        numvfs = strtoul(buf, NULL, 10);
+
+	if (numvfs < total_vfs) {
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), "%d", total_vfs);
+
+		if (write_to_file(INTEL_GPU_DEV_PATH"/sriov_drivers_autoprobe", "0")) {
 		fprintf(stderr, "Unable to de-probe sriov drivers");
-		return -1;
-	}
+			return -1;
+		}
 
-	if (write_to_file("/sys/class/drm/card0/device/sriov_numvfs", buf)) {
-		fprintf(stderr, "Unable to de-probe sriov drivers");
-		return -1;
-	}
+		if (write_to_file("/sys/class/drm/card0/device/sriov_numvfs", buf)) {
+			fprintf(stderr, "Unable to de-probe sriov drivers");
+			return -1;
+		}
 
-	if (write_to_file(INTEL_GPU_DEV_PATH"/sriov_drivers_autoprobe", "1")) {
-		fprintf(stderr, "Unable to auto-probe sriov drivers");
-		return -1;
-	}
+		if (write_to_file(INTEL_GPU_DEV_PATH"/sriov_drivers_autoprobe", "1")) {
+			fprintf(stderr, "Unable to auto-probe sriov drivers");
+			return -1;
+		}
 
-	/* Get device ID */
-	fd = open(INTEL_GPU_DEV_PATH"/device", O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "open %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/device", errno);
-		return -1;
-	}
+		/* Get device ID */
+		fd = open(INTEL_GPU_DEV_PATH"/device", O_RDONLY);
+		if (fd == -1) {
+			fprintf(stderr, "open %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/device", errno);
+			return -1;
+		}
 
-	n = read(fd, buf, sizeof(buf));
-	if (n == -1) {
-		fprintf(stderr, "read %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/device", errno);
+		n = read(fd, buf, sizeof(buf));
+		if (n == -1) {
+			fprintf(stderr, "read %s failed, errno=%d\n", INTEL_GPU_DEV_PATH"/device", errno);
+			close(fd);
+			return -1;
+		}
 		close(fd);
-		return -1;
-	}
-	close(fd);
-	dev_id = strtol(buf, NULL, 16);
+		dev_id = strtol(buf, NULL, 16);
 
+		memset(buf, 0, sizeof(buf));
+		snprintf(buf, sizeof(buf), "8086 %x", dev_id);
 
-	memset(buf, 0, sizeof(buf));
-	snprintf(buf, sizeof(buf), "8086 %x", dev_id);
-
-	/* Create new vfio id for GPU */
-	ret = write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf);
-	if (ret == EEXIST) {
-		if (write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buf)) {
-			fprintf(stderr, "Cannot remove original GPU vfio id\n");
+		/* Create new vfio id for GPU */
+		ret = write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf);
+		if (ret == EEXIST) {
+			if (write_to_file("/sys/bus/pci/drivers/vfio-pci/remove_id", buf)) {
+				fprintf(stderr, "Cannot remove original GPU vfio id\n");
+				return -1;
+			}
+			if (write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf)) {
+				fprintf(stderr, "Cannot add new GPU vfio id\n");
+				return -1;
+			}
+		} else if (ret != 0) {
 			return -1;
 		}
-		if (write_to_file(PCI_DRIVER_PATH"vfio-pci/new_id", buf)) {
-			fprintf(stderr, "Cannot add new GPU vfio id\n");
-			return -1;
-		}
-	} else if (ret != 0) {
-		return -1;
 	}
 
 	for (i = 1; i < total_vfs; i++) {
