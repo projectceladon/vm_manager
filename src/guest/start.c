@@ -377,6 +377,7 @@ static int set_available_vf(void)
 	int dev_id = 0;
 	ssize_t n = 0;
 	char buf[64] = { 0 };
+	char timeout_file[64] = { 0 };
 	int i;
 	int ret = 0;
 
@@ -479,7 +480,7 @@ static int set_available_vf(void)
 		}
 	}
 
-	for (i = 1; i < total_vfs; i++) {
+	for (i = 1; i < numvfs; i++) {
 		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), "/sys/bus/pci/devices/0000:00:02.%d/enable", i);
 		fd = open(buf, O_RDONLY);
@@ -497,6 +498,13 @@ static int set_available_vf(void)
 		}
 		close(fd);
 		if (strtol(buf, NULL, 10) == 0) {
+			//Configure timeout values
+			snprintf(timeout_file, sizeof(timeout_file), "/sys/class/drm/card0/iov/vf%d/gt/preempt_timeout_us", i);
+			snprintf(buf, sizeof(buf), "%d", 50000);
+			write_to_file(timeout_file, buf);
+			snprintf(timeout_file, sizeof(timeout_file), "/sys/class/drm/card0/iov/vf%d/gt/exec_quantum_ms", i);
+			snprintf(buf, sizeof(buf), "%d", 25);
+			write_to_file(timeout_file, buf);
 			return i;
 		}
 	}
