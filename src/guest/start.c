@@ -579,6 +579,55 @@ static void cleanup_passthrough(void) {
 	}
 }
 
+static void cleanup_hugepages(void) {
+	int free_hugepg = 0;
+        int nr_hugepg = 0;
+	char buf[64] = { 0 };
+	int fd = 0;
+        ssize_t n = 0;
+
+	/* Get free hugepages */
+        fd = open("/sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages", O_RDONLY);
+        if (fd == -1) {
+                fprintf(stderr, "open /sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages failed, errno=%d\n", errno);
+                return;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        if (n == -1) {
+                fprintf(stderr, "read /sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages failed, errno=%d\n", errno);
+                close(fd);
+                return;
+        }
+        close(fd);
+        free_hugepg = strtoul(buf, NULL, 10);
+
+	/* Get nr hugepages */
+        fd = open("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages", O_RDONLY);
+        if (fd == -1) {
+                fprintf(stderr, "open /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages failed, errno=%d\n", errno);
+                return;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        if (n == -1) {
+                fprintf(stderr, "read /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages failed, errno=%d\n", errno);
+                close(fd);
+                return;
+        }
+        close(fd);
+        nr_hugepg = strtoul(buf, NULL, 10);
+
+	if (free_hugepg == nr_hugepg) {
+		fprintf(stderr, "Restoring hugepages.\n");
+		snprintf(buf, sizeof(buf), "%d", 0);
+		if (write_to_file("/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages", buf)) {
+			fprintf(stderr, "Failed to write /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages!\n");
+			return;
+	        }
+	}
+}
+
 static int check_soundcard_on_host(){
         int ret = system("cat /proc/asound/cards | grep sof");
         return ret;
@@ -599,7 +648,7 @@ static void cleanup(int num, int removed_sof_tgl_snd_module)
 	cleanup_passthrough();
 	if(removed_sof_tgl_snd_module)
 		insert_sof_tgl_snd_module();
-
+	cleanup_hugepages();
 	exit(130);
 }
 
