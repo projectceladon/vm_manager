@@ -67,12 +67,11 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
     }
 
     if (file.extension().compare(".zip") != 0) {
-        LOG(error) << "Flashfile is not zip file: " << file.c_str();
-        return false;
+        virtual_disk_ = file.string();
+        return true;
     }
 
     boost::filesystem::path o_dir("/tmp/" + file.stem().string());
-
     std::error_code ec;
     std::string cmd;
     if (boost::filesystem::exists(o_dir)) {
@@ -89,44 +88,59 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
         return false;
     }
 
-    if (!CheckImages(o_dir))
-        return false;
+    boost::filesystem::path boot_file(o_dir.string() + "/boot.img");
+    if (boost::filesystem::exists(boot_file)) {
+        if (!CheckImages(o_dir))
+            return false;
 
-    cmd.assign("dd if=/dev/zero of=" + std::string(kVirtualUsbDiskPath) +
-               " bs=" + std::to_string(kDdBs) +
-               " count=" + std::to_string((total_image_size_ + 1_GB + kDdBs - 1)/kDdBs));
-    LOG(info) << cmd;
-    if (boost::process::system(cmd)) {
-        LOG(error) << "Failed to : " << cmd;
-        return false;
-    }
+        cmd.assign("dd if=/dev/zero of=" + std::string(kVirtualUsbDiskPath) +
+                " bs=" + std::to_string(kDdBs) +
+                " count=" + std::to_string((total_image_size_ + 1_GB + kDdBs - 1)/kDdBs));
+        LOG(info) << cmd;
+        if (boost::process::system(cmd)) {
+            LOG(error) << "Failed to : " << cmd;
+            return false;
+        }
 
-    cmd.assign("mkfs.vfat " + std::string(kVirtualUsbDiskPath));
-    LOG(info) << cmd;
-    if (boost::process::system(cmd)) {
-        LOG(error) << "Failed to : " << cmd;
-        return false;
-    }
+        cmd.assign("mkfs.vfat " + std::string(kVirtualUsbDiskPath));
+        LOG(info) << cmd;
+        if (boost::process::system(cmd)) {
+            LOG(error) << "Failed to : " << cmd;
+            return false;
+        }
 
-    boost::filesystem::directory_iterator end_itr;
-    for (boost::filesystem::directory_iterator ditr(o_dir); ditr != end_itr; ++ditr) {
-        if (boost::filesystem::is_regular_file(ditr->path(), bec)) {
-            cmd.assign("mcopy -o -n -i " + std::string(kVirtualUsbDiskPath) + " " + ditr->path().string() + " ::");
-            LOG(info) << cmd;
-            if (boost::process::system(cmd)) {
-                LOG(error) << "Failed to : " << cmd;
-                return false;
+        boost::filesystem::directory_iterator end_itr;
+        for (boost::filesystem::directory_iterator ditr(o_dir); ditr != end_itr; ++ditr) {
+            if (boost::filesystem::is_regular_file(ditr->path(), bec)) {
+                cmd.assign("mcopy -o -n -i " + std::string(kVirtualUsbDiskPath) + " " + ditr->path().string() + " ::");
+                LOG(info) << cmd;
+                if (boost::process::system(cmd)) {
+                    LOG(error) << "Failed to : " << cmd;
+                    return false;
+                }
             }
         }
-    }
+        cmd.assign("rm -r " + o_dir.string());
+        LOG(info) << cmd;
+        if (boost::process::system(cmd)) {
+            LOG(warning) << "Failed to : " << cmd;
+        }
 
-    cmd.assign("rm -r " + o_dir.string());
-    LOG(info) << cmd;
-    if (boost::process::system(cmd)) {
-        LOG(warning) << "Failed to : " << cmd;
-    }
+        virtual_disk_ = kVirtualUsbDiskPath;
+        return true;
+    } 
 
-    return true;
+    int count = 0;
+    for (auto& p : boost::filesystem::directory_iterator(o_dir)) {
+        if (++count >1)
+            return false;
+    }
+    if (count == 1) {
+        virtual_disk_ = o_dir.string() + "/" + file.stem().string();
+        return true;
+    }
+    
+    return false;
 }
 
 bool VmFlasher::QemuCreateVirtualDisk(void) {
@@ -213,7 +227,7 @@ bool VmFlasher::FlashWithQemu(void) {
         " -no-reboot"
         " -nographic -display none -serial mon:stdio"
         " -boot menu=on,splash-time=5000,strict=on "
-        " -drive id=udisk1,format=raw,if=none,file=" + std::string(kVirtualUsbDiskPath) +
+        " -drive id=udisk1,format=raw,if=none,file=" + virtual_disk_ +
         " -device usb-storage,drive=udisk1,bus=xhci.0"
         " -nodefaults");
 

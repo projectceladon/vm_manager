@@ -29,6 +29,7 @@ class VmFlasher final {
 
  private:
     size_t total_image_size_ = 0;
+    std::string virtual_disk_;
     CivConfig cfg_;
 };
 
