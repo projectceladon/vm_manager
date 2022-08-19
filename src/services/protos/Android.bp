@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+genrule {
+    name: "CivCommonProtoStub_h",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "common.proto",
+    ],
+    out: [
+        "common.pb.h",
+        "common.grpc.pb.h",
+    ],
+}
+
+genrule {
+    name: "CivCommonProtoStub_cc",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "common.proto",
+    ],
+    out: [
+        "common.pb.cc",
+        "common.grpc.pb.cc",
+    ],
+}
+
+genrule {
+    name: "CivVmHostProtoStub_h",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "vm_host.proto",
+    ],
+    out: [
+        "vm_host.pb.h",
+        "vm_host.grpc.pb.h",
+    ],
+}
+
+genrule {
+    name: "CivVmHostProtoStub_cc",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "vm_host.proto",
+    ],
+    out: [
+        "vm_host.pb.cc",
+        "vm_host.grpc.pb.cc",
+    ],
+}
+
+genrule {
+    name: "CivVmGuestProtoStub_h",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "vm_guest.proto",
+    ],
+    out: [
+        "vm_guest.pb.h",
+        "vm_guest.grpc.pb.h",
+    ],
+}
+
+genrule {
+    name: "CivVmGuestProtoStub_cc",
+    tools: [
+        "aprotoc",
+        "protoc-gen-grpc-cpp-plugin",
+    ],
+    cmd: "$(location aprotoc) -I$$(dirname $(in)) -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-cpp-plugin) $(in) --grpc_out=$(genDir) --cpp_out=$(genDir)",
+    srcs: [
+        "vm_guest.proto",
+    ],
+    out: [
+        "vm_guest.pb.cc",
+        "vm_guest.grpc.pb.cc",
+    ],
+}

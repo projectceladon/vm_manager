@@ -1,0 +1,18 @@
+//
+// Copyright (c) 2022 Intel Corporation.
+// All rights reserved.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package vm_manager;
+
+import "common.proto";
+
+// The Startup Listener service definition.
+service StartupListener {
+  // Called by each VM when it starts up to indicate that it is ready to handle
+  // incoming requests.
+  rpc VmReady (EmptyMessage) returns (EmptyMessage);
+}

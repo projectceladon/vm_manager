@@ -6,10 +6,14 @@ Quick start:
 ------------
 
 [Install dependencies]
-sudo apt-get install build-essential libglib2.0-dev libncurses-dev uuid-dev libjson-c-dev
+sudo apt-get install build-essential autoconf libtool pkg-config cmake
+
+[Configure]
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
 
 [Build]
-make
+make -j
 
 [Install]
 sudo make install
@@ -19,10 +23,10 @@ Build deb packages:
 -------------------
 
 [Install dependencies]
-sudo apt-get install build-essential libglib2.0-dev libncurses-dev uuid-dev libjson-c-dev dev devscripts build-essential lintian debhelper
+sudo apt-get install build-essential cmake dev devscripts lintian debhelper
 
 [Build]
-debuild -b #vm-manager_x.x.x_amd64.deb will be generated at parent directory
+debuild --preserve-env -b -uc -us --lintian-opts --profile debian #vm-manager_x.x.x_amd64.deb will be generated at parent directory
 
 [Install]
 dpkg -i vm-manager_x.x.x_amd64.deb

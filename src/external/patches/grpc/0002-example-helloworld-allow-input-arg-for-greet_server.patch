@@ -1,0 +1,59 @@
+From d23ab41e36953946c9ba6add3a5f5daf67b520bc Mon Sep 17 00:00:00 2001
+From: "Qi, Yadong" <yadong.qi@intel.com>
+Date: Mon, 19 Jul 2021 08:01:08 +0000
+Subject: [PATCH 2/2] example: helloworld: allow input arg for greet_server
+
+allow input args for greet_server.
+
+Signed-off-by: Qi, Yadong <yadong.qi@intel.com>
+---
+ examples/cpp/helloworld/greeter_server.cc | 26 ++++++++++++++++++++---
+ 1 file changed, 23 insertions(+), 3 deletions(-)
+
+diff --git a/examples/cpp/helloworld/greeter_server.cc b/examples/cpp/helloworld/greeter_server.cc
+index 560b8b4282..d2c4f3f42f 100644
+--- a/examples/cpp/helloworld/greeter_server.cc
++++ b/examples/cpp/helloworld/greeter_server.cc
+@@ -48,8 +48,7 @@ class GreeterServiceImpl final : public Greeter::Service {
+   }
+ };
+ 
+-void RunServer() {
+-  std::string server_address("0.0.0.0:50051");
++void RunServer(std::string server_address) {
+   GreeterServiceImpl service;
+ 
+   grpc::EnableDefaultHealthCheckService(true);
+@@ -70,7 +69,28 @@ void RunServer() {
+ }
+ 
+ int main(int argc, char** argv) {
+-  RunServer();
++  std::string server_str;
++  std::string arg_str("--server");
++  if (argc > 1) {
++    std::string arg_val = argv[1];
++    size_t start_pos = arg_val.find(arg_str);
++    if (start_pos != std::string::npos) {
++      start_pos += arg_str.size();
++      if (arg_val[start_pos] == '=') {
++        server_str = arg_val.substr(start_pos + 1);
++      } else {
++        std::cout << "The only correct argument syntax is --server="
++                  << std::endl;
++        return 0;
++      }
++    } else {
++      std::cout << "The only acceptable argument is --server=" << std::endl;
++      return 0;
++    }
++  } else {
++    server_str = "0.0.0.0:50051";
++  }
++  RunServer(server_str);
+ 
+   return 0;
+ }
+-- 
+2.25.1
+

@@ -23,35 +23,29 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+      with:
+        path: vm-manager
+
+    - run: |
+       export CC=/usr/bin/clang
+       export CXX=/usr/bin/clang++
+       mkdir vm-manager/build/
+       cd vm-manager/build/
+       cmake -DCMAKE_BUILD_TYPE=Release ..
+       cmake --build . --config Release
+       cd -
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        queries: security-extended,security-and-quality
+        #queries: security-extended,security-and-quality
 
-    # Install dependencies
     - run: |
-       sudo apt-get --quiet update --yes
-       sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
-
-    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see below)
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
-
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 https://git.io/JvXDl
-
-    # ✏️ If the Autobuild fails above, remove it and uncomment the following three lines
-    #    and modify them (or add more) to build your code if your project
-    #    uses a compiled language
-    #- run: |
-    #   sudo apt-get --quiet update --yes
-    #   sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
-    #   make
-    #   make release
+       cd vm-manager/build/
+       find src/CMakeFiles/vm-manager.dir/ -iname *.o |xargs rm
+       cmake --build . --config Release
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2

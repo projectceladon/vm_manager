@@ -1,16 +1,14 @@
 #!/usr/bin/make -f
 export DH_VERBOSE = 1
-export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all,-format
 export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
-export BUILD_DIR=$(CURDIR)/debian/build
-
 %:
-	dh $@
+	dh $@ --parallel
 
-override_dh_auto_build:
-	make -j1
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_BUILD_TYPE=Release
 
 override_dh_auto_install:
 	dh_auto_install -- prefix=/usr
@@ -20,4 +18,3 @@ override_dh_installudev:
 
 override_dh_clean:
 	dh_clean
-	rm -rf $(BUILD_DIR)

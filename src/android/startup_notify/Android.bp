@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+INCLUDE_DIR = [
+    "external/grpc-grpc",
+    "external/grpc-grpc/include",
+    "external/grpc-grpc/third_party/cares",
+    "external/grpc-grpc/third_party/cares/config_android",
+    "external/grpc-grpc/src/core/ext/filters/client_channel",
+    "external/grpc-grpc/third_party/nanopb",
+    "external/protobuf",
+    "external/protobuf/src",
+    "external/protobuf/config",
+    "external/protobuf/android",
+    "device/intel/civ/host/vm-manager/src/include/constants"
+]
+
+CFLAGS = [
+    "-fexceptions",
+    "-std=c++11",
+    "-fPIE",
+    "-Wall",
+    "-Wno-unused-variable",
+    "-Wno-unused-parameter",
+    "-Wno-non-virtual-dtor",
+    "-Wno-missing-field-initializers",
+    "-Wno-error",
+    "-Wextra",
+    "-Wno-extern-c-compat",
+    "-Wno-sign-compare",
+    "-Wno-unused-local-typedef",
+    "-Wno-unused-private-field",
+    "-Wno-invalid-partial-specialization",
+    "-Wno-array-bounds",
+    "-D_FORTIFY_SOURCE=2",
+    "-fvisibility=default",
+    "-fwrapv",
+    "-fstack-protector-all",
+    "-Wno-conversion-null",
+    "-Wnull-dereference",
+    "-Warray-bounds",
+    "-O2",
+    "-fPIC",
+]
+
+cc_binary {
+    name: "civ_startup_notify",
+    srcs: [
+        "civ_startup_notify.cc"
+    ],
+
+    include_dirs: INCLUDE_DIR,
+
+    cflags: CFLAGS,
+
+    shared_libs: [
+        "libgrpc++",
+        "libprotobuf-cpp-full"
+    ],
+
+    generated_headers: [
+        "CivCommonProtoStub_h",
+        "CivVmHostProtoStub_h",
+    ],
+    generated_sources: [
+        "CivCommonProtoStub_cc",
+        "CivVmHostProtoStub_cc",
+    ],
+}
