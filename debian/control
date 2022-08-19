@@ -5,10 +5,6 @@ Maintainer: Qi, Yadong <yadong.qi@intel.com>
 Build-Depends:
  debhelper (>=9),
  gcc,
- libncurses-dev,
- uuid-dev,
- libglib2.0-dev,
- libjson-c-dev
 Standards-Version: 3.9.8
 Homepage: http://github.com/projectceladon/vm_manager
 
@@ -16,10 +12,6 @@ Package: vm-manager
 Architecture: any-amd64
 Multi-Arch: foreign
 Depends:
- libncurses-dev,
- uuid-dev,
- libglib2.0-dev,
- libjson-c-dev,
  ${misc:Depends},
  ${shlibs:Depends}
 Description: CiV VM Manager

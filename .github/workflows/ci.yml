@@ -6,10 +6,12 @@ jobs:
   build_ubuntu_gcc:
 
     runs-on: ${{ matrix.os }}
+    env:
+      LOCAL_INSTALL_DIR: ${{ github.workspace }}/.local
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+        os: [ubuntu-20.04]
 
     steps:
       - uses: actions/checkout@v2
@@ -19,19 +21,29 @@ jobs:
       - name: setup
         run: |
           sudo apt-get --quiet update --yes
-          sudo apt-get --quiet install --yes make libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev devscripts build-essential lintian debhelper
+          sudo apt-get --quiet install --yes make devscripts lintian debhelper
+          sudo apt-get --quiet install --yes autoconf libtool pkg-config
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          gcc --version
+          cmake --version
+          which cmake
 
       - name: build
         run: |
+          export PATH="${{ env.LOCAL_INSTALL_DIR }}/bin:$PATH"
+          sudo ln -s $(which cmake) /usr/bin/cmake || echo ""
           cd vm-manager/
-          debuild -b -uc -us --lintian-opts --profile debian
+          export CC=/usr/bin/clang
+          export CXX=/usr/bin/clang++
+          debuild --preserve-env -b -uc -us --lintian-opts --profile debian
 
       - name: artifacts
         uses: actions/upload-artifact@v2
         with:
           name: vm-manager.${{ matrix.os }}.${{ github.run_id }}.${{ github.sha }}
           path: |
-            debian/
+            ${{ github.workspace }}/vm-manager/debian/
             *.deb
             *.ddeb
             *.build

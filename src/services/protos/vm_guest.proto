@@ -1,0 +1,39 @@
+//
+// Copyright (c) 2022 Intel Corporation.
+// All rights reserved.
+//
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package vm_manager;
+
+import "common.proto";
+
+// The Power Control service definition.
+service CivPowerCtl {
+  // Called by Host to shutdown Guest.
+  rpc Shutdown (EmptyMessage) returns (EmptyMessage);
+}
+
+message AppLaunchRequest {
+  string app_name = 1;
+  uint32 disp_id = 2;
+}
+
+enum AppStatus {
+  UNKNOWN = 0;
+  LAUNCHED = 1;
+  EXITED = 2;
+  FAILED = 3;
+}
+
+message AppLaunchResponse {
+  AppStatus status = 1;
+  sint32 code = 2;
+}
+
+service CivAppLauncher {
+  // Called by Host to launch app in guest
+  rpc LaunchApp (AppLaunchRequest) returns (AppLaunchResponse);
+}
