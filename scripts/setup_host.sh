@@ -177,10 +177,6 @@ function ubu_install_qemu_gvt(){
         done
     fi
 
-    if [[ $(lsb_release -rs) == "22.04" ]]; then
-	git apply $CIV_WORK_DIR/patches/qemu/gcc_11/0034-Fix_VLA_parameter_warning.patch
-    fi
-
     ./configure --prefix=/usr \
         --enable-kvm \
         --disable-xen \
