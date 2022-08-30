@@ -21,14 +21,19 @@ jobs:
       - name: setup
         run: |
           sudo apt-get --quiet update --yes
-          sudo apt-get --quiet install --yes make devscripts build-essential lintian debhelper
+          sudo apt-get --quiet install --yes cmake make devscripts lintian debhelper
+          sudo apt-get --quiet install --yes autoconf libtool pkg-config 
 
       - name: Set release version
         run: echo "REL_VER=${GITHUB_REF##*/}" >> $GITHUB_ENV
 
       - name: build
         run: |
+          export PATH="${{ env.LOCAL_INSTALL_DIR }}/bin:$PATH"
+          sudo ln -s $(which cmake) /usr/bin/cmake || echo ""
           cd vm-manager/
+          export CC=/usr/bin/clang
+          export CXX=/usr/bin/clang++
           debuild --preserve-env -b -uc -us --lintian-opts --profile debian
           cp $(realpath ../*.deb) vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
 
