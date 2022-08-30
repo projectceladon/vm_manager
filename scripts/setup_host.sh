@@ -146,6 +146,10 @@ function ubu_changes_require(){
 function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
+<<<<<<< HEAD
+=======
+    
+>>>>>>> ec77a1d (Update setup with support for Ubuntu 22.04)
     if [[ $(lsb_release -rs) == "22.04" ]]; then
         sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python2-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev
     else
@@ -178,6 +182,10 @@ function ubu_install_qemu_gvt(){
             echo "applying qemu patch $i"
             patch -p1 < $i
         done
+    fi
+
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	git apply $CIV_WORK_DIR/patches/qemu/gcc_11/0034-Fix_VLA_parameter_warning.patch
     fi
 
     ./configure --prefix=/usr \
