@@ -99,7 +99,11 @@ function install_virtual_camera() {
 }
 
 function install_host_service() {
-    sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavdevice-dev -y
+    else
+	sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
+    fi
     sudo apt-get install ffmpeg -y
     sudo apt-get install build-essential clang -y
 
@@ -111,6 +115,9 @@ function install_host_service() {
     git clone https://github.com/projectceladon/host-camera-server.git
     cd host-camera-server
     git checkout b715695dc2e47eaf2a7d275093419394efe0a7c3
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+        git apply $CIV_WORK_DIR/patches/host_camera/*.patch
+    fi
     mkdir build
     cd build
     cmake ..
@@ -137,7 +144,11 @@ function ubu_changes_require(){
 function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
-    sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+        sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python2-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
+    else
+       sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
+    fi
     sudo apt install -y ninja-build libcap-ng-dev
 
     [ ! -f $CIV_WORK_DIR/$QEMU_REL.tar.xz ] && wget https://download.qemu.org/$QEMU_REL.tar.xz -P $CIV_WORK_DIR
@@ -164,6 +175,10 @@ function ubu_install_qemu_gvt(){
             echo "applying qemu patch $i"
             patch -p1 < $i
         done
+    fi
+
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	git apply $CIV_WORK_DIR/patches/qemu/gcc_11/0034-Fix_VLA_parameter_warning.patch
     fi
 
     ./configure --prefix=/usr \
@@ -595,6 +610,18 @@ fi" > /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
     reboot_required=1
 }
 
+function ubu_build_openssl() {
+    wget https://www.openssl.org/source/openssl-$OPENSSL_REL.tar.gz
+    tar -xf openssl-$OPENSSL_REL.tar.gz
+    cd openssl-$OPENSSL_REL
+    ./config
+    make
+    sudo make install
+    #Symbolic link to it for rpmb_dev feature
+    ln -sf /usr/local/lib/libssl.so.1.1 /usr/lib/libssl.so.1.1
+    ln -sf /usr/local/lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+}
+
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -669,6 +696,7 @@ ubu_build_ovmf_gvt
 ubu_enable_host_gvt
 ubu_enable_host_sriov
 ubu_update_fw
+ubu_build_openssl
 
 install_vm_manager
 
