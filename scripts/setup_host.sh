@@ -225,9 +225,14 @@ function ubu_build_ovmf_gvt(){
 
     git submodule update --init
 
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+        git apply $CIV_WORK_DIR/patches/qemu/gcc_11/0034-Fix_VLA_parameter_warning.patch
+    fi
+
     source ./edksetup.sh
     make -C BaseTools/
     build -b DEBUG -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_IP4_ENABLE -D NETWORK_ENABLE  -D SECURE_BOOT_ENABLE -D TPM_ENABLE
+
     cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF.fd ../OVMF.fd
 
     if [ -d $CIV_GOP_DIR ]; then
