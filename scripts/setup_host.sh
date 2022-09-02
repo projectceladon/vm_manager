@@ -282,7 +282,11 @@ function install_vm_manager_src() {
 function install_vm_manager() {
     sudo apt-get update
     sudo apt-get install --yes libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev wget lsb-release git
-    install_vm_manager_deb || install_vm_manager_src
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+    	install_vm_manager_src
+    else
+        install_vm_manager_deb || install_vm_manager_src
+    fi
     if [ "$?" -ne 0 ]; then
         echo "Failed to install vm-manager!"
         echo "Please download and install mannually from: https://github.com/projectceladon/vm_manager/releases/"
