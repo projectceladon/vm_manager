@@ -317,7 +317,7 @@ static bool PassthroughOnePciDev(const char *pci_id, PciPassthroughAction action
             while (cnt < kCheckUnbindRepeatCount) {
                 if (!boost::filesystem::exists(driver))
                     break;
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                boost::this_thread::sleep_for(boost::chrono::milliseconds(1));
                 cnt++;
             }
             if (cnt >= kCheckUnbindRepeatCount) {
