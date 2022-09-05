@@ -35,7 +35,7 @@ jobs:
           export CC=/usr/bin/clang
           export CXX=/usr/bin/clang++
           debuild --preserve-env -b -uc -us --lintian-opts --profile debian
-          cp $(realpath ../*.deb) vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
+          cp $(realpath ../*.deb) vm-manager_${{ env.REL_VER }}.deb
 
       - name: artifacts
         uses: actions/upload-artifact@v2
@@ -53,4 +53,4 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            vm-manager/vm-manager_${{ env.REL_VER }}_${{ matrix.os }}.deb
+            vm-manager/vm-manager_${{ env.REL_VER }}.deb
