@@ -237,49 +237,9 @@ function ubu_build_ovmf_gvt(){
     cd -
 }
 
-function install_vm_manager_deb(){
-    #Try to download from latest release/tag
-    local os_ver=$(lsb_release -rs)
-    local vm_repo="https://github.com/projectceladon/vm_manager/"
-    local rtag=$(git ls-remote -t --refs ${vm_repo} | cut --delimiter='/' --fields=3  | tr '-' '~' | sort --version-sort | tail --lines=1)
-    if [ ! -z $VM_MANAGER_VERSION ]; then
-        rtag=$VM_MANAGER_VERSION
-    fi
-    local rdeb=vm-manager_${rtag}_ubuntu-${os_ver}.deb
-
-    [ -f ${rdeb} ] && rm -f ${rdeb}
-
-    local rurl=https://github.com/projectceladon/vm_manager/releases/download/${rtag}/${rdeb}
-
-    if wget ${rurl} ; then
-        sudo dpkg -i ${rdeb} || return -1
-        return 0
-    else
-        return -1
-    fi
-}
-
-function install_vm_manager_src() {
-    #Try to build from source code
-    sudo apt-get install --yes make gcc
-
-    if [ ! -z $VM_MANAGER_VERSION ]; then
-        git clone -b $VM_MANAGER_VERSION --single-branch https://github.com/projectceladon/vm_manager.git
-    else
-        git clone https://github.com/projectceladon/vm_manager.git || return -1
-    fi
-
-    cd vm_manager/
-    make || return -1
-    sudo make install || return -1
-    cd -
-    rm -rf vm_manager/
-}
-
 function install_vm_manager() {
-    sudo apt-get update
-    sudo apt-get install --yes libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev wget lsb-release git
-    install_vm_manager_deb || install_vm_manager_src
+    local SCRIPTS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+    sudo dpkg -i $SCRIPTS_DIR/vm-manager*.deb
     if [ "$?" -ne 0 ]; then
         echo "Failed to install vm-manager!"
         echo "Please download and install mannually from: https://github.com/projectceladon/vm_manager/releases/"
