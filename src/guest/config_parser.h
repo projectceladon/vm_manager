@@ -62,8 +62,8 @@ constexpr char kVgpuOutputs[]    = "outputs";
 constexpr char kDispOptions[] = "options";
 
 constexpr char kNetModel[] = "model";
-constexpr char kNetAdbPort[] = "adb";
-inline constexpr char kNetFastbootPort[] = "fastboot";
+constexpr char kNetAdbPort[] = "adb_port";
+constexpr char kNetFastbootPort[] = "fastboot_port";
 
 constexpr char kVtpmBinPath[] = "bin_path";
 constexpr char kVtpmDataDir[] = "data_dir";

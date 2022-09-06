@@ -102,8 +102,8 @@ options:
 For network emulation.
 requirements:
 - model: optional ethernet model, default is e1000.
-- adb: optional adb forwarding port.
-- fastboot: optional fastboot forwarding port. 
+- adb_port: optional adb forwarding port.
+- fastboot_port: optional fastboot forwarding port. 
 
 
 ### [vtpm]
