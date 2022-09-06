@@ -39,7 +39,7 @@ map<string_view, vector<string_view>> kConfigMap = {
     { kGroupNet,     { kNetModel, kNetAdbPort, kNetFastbootPort } },
     { kGroupVtpm,    { kVtpmBinPath, kVtpmDataDir } },
     { kGroupRpmb,    { kRpmbBinPath, kRpmbDataDir } },
-    { kGroupAaf,     { kAafPath, kAafSuspend }},
+    { kGroupAaf,     { kAafPath, kAafSuspend, kAafAudioType }},
     { kGroupPciPt,   { kPciPtDev }},
     { kGroupMed,     { kMedBattery, kMedThermal, kMedCamera } },
     { kGroupService, { kServTimeKeep, kServPmCtrl } },
