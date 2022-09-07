@@ -155,10 +155,11 @@ Requirements:
 
 ### [Guest control]
 
-Guest services including time keeping and PM control.
+Enable guest services. Absolute paths to executable services needed, and Write access to directory is required to create pipe and socket.
 Requirements
-- Absolute paths to executable services.
-- Write access to directory is required to create pipe and socket.
+- time_keep: absolute path to guest_time_keeping.sh.
+- pm_control: absolute path to guest_pm_control.
+- vinput: absolute path to vinput-manager.
 
 
 ### [extra]
