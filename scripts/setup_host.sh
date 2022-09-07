@@ -14,7 +14,6 @@ OPENSSL_REL="1.1.1q"
 CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
 CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
-CIV_VIRTIOFSD_REL="virtiofsd-v1.4.0"
 
 #---------      Functions    -------------------
 function error() {
@@ -202,23 +201,10 @@ function ubu_install_qemu_gvt(){
         --enable-gtk \
         --enable-virtfs \
         --target-list=x86_64-softmmu \
-        --enable-virtiofsd \
-        --enable-cap-ng \
-        --enable-seccomp \
-        --enable-libdaxctl \
         --audio-drv-list=pa
     make -j24
     sudo make install
     cd -
-}
-
-function ubu_install_virtiofsd(){
-    echo "download virtiofsd"
-    wget https://gitlab.com/virtio-fs/virtiofsd/uploads/b4a5fbe388739bbd833f822ef9d83e82/$CIV_VIRTIOFSD_REL.zip -P $CIV_WORK_DIR
-    echo "unzip virtiofsd package"
-    unzip -n $CIV_VIRTIOFSD_REL.zip -d $CIV_VIRTIOFSD_REL
-    echo "copy virtiofsd to /usr/bin"
-    sudo cp $CIV_WORK_DIR/$CIV_VIRTIOFSD_REL/target/x86_64-unknown-linux-musl/release/virtiofsd /usr/bin
 }
 
 function ubu_build_ovmf_gvt(){
@@ -726,7 +712,6 @@ install_host_service
 install_virtual_camera
 
 ubu_install_qemu_gvt
-ubu_install_virtiofsd
 ubu_build_ovmf_gvt
 ubu_enable_host_gvt
 ubu_enable_host_sriov
