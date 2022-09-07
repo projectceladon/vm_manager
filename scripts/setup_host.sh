@@ -10,6 +10,7 @@ set -eE
 #---------      Global variable     -------------------
 reboot_required=0
 QEMU_REL="qemu-7.0.0"
+OPENSSL_REL="1.1.1q"
 CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
 CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
@@ -100,7 +101,11 @@ function install_virtual_camera() {
 }
 
 function install_host_service() {
-    sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavdevice-dev -y
+    else
+	sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
+    fi
     sudo apt-get install ffmpeg -y
     sudo apt-get install build-essential clang -y
 
@@ -112,6 +117,9 @@ function install_host_service() {
     git clone https://github.com/projectceladon/host-camera-server.git
     cd host-camera-server
     git checkout b715695dc2e47eaf2a7d275093419394efe0a7c3
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+        git apply $CIV_WORK_DIR/patches/host_camera/*.patch
+    fi
     mkdir build
     cd build
     cmake ..
@@ -138,7 +146,13 @@ function ubu_changes_require(){
 function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
-    sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev
+
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+        sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python2-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev
+    else
+       sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev
+    fi
+
     sudo apt install -y ninja-build libcap-ng-dev
 
     [ ! -f $CIV_WORK_DIR/$QEMU_REL.tar.xz ] && wget https://download.qemu.org/$QEMU_REL.tar.xz -P $CIV_WORK_DIR
@@ -224,9 +238,14 @@ function ubu_build_ovmf_gvt(){
 
     git submodule update --init
 
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+        git apply $CIV_WORK_DIR/patches/qemu/gcc_11/0034-Fix_VLA_parameter_warning.patch
+    fi
+
     source ./edksetup.sh
     make -C BaseTools/
     build -b DEBUG -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_IP4_ENABLE -D NETWORK_ENABLE  -D SECURE_BOOT_ENABLE -D TPM_ENABLE
+
     cp Build/OvmfX64/DEBUG_GCC5/FV/OVMF.fd ../OVMF.fd
 
     if [ -d $CIV_GOP_DIR ]; then
@@ -279,7 +298,12 @@ function install_vm_manager_src() {
 function install_vm_manager() {
     sudo apt-get update
     sudo apt-get install --yes libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev wget lsb-release git
-    install_vm_manager_deb || install_vm_manager_src
+
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	install_vm_manager_src
+    else
+        install_vm_manager_deb || install_vm_manager_src
+    fi
     if [ "$?" -ne 0 ]; then
         echo "Failed to install vm-manager!"
         echo "Please download and install mannually from: https://github.com/projectceladon/vm_manager/releases/"
@@ -496,33 +520,38 @@ function setup_sof() {
 }
 
 function ubu_install_swtpm() {
-    TPMS_VER=v0.9.0
-    TPMS_LIB=libtpms-0.9.0
-    SWTPM_VER=v0.7.0
-    SWTPM=swtpm-0.7.0
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	#install libtpms and swtpm
+	sudo apt-get -y install libtpms-dev swtpm
+    else
+	TPMS_VER=v0.9.0
+	TPMS_LIB=libtpms-0.9.0
+	SWTPM_VER=v0.7.0
+	SWTPM=swtpm-0.7.0
 
-    #install libtpms
-    apt-get -y install automake autoconf gawk
-    [ ! -f $TPMS_VER.tar.gz ] && wget https://github.com/stefanberger/libtpms/archive/$TPMS_VER.tar.gz -P $CIV_WORK_DIR
-    [ -d $CIV_WORK_DIR/$TPMS_LIB ] && rm -rf  $CIV_WORK_DIR/$TPMS_LIB
-    tar zxvf $CIV_WORK_DIR/$TPMS_VER.tar.gz
-    cd $CIV_WORK_DIR/$TPMS_LIB
-    ./autogen.sh --with-tpm2 --with-openssl --prefix=/usr
-    make -j24
-    make -j24 check
-    make install
-    cd -
+	#install libtpms
+	apt-get -y install automake autoconf gawk
+	[ ! -f $TPMS_VER.tar.gz ] && wget https://github.com/stefanberger/libtpms/archive/$TPMS_VER.tar.gz -P $CIV_WORK_DIR
+	[ -d $CIV_WORK_DIR/$TPMS_LIB ] && rm -rf  $CIV_WORK_DIR/$TPMS_LIB
+	tar zxvf $CIV_WORK_DIR/$TPMS_VER.tar.gz
+	cd $CIV_WORK_DIR/$TPMS_LIB
+	./autogen.sh --with-tpm2 --with-openssl --prefix=/usr
+	make -j24
+	make -j24 check
+	make install
+	cd -
 
-    #install swtpm
-    apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect libjson-glib-dev
-    [ ! -f $SWTPM_VER.tar.gz ] && wget https://github.com/stefanberger/swtpm/archive/$SWTPM_VER.tar.gz -P $CIV_WORK_DIR
-    [ -d $CIV_WORK_DIR/$SWTPM ] && rm -rf  $CIV_WORK_DIR/$SWTPM
-    tar zxvf $CIV_WORK_DIR/$SWTPM_VER.tar.gz
-    cd $CIV_WORK_DIR/$SWTPM
-    ./autogen.sh --with-openssl --prefix=/usr
-    make -j24
-    make install
-    cd -
+	#install swtpm
+	apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect libjson-glib-dev
+	[ ! -f $SWTPM_VER.tar.gz ] && wget https://github.com/stefanberger/swtpm/archive/$SWTPM_VER.tar.gz -P $CIV_WORK_DIR
+	[ -d $CIV_WORK_DIR/$SWTPM ] && rm -rf  $CIV_WORK_DIR/$SWTPM
+	tar zxvf $CIV_WORK_DIR/$SWTPM_VER.tar.gz
+	cd $CIV_WORK_DIR/$SWTPM
+	./autogen.sh --with-openssl --prefix=/usr
+	make -j24
+	make install
+	cd -
+    fi
 }
 
 function ubu_update_bt_fw() {
@@ -609,6 +638,18 @@ fi" > /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
     reboot_required=1
 }
 
+function ubu_build_openssl() {
+    wget https://www.openssl.org/source/openssl-$OPENSSL_REL.tar.gz
+    tar -xf openssl-$OPENSSL_REL.tar.gz
+    cd openssl-$OPENSSL_REL
+    ./config
+    make
+    sudo make install
+    #Symbolic link to it for rpmb_dev feature
+    ln -sf /usr/local/lib/libssl.so.1.1 /usr/lib/libssl.so.1.1
+    ln -sf /usr/local/lib/libcrypto.so.1.1 /usr/lib/libcrypto.so.1.1
+}
+
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -684,6 +725,7 @@ ubu_build_ovmf_gvt
 ubu_enable_host_gvt
 ubu_enable_host_sriov
 ubu_update_fw
+ubu_build_openssl
 
 install_vm_manager
 
