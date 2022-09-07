@@ -526,33 +526,38 @@ function setup_sof() {
 }
 
 function ubu_install_swtpm() {
-    TPMS_VER=v0.9.0
-    TPMS_LIB=libtpms-0.9.0
-    SWTPM_VER=v0.7.0
-    SWTPM=swtpm-0.7.0
+    if [[ $(lsb_release -rs) == "22.04" ]]; then
+	#install libtpms and swtpm
+	sudo apt-get -y install libtpms-dev swtpm
+    else
+	TPMS_VER=v0.9.0
+	TPMS_LIB=libtpms-0.9.0
+	SWTPM_VER=v0.7.0
+	SWTPM=swtpm-0.7.0
 
-    #install libtpms
-    apt-get -y install automake autoconf gawk
-    [ ! -f $TPMS_VER.tar.gz ] && wget https://github.com/stefanberger/libtpms/archive/$TPMS_VER.tar.gz -P $CIV_WORK_DIR
-    [ -d $CIV_WORK_DIR/$TPMS_LIB ] && rm -rf  $CIV_WORK_DIR/$TPMS_LIB
-    tar zxvf $CIV_WORK_DIR/$TPMS_VER.tar.gz
-    cd $CIV_WORK_DIR/$TPMS_LIB
-    ./autogen.sh --with-tpm2 --with-openssl --prefix=/usr
-    make -j24
-    make -j24 check
-    make install
-    cd -
+	#install libtpms
+	apt-get -y install automake autoconf gawk
+	[ ! -f $TPMS_VER.tar.gz ] && wget https://github.com/stefanberger/libtpms/archive/$TPMS_VER.tar.gz -P $CIV_WORK_DIR
+	[ -d $CIV_WORK_DIR/$TPMS_LIB ] && rm -rf  $CIV_WORK_DIR/$TPMS_LIB
+	tar zxvf $CIV_WORK_DIR/$TPMS_VER.tar.gz
+	cd $CIV_WORK_DIR/$TPMS_LIB
+	./autogen.sh --with-tpm2 --with-openssl --prefix=/usr
+	make -j24
+	make -j24 check
+	make install
+	cd -
 
-    #install swtpm
-    apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect libjson-glib-dev
-    [ ! -f $SWTPM_VER.tar.gz ] && wget https://github.com/stefanberger/swtpm/archive/$SWTPM_VER.tar.gz -P $CIV_WORK_DIR
-    [ -d $CIV_WORK_DIR/$SWTPM ] && rm -rf  $CIV_WORK_DIR/$SWTPM
-    tar zxvf $CIV_WORK_DIR/$SWTPM_VER.tar.gz
-    cd $CIV_WORK_DIR/$SWTPM
-    ./autogen.sh --with-openssl --prefix=/usr
-    make -j24
-    make install
-    cd -
+	#install swtpm
+	apt-get -y install net-tools libseccomp-dev libtasn1-6-dev libgnutls28-dev expect libjson-glib-dev
+	[ ! -f $SWTPM_VER.tar.gz ] && wget https://github.com/stefanberger/swtpm/archive/$SWTPM_VER.tar.gz -P $CIV_WORK_DIR
+	[ -d $CIV_WORK_DIR/$SWTPM ] && rm -rf  $CIV_WORK_DIR/$SWTPM
+	tar zxvf $CIV_WORK_DIR/$SWTPM_VER.tar.gz
+	cd $CIV_WORK_DIR/$SWTPM
+	./autogen.sh --with-openssl --prefix=/usr
+	make -j24
+	make install
+	cd -
+    fi
 }
 
 function ubu_update_bt_fw() {
