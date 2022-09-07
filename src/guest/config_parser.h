@@ -22,7 +22,7 @@ constexpr char kGroupVcpu[]    = "vcpu";
 constexpr char kGroupFirm[]    = "firmware";
 constexpr char kGroupDisk[]    = "disk";
 constexpr char kGroupVgpu[]    = "graphics";
-constexpr char kGroupDisplay[]    = "display";
+constexpr char kGroupDisplay[] = "display";
 constexpr char kGroupNet[]     = "net";
 constexpr char kGroupVtpm[]    = "vtpm";
 constexpr char kGroupRpmb[]    = "rpmb";
@@ -83,6 +83,7 @@ constexpr char kMedCamera[] = "camera_med";
 
 constexpr char kServTimeKeep[] = "time_keep";
 constexpr char kServPmCtrl[]   = "pm_control";
+constexpr char kServVinput[]   = "vinput";
 
 constexpr char kExtraCmd[]     = "cmd";
 constexpr char kExtraService[] = "service";

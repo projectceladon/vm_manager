@@ -677,6 +677,31 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
     return true;
 }
 
+void VmBuilderQemu::BuildVinputCmd(void) {
+    std::string vgpu_type = cfg_.GetValue(kGroupVgpu, kVgpuType);
+    std::string vinput = cfg_.GetValue(kGroupService, kServVinput);
+
+    if (vinput.empty()) {
+        LOG(warning) << "vinput-manager not found";
+        return;
+    }
+    
+    if (vgpu_type.compare(kVgpuGvtD) == 0) {
+        vinput.append(" --gvtd");
+        emul_cmd_.append(
+            " -qmp unix:./qmp-vinput-sock,server,nowait"
+            " -device virtio-input-host-pci,evdev=/dev/input/by-id/Power-Button-vm0"
+            " -device virtio-input-host-pci,evdev=/dev/input/by-id/Volume-Button-vm0"
+            " -device virtio-input-host-pci,evdev=/dev/input/by-id/Other-Button-vm0");
+    } else {
+        emul_cmd_.append(
+            " -device virtio-input-host-pci,evdev=/dev/input/by-id/Power-Button-vm0"
+            " -device virtio-input-host-pci,evdev=/dev/input/by-id/Volume-Button-vm0"
+            " -device virtio-input-host-pci,evdev=/dev/input/by-id/Other-Button-vm0");
+    }
+    co_procs_.emplace_back(std::make_unique<VmProcSimple>(vinput));
+}
+
 void VmBuilderQemu::BuildDispCmd(void) {
     std::string disp_op = cfg_.GetValue(kGroupDisplay, kDispOptions);
     if (disp_op.empty()) {
@@ -732,6 +757,8 @@ bool VmBuilderQemu::BuildVmArgs(void) {
 
     if (!BuildVgpuCmd())
         return false;
+    
+    BuildVinputCmd();
 
     BuildAafCfg();
 

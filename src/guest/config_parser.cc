@@ -42,7 +42,7 @@ map<string_view, vector<string_view>> kConfigMap = {
     { kGroupAaf,     { kAafPath, kAafSuspend, kAafAudioType }},
     { kGroupPciPt,   { kPciPtDev }},
     { kGroupMed,     { kMedBattery, kMedThermal, kMedCamera } },
-    { kGroupService, { kServTimeKeep, kServPmCtrl } },
+    { kGroupService, { kServTimeKeep, kServPmCtrl, kServVinput } },
     { kGroupExtra,   { kExtraCmd, kExtraService } }
 };
 
