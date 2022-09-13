@@ -14,6 +14,10 @@ CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
 CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
 CIV_VIRTIOFSD_REL="virtiofsd-v1.4.0"
+VERIFY_QEMU=$(qemu-system-x86_64 --version | grep "version" | cut -f 4 -d " ")
+EXPECTED_QEMU_VERSION="7.0.0"
+VERIFY_VIRTIOFSD=$(virtiofsd --version | grep "backend" | cut -f 3 -d " ")
+EXPECTED_VIRTIOFSD_VERSION="1.4.0"
 
 #---------      Functions    -------------------
 function error() {
@@ -50,6 +54,13 @@ function install_virtual_camera() {
     KERNELRELEASE=`uname -r`
     KERNEL_DIR=/lib/modules/${KERNELRELEASE}/kernel/drivers/media/v4l2-core/
     CURRENT_DIR=`pwd`
+    VERIFY_VIRTUAL_CAMERA_DRIVER=${KERNEL_DIR}/v4l2loopback.ko
+    VERIFY_INTEL_CAMERA_SERVICE=/usr/bin/IntelCameraService
+
+    if [ -f $VERIFY_VIRTUAL_CAMERA_DRIVER ] && [ -f $VERIFY_INTEL_CAMERA_SERVICE ];  then
+        echo "Skip virtual camera: already present on host"
+        return 0
+    fi
 
     sudo -E apt install linux-headers-`uname -r`
 
@@ -100,6 +111,14 @@ function install_virtual_camera() {
 }
 
 function install_host_service() {
+    VERIFY_LIBHAL_CLIENT=/usr/lib/libvhal-client.so
+    VERIFY_STREAM=/usr/local/bin/stream
+
+    if [ -f $VERIFY_LIBHAL_CLIENT ] && [ -f $VERIFY_HOST_CAMERA_SERVICE ];  then
+        echo "Skip host service: already present on host"
+        return 0
+    fi
+
     sudo apt-get install libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavresample-dev libavdevice-dev -y
     sudo apt-get install ffmpeg -y
     sudo apt-get install build-essential clang -y
@@ -123,6 +142,10 @@ function install_host_service() {
 }
 
 function ubu_changes_require(){
+     if [ $VERIFY_QEMU = $EXPECTED_QEMU_VERSION ] ;  then
+        echo "Skip qemu: already present on host"
+        return 0
+    fi
     echo "Please make sure your apt is working"
     echo "If you run the installation first time, reboot is required"
     read -p "QEMU version will be replaced (it could be recovered by 'apt purge ^qemu, apt install qemu'), do you want to continue? [Y/n]" res
@@ -136,6 +159,10 @@ function ubu_changes_require(){
 }
 
 function ubu_install_qemu_gvt(){
+    if [ $VERIFY_QEMU = $EXPECTED_QEMU_VERSION ] ;  then
+        echo "Skip qemu: already present on host"
+        return 0
+    fi
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
     sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev libseccomp-dev
@@ -192,6 +219,10 @@ function ubu_install_qemu_gvt(){
 }
 
 function ubu_install_virtiofsd(){
+    if [ $VERIFY_VIRTIOFSD = $EXPECTED_VIRTIOFSD_VERSION ] ;  then
+        echo "Skip virtiofsd: already present on host"
+        return 0
+    fi
     echo "download virtiofsd"
     wget https://gitlab.com/virtio-fs/virtiofsd/uploads/b4a5fbe388739bbd833f822ef9d83e82/$CIV_VIRTIOFSD_REL.zip -P $CIV_WORK_DIR
     echo "unzip virtiofsd package"
@@ -201,6 +232,12 @@ function ubu_install_virtiofsd(){
 }
 
 function ubu_build_ovmf_gvt(){
+    VERIFY_OVMF=$CIV_WORK_DIR/OVMF.fd
+
+    if [ -f $VERIFY_OVMF ] ;  then
+        echo "Skip ovmf: already present on host"
+        return 0
+    fi
     [ -d $CIV_WORK_DIR/edk2 ] && rm -rf $CIV_WORK_DIR/edk2
 
     sudo apt install -y uuid-dev nasm acpidump iasl
@@ -277,6 +314,12 @@ function install_vm_manager_src() {
 }
 
 function install_vm_manager() {
+    VERIFY_VM_MANAGER=/usr/bin/vm-manager
+    if [ -f $VERIFY_VM_MANAGER ] ;  then
+        echo "Skip vm manager: already present on host"
+        return 0
+    fi
+
     sudo apt-get update
     sudo apt-get install --yes libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev wget lsb-release git
     install_vm_manager_deb || install_vm_manager_src
@@ -330,6 +373,13 @@ function ubu_update_fw(){
     HUC_REL="7.9.3"
     S_DMC_REL="2_01"
     P_DMC_REL="2_12"
+    FW_PATH=/lib/firmware/i915/
+
+    if [ -f $FW_PATH/adlp_guc_$GUC_REL.bin ] && [ -f $FW_PATH/tgl_guc_$GUC_REL.bin ] && [ -f $FW_PATH/adlp_dmc_ver$P_DMC_REL.bin ]  \
+    && [ -f $FW_PATH/adls_dmc_ver$S_DMC_REL.bin ] && [ -f $FW_PATH/tgl_huc_$HUC_REL.bin ];  then
+        echo "Skip linux-firmware graphics: already present on host"
+        return 0
+    fi
 
     [ ! -f $CIV_WORK_DIR/$FW_REL.tar.xz ] && wget "https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git/snapshot/linux-firmware-20220310.tar.gz" -P $CIV_WORK_DIR
 
@@ -500,6 +550,13 @@ function ubu_install_swtpm() {
     TPMS_LIB=libtpms-0.9.0
     SWTPM_VER=v0.7.0
     SWTPM=swtpm-0.7.0
+    VERIFY_libtpms=/usr/include/libtpms
+    VERIFY_swtpm=/usr/bin/swtpm
+
+    if [ -f $VERIFY_swtpm ] && [ -d $VERIFY_libtpms ];  then
+        echo "Skip swtpm and libtpms: already present on host"
+        return 0
+    fi
 
     #install libtpms
     apt-get -y install automake autoconf gawk
@@ -526,6 +583,12 @@ function ubu_install_swtpm() {
 }
 
 function ubu_update_bt_fw() {
+    BT_FW_PATH=/lib/firmware/intel
+    if [ -f $BT_FW_PATH/ibt-19-0-4.sfi ] && [ -f $BT_FW_PATH/ibt-18-16-1.sfi ]  \
+        && [ -f $BT_FW_PATH/ibt-0040-0041.sfi ] && [ -f $BT_FW_PATH/ibt-0040-4150.sfi ];  then
+        echo "Skip bt-fw: already present on host"
+        return 0
+    fi
     #kill qemu if android is launched, because BT might have been given as passthrough to the guest.
     #In this case hciconfig will show null
     qemu_pid="$(ps -ef | grep qemu-system | grep -v grep | awk '{print $2}')"
@@ -580,6 +643,11 @@ function ubu_update_wifi_fw(){
 
 
 function set_sleep_inhibitor() {
+    VERIFY_SLEEP_INHIBATOR=/usr/local/bin/sleep-inhibitor
+    if [ -f $VERIFY_SLEEP_INHIBATOR ];  then
+        echo "Skip sleep inhibitor: already present on host"
+        return 0
+    fi
     sudo apt-get -y install python3-pip
     sudo pip3 install -U sleep-inhibitor
     sudo sed -i 's/\/usr\/bin\/%p/\/usr\/local\/bin\/%p/' /usr/local/share/sleep-inhibitor/sleep-inhibitor.service
