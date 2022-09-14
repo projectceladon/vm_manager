@@ -21,7 +21,7 @@ jobs:
       - name: setup
         run: |
           sudo apt-get --quiet update --yes
-          sudo apt-get --quiet install --yes cmake make devscripts lintian debhelper
+          sudo apt-get --quiet install --yes make devscripts lintian debhelper
           sudo apt-get --quiet install --yes autoconf libtool pkg-config 
 
       - name: Set release version
