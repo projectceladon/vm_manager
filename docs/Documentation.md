@@ -79,12 +79,12 @@ $ sudo dpkg -i vm-manager_1.0.0_amd64.deb
    ```
 
 2. Create an ini file under `$HOME/.intel/.civ/` .  
-   Eg. If you want to name your civ instance as **civ-2**,the ini file `civ-2.ini` should be created under `$HOME/.intel/.civ/`.
+   Eg. If you want to name your civ instance as **civ-1**,the ini file `civ-1.ini` should be created under `$HOME/.intel/.civ/`.
    
     ```sh
-    $ touch ~/.intel/.civ/civ-2.ini
+    $ touch ~/.intel/.civ/civ-1.ini
     ```
-    Follow the sample ini to config your civ instance: [guest02.ini](../sample/guest02.ini). For details, see [the specific instructions of configuration](fields.md).
+    Follow the sample ini to config your civ instance: [civ-1.ini](../sample/civ-1.ini). For details, see [the specific instructions of configuration](fields.md).
 
 
 
@@ -99,12 +99,12 @@ $ sudo dpkg -i vm-manager_1.0.0_amd64.deb
 
 2. Flash virtual disk if required, the flashing process will take a while. If the virtual disk image is already flashed, you can skip this step.
     ```
-    $ vm-manager -f civ-2
+    $ vm-manager -f civ-1
     ```
 
 3. Start a Civ guest
     ```
-    $ vm-manager -b civ-2
+    $ vm-manager -b civ-1
     ```
 
 
@@ -113,33 +113,33 @@ $ sudo dpkg -i vm-manager_1.0.0_amd64.deb
 
 1. Create a Civ guest  
    This command will bring up a terminal UI, you can find the corresponding ini file in `$HOME/.intel/.civ/` after you clicked save button.  
-   Eg. If you want to name your civ instance as **civ-2**, the command should be:
+   Eg. If you want to name your civ instance as **civ-1**, the command should be:
    ```sh
-   $ vm-manager -c civ2
+   $ vm-manager -c civ-1
    ```
 2. Import an existing config file
    ```sh
-    $ vm-manager -i civ3.ini
+    $ vm-manager -i civ-2.ini
     ```
 3. Delete a CiV config
     ```sh
-    $ vm-manager -d civ-2
+    $ vm-manager -d civ-1
     ```
 
 4. Update/Modify a CiV config
     ```sh
-    $ vm-manager -u civ-2
+    $ vm-manager -u civ-1
     ```
 
 5. List Guest
    ```sh
-   $ vm-manager -b civ-2
+   $ vm-manager -b civ-1
    ```
 
 6. Stop Guest  
     This command will force to quit the guest
     ```sh
-    $ sudo vm-manager -q civ-2
+    $ sudo vm-manager -q civ-1
     ```
 
 

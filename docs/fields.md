@@ -1,6 +1,6 @@
 # CIV vm_manager config doc
 
-A [sample vm_manager config file](../sample/guest02.ini).
+A [sample vm_manager config file](../sample/civ-1.ini).
 
 ## All Groups
 
