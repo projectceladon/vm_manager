@@ -405,16 +405,27 @@ void VmBuilderQemu::BuildGuestTimeKeepCmd(void) {
     std::string tk = cfg_.GetValue(kGroupService, kServTimeKeep);
     if (tk.empty())
         return;
+
+    constexpr const char *kTimeKeepPipe = "/tmp/qmp-time-keep-pipe";
+    tk.append(" " + std::string(kTimeKeepPipe));
     co_procs_.emplace_back(std::make_unique<VmProcSimple>(tk));
-    emul_cmd_.append(" -qmp pipe:/tmp/qmp-time-keep-pipe");
+    emul_cmd_.append(" -qmp pipe:" + std::string(kTimeKeepPipe));
 }
 
 void VmBuilderQemu::BuildGuestPmCtrlCmd(void) {
     std::string pm = cfg_.GetValue(kGroupService, kServPmCtrl);
     if (pm.empty())
         return;
+
+    constexpr const char *kPmCtrlSock = "/tmp/qmp-pm-sock";
+    std::size_t pos = pm.find_first_of(' ');
+    if (pos != std::string::npos) {
+        pm.insert(pos + 1, std::string(kPmCtrlSock) + " ");
+    } else {
+        pm.append(" " + std::string(kPmCtrlSock));
+    }
     co_procs_.emplace_back(std::make_unique<VmProcSimple>(pm));
-    emul_cmd_.append(" -qmp unix:/tmp/qmp-pm-sock,server=on,wait=off -no-reboot");
+    emul_cmd_.append(" -qmp unix:" + std::string(kPmCtrlSock) + ",server=on,wait=off -no-reboot");
 }
 
 static int GetUid(void) {
