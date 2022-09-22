@@ -40,7 +40,7 @@ constexpr const char *kIntelGpuDriver = "/sys/bus/pci/devices/0000:00:02.0/drive
 constexpr const char *kIntelGpuDriverUnbind = "/sys/bus/pci/devices/0000:00:02.0/driver/unbind";
 constexpr const char *kIntelGpuSriovTotalVfs = "/sys/bus/pci/devices/0000:00:02.0/sriov_totalvfs";
 constexpr const char *kIntelGpuSriovAutoProbe = "/sys/bus/pci/devices/0000:00:02.0/sriov_drivers_autoprobe";
-constexpr const char *kDrmCard0DevSriovNumVfs = "/sys/class/drm/card0/device/sriov_numvfs";
+constexpr const char *kIntelGpuSriovNumVfs = "/sys/bus/pci/devices/0000:00:02.0/sriov_numvfs";
 
 constexpr const char *kVfioPciNewId =    "/sys/bus/pci/drivers/vfio-pci/new_id";
 constexpr const char *kVfioPciRemoveId = "/sys/bus/pci/drivers/vfio-pci/remove_id";
@@ -197,12 +197,17 @@ static int SetAvailableVf(void) {
     if (totalvfs <= 0)
         return -1;
 
-    /* Limit total VFs to conserve memory */
-    if (totalvfs > 4) {
-        totalvfs = 4;
-        /* Re-Probe SRIOV with limited VFs */
+    int current_vfs = ReadSysFile(kIntelGpuSriovNumVfs, std::ios_base::dec);
+    if (current_vfs < 0)
+        return -1;
+
+    if (current_vfs == 0) {
+        /* Limit VF's number to conserve memory */
+        int num_vfs = (totalvfs < 4) ? totalvfs : 4;
+
         WriteSysFile(kIntelGpuSriovAutoProbe, "0");
-        WriteSysFile(kDrmCard0DevSriovNumVfs, std::to_string(totalvfs));
+        WriteSysFile(kIntelGpuSriovNumVfs, "0");
+        WriteSysFile(kIntelGpuSriovNumVfs, std::to_string(num_vfs));
         WriteSysFile(kIntelGpuSriovAutoProbe, "1");
     }
 
@@ -227,6 +232,8 @@ static int SetAvailableVf(void) {
         if (status == 0)
             return i;
     }
+
+    LOG(error) << "Failed to find 1 available VF!";
 
     return -1;
 }
