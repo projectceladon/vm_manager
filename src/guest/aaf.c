@@ -25,7 +25,8 @@
 static const char *gpu_type[] = {
 	[AAF_GPU_TYPE_VIRTIO] = "gpu-type:virtio",
 	[AAF_GPU_TYPE_GVTG]   = "gpu-type:gvtg",
-	[AAF_GPU_TYPE_GVTD]   = "gpu-type:gvtd"
+	[AAF_GPU_TYPE_GVTD]   = "gpu-type:gvtd",
+	[AAF_GPU_TYPE_SRIOV]  = "gpu-type:sriov"
 };
 
 static const char *suspend_support[] = {
@@ -111,7 +112,7 @@ int set_aaf_option(aaf_config_opt_t opt, unsigned int sub)
 			aaf_config_array[AAF_CONFIG_AUDIO] = audio_type[sub];
 			break;
 		case AAF_CONFIG_GPU_TYPE:
-			if (sub > AAF_GPU_TYPE_GVTD)
+			if (sub > AAF_GPU_TYPE_SRIOV)
 				return -1;
 			aaf_config_array[AAF_CONFIG_GPU_TYPE] = gpu_type[sub];
 			break;
