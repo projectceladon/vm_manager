@@ -1036,7 +1036,7 @@ int start_guest(char *name)
 	} else if (strcmp(val, VGPU_OPTS_SRIOV_STR) == 0) {
 		if (setup_sriov(gkf, &p, &size))
 			return -1;
-		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_VIRTIO);
+		set_aaf_option(AAF_CONFIG_GPU_TYPE, AAF_GPU_TYPE_SRIOV);
 	} else {
 		g_warning("Invalid Graphics config\n");
 		return -1;

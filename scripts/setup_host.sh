@@ -645,6 +645,10 @@ function parse_arg() {
     done
 }
 
+function create_aaf_dir() {
+        mkdir -p $CIV_WORK_DIR/scripts/aaf
+}
+
 
 #-------------    main processes    -------------
 
@@ -667,6 +671,7 @@ ubu_enable_host_sriov
 ubu_update_fw
 
 install_vm_manager
+create_aaf_dir
 
 prepare_required_scripts
 ubu_install_swtpm
