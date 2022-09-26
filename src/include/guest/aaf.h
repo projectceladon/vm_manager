@@ -28,7 +28,8 @@ enum {
 enum {
     AAF_GPU_TYPE_VIRTIO = 0,
     AAF_GPU_TYPE_GVTG,
-    AAF_GPU_TYPE_GVTD
+    AAF_GPU_TYPE_GVTD,
+    AAF_GPU_TYPE_SRIOV
 };
 
 int set_aaf_path(const char *bin_path);
