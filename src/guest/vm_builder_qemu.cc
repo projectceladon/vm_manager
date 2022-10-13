@@ -597,11 +597,17 @@ void VmBuilderQemu::BuildVtpmCmd(void) {
 
 }
 
+void VmBuilderQemu::InitAafCfg(void){
+    std::string aaf_path = cfg_.GetValue(kGroupAaf, kAafPath);
+    if (!aaf_path.empty()) {
+        aaf_cfg_ = std::make_unique<Aaf>(aaf_path.c_str());
+    }
+}
+
 void VmBuilderQemu::BuildAafCfg(void) {
     std::string aaf_path = cfg_.GetValue(kGroupAaf, kAafPath);
     if (!aaf_path.empty()) {
         emul_cmd_.append(" -virtfs local,mount_tag=aaf,security_model=none,path=" + aaf_path);
-        aaf_cfg_ = std::make_unique<Aaf>(aaf_path.c_str());
 
         std::string aaf_suspend = cfg_.GetValue(kGroupAaf, kAafSuspend);
         if (!aaf_suspend.empty()) {
@@ -668,7 +674,7 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
                 return false;
             }
             if (aaf_cfg_)
-                aaf_cfg_->Set(kAafKeyGpuType, "virtio");
+                aaf_cfg_->Set(kAafKeyGpuType, "sriov");
         } else {
             LOG(warning) << "Invalid Graphics config";
             return false;
@@ -754,6 +760,8 @@ bool VmBuilderQemu::BuildVmArgs(void) {
     BuildRpmbCmd();
 
     BuildDispCmd();
+
+    InitAafCfg();
 
     if (!BuildVgpuCmd())
         return false;

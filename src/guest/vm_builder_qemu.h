@@ -48,6 +48,7 @@ class VmBuilderQemu : public VmBuilder {
     bool BuildVsockCmd(void);
     void BuildRpmbCmd(void);
     void BuildVtpmCmd(void);
+    void InitAafCfg(void);
     void BuildAafCfg(void);
     bool BuildVgpuCmd(void);
     void BuildVinputCmd(void);
