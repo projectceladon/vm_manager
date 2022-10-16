@@ -10,6 +10,10 @@ set -eE
 #---------      Global variable     -------------------
 reboot_required=0
 QEMU_REL="qemu-6.0.0"
+
+#Directory to keep versions of qemu which can be reused instead of downloading again
+QEMU_CACHE_DIR="$HOME/.cache/civ/qemu"
+
 CIV_WORK_DIR=$(pwd)
 CIV_GOP_DIR=$CIV_WORK_DIR/GOP_PKG
 CIV_VERTICAl_DIR=$CIV_WORK_DIR/vertical_patches/host
@@ -140,9 +144,17 @@ function ubu_install_qemu_gvt(){
     sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
     sudo apt install -y ninja-build libcap-ng-dev
 
-    [ ! -f $CIV_WORK_DIR/$QEMU_REL.tar.xz ] && wget https://download.qemu.org/$QEMU_REL.tar.xz -P $CIV_WORK_DIR
+    #Create QEMU_CACHE_DIR if it doesnt exists
+    mkdir -p $QEMU_CACHE_DIR
+
+    #Download QEMU_REL.tar.xz if it doesnt exist in QEMU_CACHE_DIR
+    [ ! -f $QEMU_CACHE_DIR/$QEMU_REL.tar.xz ] && check_qemu_network && wget https://download.qemu.org/$QEMU_REL.tar.xz -P $QEMU_CACHE_DIR
+
+
     [ -d $CIV_WORK_DIR/$QEMU_REL ] && rm -rf $CIV_WORK_DIR/$QEMU_REL
-    tar -xf $CIV_WORK_DIR/$QEMU_REL.tar.xz
+    
+    #Directly untar into the CIV_WORK_DIR
+    tar -xf $QEMU_CACHE_DIR/$QEMU_REL.tar.xz -C $CIV_WORK_DIR
 
     cd $CIV_WORK_DIR/$QEMU_REL/
 
@@ -318,6 +330,17 @@ function check_os() {
 }
 
 function check_network(){
+    #Check if you are able to access external website without actually downloading it
+    wget --timeout=3 --tries=1 -q --spider https://github.com
+    if [ $? -ne 0 ]; then
+        echo "access https://github.com failed!"
+        echo "please make sure network is working"
+        return -1
+    fi
+}
+
+#Check Connection specifically with qemu network only if QEMU_REL.tar.xz needs to be downloaded as it doesnt exist in QEMU_CACHE_DIR
+function check_qemu_network(){
     wget --timeout=3 --tries=1 https://download.qemu.org/ -q -O /dev/null
     if [ $? -ne 0 ]; then
         echo "access https://download.qemu.org failed!"
