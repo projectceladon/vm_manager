@@ -83,6 +83,7 @@ class VmBuilderQemu : public VmBuilder {
     std::set<std::string> pci_pt_dev_set_;
     boost::latch vm_ready_latch_;
     std::queue<std::function<void(void)>> end_call_;
+    std::mutex stopvm_mutex_;
 };
 
 }  // namespace vm_manager
