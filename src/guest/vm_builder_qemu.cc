@@ -879,12 +879,15 @@ void VmBuilderQemu::WaitVmExit() {
 }
 
 void VmBuilderQemu::StopVm() {
+    std::scoped_lock lock(stopvm_mutex_);
+
     if (main_proc_)
         main_proc_->Stop();
 
     for (size_t i = 0; i < co_procs_.size(); ++i) {
         co_procs_[i]->Stop();
     }
+    co_procs_.clear();
 
     VsockCidPool::Pool().ReleaseCid(vsock_cid_);
 
