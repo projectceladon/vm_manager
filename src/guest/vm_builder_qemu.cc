@@ -84,7 +84,7 @@ void VmBuilderQemu::SoundCardHook(void) {
         passthrough when sof-hda is enabled on host and reinsert
         snd-sof-pci-intel-tgl module before exit from guest.
     */
-    if (!boost::process::system("cat /proc/asound/cards | grep sof")) {
+    if (!boost::process::system("ls /proc/asound/sofhdadsp")) {
         LOG(info) << "Removing snd-sof-pci-intel-tgl ...";
         if (!boost::process::system("modprobe -r snd-sof-pci-intel-tgl")) {
             end_call_.emplace([](){
