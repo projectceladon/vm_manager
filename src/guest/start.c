@@ -63,6 +63,8 @@ static int get_uid() {
 #define PT_LEN 16
 static char *pci_pt_record[PT_MAX] = { 0 };
 static int pci_count = 0;
+static int MAX_NUM_GUEST = 7;
+static char qmp_pwr_socket[MAX_PATH] = { 0 };
 
 static int create_vgpu(GKeyFile *gkf)
 {
@@ -579,6 +581,13 @@ static void cleanup_passthrough(void) {
 	}
 }
 
+static void cleanup_pwr_ctrl() {
+        //cleanup qmp power control socket on exit
+        if(access(qmp_pwr_socket, F_OK) == 0) {
+                remove(qmp_pwr_socket);
+        }
+}
+
 static int check_soundcard_on_host(){
         int ret = system("cat /proc/asound/cards | grep sof");
         return ret;
@@ -597,6 +606,7 @@ static void cleanup(int num, int removed_sof_tgl_snd_module)
 	cleanup_child_proc();
 	cleanup_rpmb();
 	cleanup_passthrough();
+	cleanup_pwr_ctrl();
 	if(removed_sof_tgl_snd_module)
 		insert_sof_tgl_snd_module();
 
@@ -883,6 +893,25 @@ static void strip_duplicate(gchar *val, const gchar *inner_cmd)
 		g_free(to_split);
 }
 
+static void set_pwr_ctrl(char * qmp_cmd) {
+	for(int avail = 0; avail < MAX_NUM_GUEST; avail++) {
+		char *num;
+		asprintf(&num, "%d", avail);
+		strcpy(qmp_pwr_socket, "/tmp/qmp-pwr-socket-");
+		if (strlen(num) < (sizeof(qmp_pwr_socket) - strlen(qmp_pwr_socket))) {
+			strncat(qmp_pwr_socket, num, (sizeof(qmp_pwr_socket) - strlen(num) -1));
+		}
+		if(access(qmp_pwr_socket, F_OK) != 0) {
+			snprintf(qmp_cmd, MAX_CMDLINE_LEN, " -qmp unix:%s,%s", qmp_pwr_socket, "server,nowait");
+			break;
+		}
+	}
+	if (strcmp(qmp_cmd, "") == 0) {
+		printf("E: No power control socket available");
+		exit(1);
+	}
+}
+
 int start_guest(char *name)
 {
 	int ret = 0;
@@ -931,6 +960,11 @@ int start_guest(char *name)
 
 	char *qname = strtok(val, ",");
 	cx = snprintf(p, size, " -qmp unix:%s/.%s"CIV_GUEST_QMP_SUFFIX",server,nowait", civ_config_path, qname);
+	p += cx; size -= cx;
+
+	char qmp_sock[MAX_CMDLINE_LEN] = { 0 };
+	set_pwr_ctrl(qmp_sock);
+	cx = snprintf(p, size, "%s", qmp_sock);
 	p += cx; size -= cx;
 
 	val = g_key_file_get_string(gkf, g->name, g->key[GLOB_VSOCK_CID], NULL);
