@@ -202,12 +202,9 @@ static int SetAvailableVf(void) {
         return -1;
 
     if (current_vfs == 0) {
-        /* Limit VF's number to conserve memory */
-        int num_vfs = (totalvfs < 4) ? totalvfs : 4;
-
         WriteSysFile(kIntelGpuSriovAutoProbe, "0");
         WriteSysFile(kIntelGpuSriovNumVfs, "0");
-        WriteSysFile(kIntelGpuSriovNumVfs, std::to_string(num_vfs));
+        WriteSysFile(kIntelGpuSriovNumVfs, std::to_string(totalvfs));
         WriteSysFile(kIntelGpuSriovAutoProbe, "1");
     }
 
