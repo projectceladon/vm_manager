@@ -452,7 +452,7 @@ void VmBuilderQemu::BuildAudioCmd(void) {
     emul_cmd_.append(" -device intel-hda"
                      " -device hda-duplex,audiodev=android_spk"
                      " -audiodev id=android_spk,timer-period=5000,driver=pa,"
-                     "in.fixed-settings=off,out.fixed-settings=off,server=/var/run/pulse/native");
+                     "in.fixed-settings=off,out.fixed-settings=off,server=/run/user/1000/pulse/native");
 }
 
 void VmBuilderQemu::BuildExtraCmd(void) {
