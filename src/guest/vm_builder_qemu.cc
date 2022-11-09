@@ -55,6 +55,13 @@ constexpr const char *kGvtgMdevV58Path = "/sys/bus/pci/devices/0000:00:02.0/mdev
 constexpr const char *kSys2MFreeHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages";
 constexpr const char *kSys2MNrHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages";
 
+constexpr const char *kTimeoutPath = "/sys/class/drm/card0/iov/vf";
+constexpr const char *kTimeoutPremptFile = "/gt/preempt_timeout_us";
+constexpr const char *kTimeoutExecQuantum = "/gt/exec_quantum_ms";
+
+constexpr const unsigned int kPreintTimeout = 50000;
+constexpr const unsigned int kExecQuantum = 25;
+
 static bool CheckUuid(std::string uuid) {
     try {
         boost::uuids::string_generator gen;
@@ -222,12 +229,20 @@ static int SetAvailableVf(void) {
         return false;
     }
 
-    for (int i = 1; i < totalvfs; i++) {
+    for (int i = 1; i < current_vfs; i++) {
         std::string sd(kIntelGpuDevPath);
         sd.replace(sd.end() - 2, sd.end(), std::to_string(i) + "/enable");
         int status = ReadSysFile(sd.c_str(), std::ios_base::dec);
-        if (status == 0)
+        if (status == 0) {
+            std::string timeoutPath = kTimeoutPath;
+            timeoutPath.append(std::to_string(i) + kTimeoutPremptFile);
+            WriteSysFile(timeoutPath.c_str(), std::to_string(kPreintTimeout));
+
+            std::string execQuantumPath = kTimeoutPath;
+            execQuantumPath.append(std::to_string(i) + kTimeoutExecQuantum);
+            WriteSysFile(execQuantumPath.c_str(), std::to_string(kExecQuantum));
             return i;
+	}
     }
 
     LOG(error) << "Failed to find 1 available VF!";
