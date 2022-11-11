@@ -28,6 +28,8 @@
 #include "utils/log.h"
 #include "utils/utils.h"
 
+#define MAX_NUM_GUEST 7
+
 namespace vm_manager {
 constexpr const char *kPciDevicePath = "/sys/bus/pci/devices/";
 constexpr const char *kPciDriverPath = "/sys/bus/pci/drivers/";
@@ -55,12 +57,14 @@ constexpr const char *kGvtgMdevV58Path = "/sys/bus/pci/devices/0000:00:02.0/mdev
 constexpr const char *kSys2MFreeHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/free_hugepages";
 constexpr const char *kSys2MNrHugePages = "/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages";
 
-constexpr const char *kTimeoutPath = "/sys/class/drm/card0/iov/vf";
-constexpr const char *kTimeoutPremptFile = "/gt/preempt_timeout_us";
-constexpr const char *kTimeoutExecQuantum = "/gt/exec_quantum_ms";
+constexpr const char *kDrmCard0Vf = "/sys/class/drm/card0/iov/vf";
+constexpr const char *kGtPreemptTimeoutUs = "/gt/preempt_timeout_us";
+constexpr const char *kGtExecQuantumMs = "/gt/exec_quantum_ms";
 
-constexpr const unsigned int kPreintTimeout = 50000;
+constexpr const unsigned int kPreemptTimeout = 50000;
 constexpr const unsigned int kExecQuantum = 25;
+
+constexpr const char *kQmpPowerSocket = "/tmp/qmp-pwr-socket-";
 
 static bool CheckUuid(std::string uuid) {
     try {
@@ -229,17 +233,17 @@ static int SetAvailableVf(void) {
         return false;
     }
 
-    for (int i = 1; i < current_vfs; i++) {
+    for (int i = 1; i < totalvfs; i++) {
         std::string sd(kIntelGpuDevPath);
         sd.replace(sd.end() - 2, sd.end(), std::to_string(i) + "/enable");
         int status = ReadSysFile(sd.c_str(), std::ios_base::dec);
         if (status == 0) {
-            std::string timeoutPath = kTimeoutPath;
-            timeoutPath.append(std::to_string(i) + kTimeoutPremptFile);
-            WriteSysFile(timeoutPath.c_str(), std::to_string(kPreintTimeout));
+            std::string timeoutPath = kDrmCard0Vf;
+            timeoutPath.append(std::to_string(i) + kGtPreemptTimeoutUs);
+            WriteSysFile(timeoutPath.c_str(), std::to_string(kPreemptTimeout));
 
-            std::string execQuantumPath = kTimeoutPath;
-            execQuantumPath.append(std::to_string(i) + kTimeoutExecQuantum);
+            std::string execQuantumPath = kDrmCard0Vf;
+            execQuantumPath.append(std::to_string(i) + kGtExecQuantumMs);
             WriteSysFile(execQuantumPath.c_str(), std::to_string(kExecQuantum));
             return i;
 	}
@@ -275,6 +279,26 @@ bool VmBuilderQemu::SetupSriov(void) {
                     " -machine memory-backend=mem_sriov");
 
     return true;
+}
+
+void VmBuilderQemu::BuildExtraGuestPmCtrlCmd(void) {
+    std::string ex_cmd = cfg_.GetValue(kGroupExtra, kExtraPwrCtrlMultiOS);
+    if (ex_cmd == "true") {
+        static std::string socketPath;
+        for(int avail = 0; avail < MAX_NUM_GUEST; avail++) {
+            socketPath = kQmpPowerSocket + std::to_string(avail);
+            if(access(socketPath.c_str(), F_OK) != 0) {
+                std::string qmpCmd = " -qmp unix:" + socketPath + ",server,nowait";
+                emul_cmd_.append(qmpCmd);
+                break;
+            }
+        }
+
+        end_call_.emplace([](){
+            boost::filesystem::remove(socketPath);
+        });
+    } else
+        return;
 }
 
 enum PciPassthroughAction {
@@ -806,6 +830,7 @@ bool VmBuilderQemu::BuildVmArgs(void) {
     BuildGuestTimeKeepCmd();
 
     BuildGuestPmCtrlCmd();
+    BuildExtraGuestPmCtrlCmd();
 
     BuildAudioCmd();
 

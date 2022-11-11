@@ -165,4 +165,4 @@ Requirements
 ### [extra]
 - cmd: Set extra command.
 - service: Set extra services, use `:` split different services.
-
+- pwr_ctrl_multios: If set to "true", will create qmp socket in /tmp/ folder for suspend/hibernate feature. Setting to "false" will not create the sockeet.
