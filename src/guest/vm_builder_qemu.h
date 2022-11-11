@@ -60,6 +60,7 @@ class VmBuilderQemu : public VmBuilder {
     void BuildPtPciDevicesCmd(void);
     void BuildGuestTimeKeepCmd(void);
     void BuildGuestPmCtrlCmd(void);
+    void BuildExtraGuestPmCtrlCmd(void);
     void BuildAudioCmd(void);
     void BuildExtraCmd(void);
 

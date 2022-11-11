@@ -43,7 +43,7 @@ map<string_view, vector<string_view>> kConfigMap = {
     { kGroupPciPt,   { kPciPtDev }},
     { kGroupMed,     { kMedBattery, kMedThermal, kMedCamera } },
     { kGroupService, { kServTimeKeep, kServPmCtrl, kServVinput } },
-    { kGroupExtra,   { kExtraCmd, kExtraService } }
+    { kGroupExtra,   { kExtraCmd, kExtraService, kExtraPwrCtrlMultiOS } }
 };
 
 bool CivConfig::SanitizeOpts(void) {

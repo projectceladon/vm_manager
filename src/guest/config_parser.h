@@ -87,6 +87,7 @@ constexpr char kServVinput[]   = "vinput";
 
 constexpr char kExtraCmd[]     = "cmd";
 constexpr char kExtraService[] = "service";
+constexpr char kExtraPwrCtrlMultiOS[] = "pwr_ctrl_multios";
 
 /* Options for Key to select */
 constexpr char kEmulTypeQemu[] = "QEMU";
