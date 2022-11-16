@@ -482,6 +482,21 @@ static int set_available_vf(void)
 		}
 	}
 
+        fd = open("/sys/class/drm/card0/device/sriov_numvfs", O_RDONLY);
+        if (fd == -1) {
+                fprintf(stderr, "open /sys/class/drm/card0/device/sriov_numvfs, errno=%d\n", errno);
+                return 0;
+        }
+
+        n = read(fd, buf, sizeof(buf));
+        if (n == -1) {
+                fprintf(stderr, "read /sys/class/drm/card0/device//sriov_numvfs failed, errno=%d\n", errno);
+                close(fd);
+                return 0;
+        }
+        close(fd);
+        numvfs = strtoul(buf, NULL, 10);
+
 	for (i = 1; i < numvfs; i++) {
 		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), "/sys/bus/pci/devices/0000:00:02.%d/enable", i);
