@@ -31,7 +31,7 @@ class CivAppLauncherImpl final : public vm_manager::CivAppLauncher::Service {
 
     grpc::Status LaunchApp(grpc::ServerContext* ctx, const vm_manager::AppLaunchRequest* request, vm_manager::AppLaunchResponse* respond) override {
         ALOG("Launch APP: %s, Disp id: %u\n", request->app_name().c_str(), request->disp_id());
-        std::string cmd("/system/bin/am start -n " + request->app_name() + " --display " + std::to_string(request->disp_id()));
+        std::string cmd("/system/bin/cmd activity start -n " + request->app_name() + " --display " + std::to_string(request->disp_id()));
         if (system(cmd.c_str())) {
             respond->set_code(-1);
             respond->set_status(vm_manager::AppStatus::FAILED);

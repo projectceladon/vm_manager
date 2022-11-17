@@ -53,6 +53,8 @@ cc_binary {
         "civ_powerctl.cc"
     ],
 
+    vendor: true,
+
     include_dirs: INCLUDE_DIR,
 
     cflags: CFLAGS,
