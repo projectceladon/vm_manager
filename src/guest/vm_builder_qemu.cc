@@ -485,6 +485,9 @@ static int GetUid(void) {
 
 void VmBuilderQemu::BuildAudioCmd(void) {
     int uid = GetUid();
+    if (cfg_.GetValue(kGroupAudio, kDisableEmul).compare("true") == 0) 
+        return;
+
     emul_cmd_.append(" -device intel-hda"
                      " -device hda-duplex,audiodev=android_spk"
                      " -audiodev id=android_spk,timer-period=5000,driver=pa,"

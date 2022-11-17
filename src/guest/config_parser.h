@@ -28,6 +28,7 @@ constexpr char kGroupVtpm[]    = "vtpm";
 constexpr char kGroupRpmb[]    = "rpmb";
 constexpr char kGroupAaf[]     = "aaf";
 constexpr char kGroupPciPt[]   = "passthrough";
+constexpr char kGroupAudio[]   = "audio";
 constexpr char kGroupMed[]     = "mediation";
 constexpr char kGroupService[] = "guest_control";
 constexpr char kGroupExtra[]   = "extra";
@@ -76,6 +77,8 @@ constexpr char kAafSuspend[] = "support_suspend";
 constexpr char kAafAudioType[] = "audio_type";
 
 constexpr char kPciPtDev[] = "passthrough_pci";
+
+constexpr char kDisableEmul[] = "disable_emulation";
 
 constexpr char kMedBattery[] = "battery_med";
 constexpr char kMedThermal[] = "thermal_med";

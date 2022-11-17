@@ -41,6 +41,7 @@ map<string_view, vector<string_view>> kConfigMap = {
     { kGroupRpmb,    { kRpmbBinPath, kRpmbDataDir } },
     { kGroupAaf,     { kAafPath, kAafSuspend, kAafAudioType }},
     { kGroupPciPt,   { kPciPtDev }},
+    { kGroupAudio,   { kDisableEmul } },
     { kGroupMed,     { kMedBattery, kMedThermal, kMedCamera } },
     { kGroupService, { kServTimeKeep, kServPmCtrl, kServVinput } },
     { kGroupExtra,   { kExtraCmd, kExtraService, kExtraPwrCtrlMultiOS } }
