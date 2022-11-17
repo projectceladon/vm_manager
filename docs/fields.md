@@ -135,7 +135,7 @@ requirements:
 
 ### [Passthrough]
 
-PCIe devices to be passthroughed to the VM. Specified the PCI id here if you want to passthrough it to guest.
+PCIe devices to passthrough to the VM. Specified the PCI id here if you want to passthrough it to guest.
 Requirements: 
 - Device name need to be full, such as "0000:00:14.0". 
 - Device name must be listed in the output of `lspci` command. (`lspci` command must be able to produce a list of pci devices)
@@ -161,6 +161,9 @@ Requirements
 - pm_control: absolute path to guest_pm_control.
 - vinput: absolute path to vinput-manager.
 
+### [audio]
+
+- disable_emulation: Disable sound card emulation, set this option to true if the sound card is passthrough in `[passthrough]`
 
 ### [extra]
 - cmd: Set extra command.
