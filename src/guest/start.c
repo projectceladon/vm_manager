@@ -428,7 +428,7 @@ static int set_available_vf(void)
         close(fd);
         numvfs = strtoul(buf, NULL, 10);
 
-	if (numvfs < total_vfs) {
+	if (numvfs == 0) {
 		memset(buf, 0, sizeof(buf));
 		snprintf(buf, sizeof(buf), "%d", total_vfs);
 
