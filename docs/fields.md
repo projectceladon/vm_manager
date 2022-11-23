@@ -127,7 +127,7 @@ requirements:
 Share filesystem of host to the guest system.
 requirements:
 - path: The path to share.
-- support_suspend: enable suspend for guest. 
+- support_suspend: set the value to `true` or `enable` to enable suspend for guest. 
 - audio_type:  must be one of these two options:
   - sof-hda: enable "sof-hda" only when "sof-hda" sound card is enabled in the host and you are making audio passthrough for guest. 
   - legacy-hda: In all other cases use "legacy-hda" only.

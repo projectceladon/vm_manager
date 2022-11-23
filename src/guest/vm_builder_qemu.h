@@ -49,7 +49,7 @@ class VmBuilderQemu : public VmBuilder {
     void BuildRpmbCmd(void);
     void BuildVtpmCmd(void);
     void InitAafCfg(void);
-    void BuildAafCfg(void);
+    bool BuildAafCfg(void);
     bool BuildVgpuCmd(void);
     void BuildVinputCmd(void);
     void BuildDispCmd(void);
