@@ -640,21 +640,29 @@ void VmBuilderQemu::InitAafCfg(void){
     }
 }
 
-void VmBuilderQemu::BuildAafCfg(void) {
+bool VmBuilderQemu::BuildAafCfg(void) {
     std::string aaf_path = cfg_.GetValue(kGroupAaf, kAafPath);
     if (!aaf_path.empty()) {
-        emul_cmd_.append(" -virtfs local,mount_tag=aaf,security_model=none,path=" + aaf_path);
-
         std::string aaf_suspend = cfg_.GetValue(kGroupAaf, kAafSuspend);
         if (!aaf_suspend.empty()) {
-            aaf_cfg_->Set(kAafKeySuspend, aaf_suspend);
+            if (aaf_suspend.compare("true") == 0 || aaf_suspend.compare("enable") == 0) {
+                aaf_cfg_->Set(kAafKeySuspend, "true");
+            } else if (aaf_suspend.compare("false") == 0 || aaf_suspend.compare("disable") == 0) {
+                aaf_cfg_->Set(kAafKeySuspend, "false");
+            } else {
+                LOG(error) << "Invalid value of 'support_suspend'";
+                return false;
+            }
         }
 
         std::string aaf_audio_type = cfg_.GetValue(kGroupAaf, kAafAudioType);
         if (!aaf_audio_type.empty()) {
             aaf_cfg_->Set(kAafKeyAudioType, aaf_audio_type);
         }
+
+        emul_cmd_.append(" -virtfs local,mount_tag=aaf,security_model=none,path=" + aaf_path);
     }
+    return true;
 }
 
 bool VmBuilderQemu::BuildVgpuCmd(void) {
@@ -804,7 +812,8 @@ bool VmBuilderQemu::BuildVmArgs(void) {
     
     BuildVinputCmd();
 
-    BuildAafCfg();
+    if (!BuildAafCfg())
+        return false;
 
     BuildNetCmd();
 
