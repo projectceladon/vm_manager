@@ -1,0 +1,41 @@
+---
+name: Run vm manager jenkins job
+
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches: "**"
+  pull_request_review:
+    types: [submitted]
+    branches: "**"
+
+env:
+  PR_EVENT: ${{ github.event.action }}
+  PR_URL: https://github.com/${{github.repository}}/pull/${{ github.event.pull_request.number }}
+  PR_LABEL: ${{ github.event.label.name }}
+  BUILDTOKEN: checkbug
+  JENKINS_URL: https://cbjenkins-ba.devtools.intel.com/teams-satg-aee-android-ci/generic-webhook-trigger/invoke?token=
+
+jobs:
+  CheckBug:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: echo vars
+        run: 
+            echo The PR_EVENT is ${{ inputs.PR_EVENT }}
+            echo The PR_URL is ${{ inputs.PR_URL }}
+            echo The TOKEN is ${{ inputs.PR_LABEL }}
+            
+      - name: Trigger Jenkins Build with PR Information
+        run: |-
+              curl --location --request POST  ${{ inputs.JENKINS_URL }}${{ inputs.BUILDTOKEN }}   \
+                      --header 'Content-Type: application/json' \
+                      --data-raw '{
+                        "action": ${{ inputs.PR_EVENT }} ,
+                        "pull_request": {
+                          "html_url": ${{ inputs.PR_URL }}
+                        }
+                      }'
