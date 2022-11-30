@@ -51,6 +51,7 @@ struct CivMsgSync {
     boost::interprocess::interprocess_mutex mutex_cond;
     boost::interprocess::interprocess_condition cond_s;
     boost::interprocess::interprocess_condition cond_c;
+    bool msg_in;
 };
 
 struct CivMsg {
