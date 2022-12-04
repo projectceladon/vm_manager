@@ -144,7 +144,7 @@ void VmCoProcRpmb::Run(void) {
         init_data.wait(ec);
         int ret = init_data.exit_code();
     }
-    cmd_ = bin_ + " --dev " + data_dir_ + "/" + kRpmbData + " --sock " + data_dir_ + "/" + kRpmbSock;
+    cmd_ = bin_ + " --dev " + data_dir_ + "/" + kRpmbData + " --sock " + sock_file_;
 
     VmProcSimple::Run();
 }
@@ -156,9 +156,9 @@ void VmCoProcRpmb::Stop(void) {
              when exit, so here check and remove the sock file after the rpmb_dev process
              exited. Need to remove this block of code once the rpmb_dev fixed the issue.
      */
-    if (boost::filesystem::exists(data_dir_ + "/" + kRpmbSock)) {
+    if (boost::filesystem::exists(sock_file_)) {
         LOG(info) << "Cleanup Rpmb CoProc stuff ...";
-        boost::filesystem::remove(data_dir_ + "/" + kRpmbSock);
+        boost::filesystem::remove(sock_file_);
     }
 }
 

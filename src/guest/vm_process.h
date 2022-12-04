@@ -22,7 +22,7 @@
 namespace vm_manager {
 
 inline constexpr const char *kRpmbData = "RPMB_DATA";
-inline constexpr const char *kRpmbSock = "rpmb_sock";
+inline constexpr const char *kRpmbSockPrefix = "/tmp/rpmb_sock_";
 inline constexpr const char *kVtpmSock = "swtpm-sock";
 
 class VmProcess {
@@ -67,8 +67,8 @@ class VmProcSimple : public VmProcess {
 
 class VmCoProcRpmb : public VmProcSimple {
  public:
-    VmCoProcRpmb(std::string bin, std::string data_dir) :
-          VmProcSimple(""), bin_(bin), data_dir_(data_dir) {}
+    VmCoProcRpmb(std::string bin, std::string data_dir, std::string sock_file) :
+          VmProcSimple(""), bin_(bin), data_dir_(data_dir), sock_file_(sock_file) {}
 
     void Run(void);
     void Stop(void);
@@ -80,6 +80,7 @@ class VmCoProcRpmb : public VmProcSimple {
 
     std::string bin_;
     std::string data_dir_;
+    std::string sock_file_;
 };
 
 class VmCoProcVtpm : public VmProcSimple {
