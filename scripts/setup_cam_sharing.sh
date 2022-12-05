@@ -102,6 +102,8 @@ function install_host_service() {
     sudo cp host_camera_service/stream /usr/local/bin/
     cd ../../..
     sudo rm -rf host_camera
+    sudo apt install v4l-utils -y
+    sudo v4l2-ctl -d /dev/video0 --set-fmt-video=width=1920,height=1080,pixelformat=MJPG
 }
 
 
