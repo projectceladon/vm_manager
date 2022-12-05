@@ -1,51 +1,33 @@
-name: VM Manager CI
+---
+name: Run vm manager jenkins job
 
-on: [push, pull_request]
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches: "**"
+  pull_request_review:
+    types: [submitted]
+    branches: "**"
+
+env:
+    EVENT_CONTEXT: ${{ toJSON(github.event) }}    
+    BUILDTOKEN: test_vmmanager
+    JENKINS_URL: https://cbjenkins-ba.devtools.intel.com/teams-satg-aee-android-ci/generic-webhook-trigger/invoke?token=
 
 jobs:
-  build_ubuntu_gcc:
-
-    runs-on: ${{ matrix.os }}
-    env:
-      LOCAL_INSTALL_DIR: ${{ github.workspace }}/.local
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-20.04]
-
+  Build:
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v3
-        with:
-          path: vm-manager
-
-      - name: setup
-        run: |
-          sudo apt-get --quiet update --yes
-          sudo apt-get --quiet install --yes make devscripts lintian debhelper
-          sudo apt-get --quiet install --yes autoconf libtool pkg-config
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          gcc --version
-          cmake --version
-          which cmake
-
-      - name: build
-        run: |
-          export PATH="${{ env.LOCAL_INSTALL_DIR }}/bin:$PATH"
-          sudo ln -s $(which cmake) /usr/bin/cmake || echo ""
-          cd vm-manager/
-          export CC=/usr/bin/clang
-          export CXX=/usr/bin/clang++
-          debuild --preserve-env -b -uc -us --lintian-opts --profile debian
-
-      - name: artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: vm-manager.${{ matrix.os }}.${{ github.run_id }}.${{ github.sha }}
-          path: |
-            ${{ github.workspace }}/vm-manager/debian/
-            *.deb
-            *.ddeb
-            *.build
-            *.buildinfo
-            *.changes
+      - name: converting object to json
+        env:
+          EVENT_CONTEXT: ${{ toJSON(github.event) }}       
+          run: |
+           echo "$EVENT_CONTEXT"
+      - name: Triggering Jenkins job
+        run: |-
+                curl --location --request POST  ${{ env.JENKINS_URL }}${{ env.BUILDTOKEN }}   \
+                      --header 'Content-Type: application/json' \
+                      --data-raw '{
+                        "action": ${{ env.EVENT_CONTEXT }}                                             
+                        }'
