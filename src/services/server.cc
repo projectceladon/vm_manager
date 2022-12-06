@@ -318,7 +318,8 @@ void Server::Start(void) {
 
         while (!stop_server_) {
             boost::interprocess::scoped_lock <boost::interprocess::interprocess_mutex> lock(sync_->mutex_cond);
-            sync_->cond_s.wait(lock);
+            if (!sync_->msg_in)
+                sync_->cond_s.wait(lock);
 
             std::pair<CivMsg*, boost::interprocess::managed_shared_memory::size_type> data;
             data = shm.find<CivMsg>(kCivServerObjData);
@@ -372,6 +373,7 @@ void Server::Start(void) {
                     LOG(error) << "vm-manager: received unknown message type: " << data.first->type;
                     break;
             }
+            sync_->msg_in = false;
             sync_->cond_c.notify_one();
         }
 
