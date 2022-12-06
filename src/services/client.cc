@@ -94,9 +94,24 @@ bool Client::Notify(CivMsgType t) {
 
     boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock_cond(sync.first->mutex_cond);
     sync.first->cond_s.notify_one();
+    sync.first->msg_in = true;
 
-    sync.first->cond_c.wait(lock_cond);
-    int ret = data->type == kCivMsgRespondSuccess ? true : false;
+    int retry_cnt = 0;
+    constexpr const int kMaxRetryCount = 100;
+    while (sync.first->msg_in && (retry_cnt < kMaxRetryCount)) {
+        boost::interprocess::cv_status cs = sync.first->cond_c.wait_for(lock_cond, boost::chrono::seconds(1));
+        if (cs != boost::interprocess::cv_status::timeout) {
+            break;
+        } else {
+            retry_cnt++;
+        }
+    }
+
+    int ret = false;
+    if (retry_cnt < kMaxRetryCount)
+        ret = data->type == kCivMsgRespondSuccess ? true : false;
+    else
+        LOG(error) << "Server is not responding!";
 
     server_shm_.destroy<CivMsg>(kCivServerObjData);
     server_shm_.zero_free_memory();
