@@ -615,12 +615,19 @@ bool VmBuilderQemu::BuildVsockCmd(void) {
 void VmBuilderQemu::BuildRpmbCmd(void) {
     std::string rpmb_bin = cfg_.GetValue(kGroupRpmb, kRpmbBinPath);
     std::string rpmb_data = cfg_.GetValue(kGroupRpmb, kRpmbDataDir);
+    time_t rawtime;
+    struct tm timeinfo;
+    char t_buf[80];
+    time(&rawtime);
+    localtime_r(&rawtime, &timeinfo);
+    strftime(t_buf, 80 , "%Y-%m-%d_%T", &timeinfo);
+    std::string rpmb_sock = std::string(kRpmbSockPrefix) + t_buf;
+
     if (!rpmb_bin.empty() && !rpmb_data.empty()) {
         emul_cmd_.append(" -device virtio-serial,addr=1"
                          " -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1"
-                         " -chardev socket,id=rpmb0,path=" +
-                           rpmb_data + "/" + std::string(kRpmbSock));
-        co_procs_.emplace_back(std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data)));
+                          " -chardev socket,id=rpmb0,path=" + rpmb_sock);
+        co_procs_.emplace_back(std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data), std::move(rpmb_sock)));
     }
 }
 

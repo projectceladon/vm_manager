@@ -172,11 +172,19 @@ bool VmFlasher::FlashWithQemu(void) {
 
     std::string rpmb_bin = cfg_.GetValue(kGroupRpmb, kRpmbBinPath);
     std::string rpmb_data_dir = cfg_.GetValue(kGroupRpmb, kRpmbDataDir);
-    std::string rpmb_data_file = rpmb_data_dir + "/" + std::string(kRpmbSock);
+   std::string rpmb_data_file = rpmb_data_dir + "/" + std::string(kRpmbData);
+    time_t rawtime;
+    struct tm timeinfo;
+    char t_buf[80];
+    time(&rawtime);
+    localtime_r(&rawtime, &timeinfo);
+    strftime(t_buf, 80 , "%Y-%m-%d_%T", &timeinfo);
+    std::string rpmb_sock = std::string(kRpmbSockPrefix) + t_buf;
+
     std::unique_ptr<VmCoProcRpmb> rpmb_proc;
     boost::system::error_code ec;
     if (!rpmb_bin.empty() && !rpmb_data_dir.empty()) {
-        if (boost::filesystem::exists(rpmb_data_file))  {
+        if (boost::filesystem::exists(rpmb_data_file)) {
             if (!boost::filesystem::remove(rpmb_data_file, ec)) {
                 LOG(error) << "Failed to remove " << rpmb_data_file;
                 LOG(error) << "Please manully remove " << rpmb_data_file << ", and try again!";
@@ -185,8 +193,8 @@ bool VmFlasher::FlashWithQemu(void) {
         }
         qemu_args.append(" -device virtio-serial,addr=1"
                          " -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1"
-                         " -chardev socket,id=rpmb0,path=" + rpmb_data_file);
-        rpmb_proc = std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data_dir));
+                         " -chardev socket,id=rpmb0,path=" + rpmb_sock);
+        rpmb_proc = std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data_dir), std::move(rpmb_sock));
     }
 
     std::string vtpm_bin = cfg_.GetValue(kGroupVtpm, kVtpmBinPath);
