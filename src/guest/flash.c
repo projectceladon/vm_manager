@@ -110,7 +110,7 @@ static int create_vusb(GKeyFile *gkf)
 	}
 
 	snprintf(cmd, MAX_CMDLINE_LEN, "dd if=/dev/zero of="VUSB_FLASH_DISK" bs=%ld count=%ld",
-					DD_BS, (total_images_size + DD_BS - 1)/DD_BS);
+					DD_BS, (total_images_size + DD_BS + 2 GIGABYTE - 1)/DD_BS);
 	printf("%s\n", cmd);
 	if (system(cmd))
 		return -1;
