@@ -232,7 +232,7 @@ function ubu_build_ovmf_gvt(){
 function install_vm_manager_deb(){
     local os_ver=$(lsb_release -rs)
     local vm_repo="https://github.com/projectceladon/vm_manager"
-    local rtag="v0.7.1"
+    local rtag="v0.7.2"
     local rdeb=vm-manager_${rtag}_ubuntu-${os_ver}.deb
 
     [ -f ${rdeb} ] && rm -f ${rdeb}
