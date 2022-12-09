@@ -605,6 +605,16 @@ int start_guest(char *name)
 			else
 				g_warning("Invalid setting of AAF Allow suspend option, it should be either true or false\n");
 		}
+
+		val = g_key_file_get_string(gkf, g->name, g->key[AAF_CIV], NULL);
+		if (val) {
+			if (0 == strcmp(val, CIV_ENABLE_STR))
+				set_aaf_option(AAF_CONFIG_CIV, AAF_CIV_ENABLE);
+			else if (0 == strcmp(val, CIV_DISABLE_STR))
+				set_aaf_option(AAF_CONFIG_CIV, AAF_CIV_DISABLE);
+			else
+				g_warning("Invalid setting of AAF Allow CiV option, it should be either true or false\n");
+		}
 	}
 
 	g = &g_group[GROUP_VGPU];
