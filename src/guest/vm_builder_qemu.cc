@@ -573,6 +573,9 @@ void VmBuilderQemu::BuildNetCmd(void) {
     if (model.empty())
         model = "e1000";
 
+    if (model.compare("none") == 0)
+        return;
+
     std::string net_arg = " -netdev user,id=net0";
     std::string adb_port = cfg_.GetValue(kGroupNet, kNetAdbPort);
     if (!adb_port.empty())
