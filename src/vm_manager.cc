@@ -23,10 +23,7 @@
 #include "guest/tui.h"
 #include "services/server.h"
 #include "services/client.h"
-
-#define VERSION_MAJOR 1
-#define VERSION_MINOR 1
-#define VERSION_MICRO 0
+#include "revision.h"
 
 namespace vm_manager {
 
@@ -318,7 +315,10 @@ class CivOptions final {
     }
     void PrintVersion(void) {
         std::cout << "CiV vm-manager version: "
-                  << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_MICRO
+                  << BUILD_REVISION
+                  << " " << BUILD_TYPE
+                  << " " << BUILD_TIMESTAMP
+                  << " @" << BUILD_FQDN
                   << std::endl;
     }
 

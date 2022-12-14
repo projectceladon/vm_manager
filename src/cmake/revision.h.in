@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 Intel Corporation.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+#ifndef BUILD_REVISION_H_
+#define BUILD_REVISION_H_
+#pragma once
+
+#define BUILD_REVISION "@build_version_@"
+#define BUILD_TYPE "@build_type_@"
+#define BUILD_TIMESTAMP "@time_stamp_@"
+#define BUILD_FQDN "@build_fqdn_@"
+
+#endif  // BUILD_REVISION_H_

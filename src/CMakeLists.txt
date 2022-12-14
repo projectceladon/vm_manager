@@ -18,6 +18,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(BoostCMake)
 include(FTXUICMake)
 include(gRPCFetchCMake)
+include(revisionCMake)
 
 set(PROTOS_GEN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/services/protos/gens/)
 include_directories(${PROTOS_GEN_DIR})
@@ -42,6 +43,7 @@ file(GLOB utils_src utils/*.cc)
 add_executable(${PROJECT_NAME} vm_manager.cc ${guest_src} ${services_src} ${utils_src})
 add_dependencies(${PROJECT_NAME} vm_grpc_proto)
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE ftxui::screen
