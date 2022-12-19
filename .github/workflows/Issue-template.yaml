@@ -1,36 +1,30 @@
----
-name: Run vm manager jenkins job
-
-
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types:
+      - closed
     branches: "**"
-  pull_request_review:
-    types: [submitted]
-    branches: "**"
-
+    
 env:
     EVENT_CONTEXT: ${{ toJSON(github.event) }}
-    BUILDTOKEN: test_vmmanager
+    BUILDTOKEN: test_issue
     JENKINS_URL: https://cbjenkins-ba.devtools.intel.com/teams-satg-aee-android-ci/generic-webhook-trigger/invoke?token=
 
 jobs:
-  Build:
+  if_merged:
+    if: github.event.pull_request.merged == true
     runs-on: self-hosted
     steps:
-      - name: converting object to json
-        env:
+    - run: |
+        echo The PR was merged
+    - name: converting object to json
+      env:
           EVENT_CONTEXT: ${{ toJSON(github.event) }}
-        run: |
+      run: |
           echo "$EVENT_CONTEXT"
-      - name: Triggering Jenkins job
-        run: |-
+    - name: Triggering Jenkins job
+      run: |-
                 curl --location --request POST  ${{ env.JENKINS_URL }}${{ env.BUILDTOKEN }}   \
                       --header 'Content-Type: application/json' \
                       --data-raw '{
                         "action": ${{ env.EVENT_CONTEXT }}                      
                         }'
-                      
-        
-        
