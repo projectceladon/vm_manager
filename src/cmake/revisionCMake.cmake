@@ -6,22 +6,25 @@
 #
 #
 
-set(build_version_ "unknown")
+set(main_revision_ "1.1.0")
+
+set(rel_version_ "unknown")
 
 find_package(Git)
 if(GIT_FOUND)
+  set(tag_ver "v${main_revision_}")
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --tags --long
+    COMMAND ${GIT_EXECUTABLE} describe --all --match ${tag_ver}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE build_version_
+    OUTPUT_VARIABLE rel_version_
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-  if("${build_version_}" STREQUAL "")
+  if("${rel_version_}" STREQUAL "")
     execute_process(
       COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      OUTPUT_VARIABLE build_version_
+      OUTPUT_VARIABLE rel_version_
       ERROR_QUIET
       OUTPUT_STRIP_TRAILING_WHITESPACE
     )
@@ -29,6 +32,8 @@ if(GIT_FOUND)
 else()
   message(STATUS "Git not found!")
 endif()
+
+set(build_version_ "${main_revision_} ${rel_version_}")
 message(STATUS "Build version: ${build_version_}")
 
 set(build_type_ ${CMAKE_BUILD_TYPE})
