@@ -542,7 +542,7 @@ void VmBuilderQemu::BuildFixedCmd(void) {
         " -M q35"
         " -machine kernel_irqchip=on"
         " -k en-us"
-        " -cpu host,-waitpkg"
+        " -cpu host,-waitpkg,pmu=off"
         " -enable-kvm"
         " -device qemu-xhci,id=xhci,p2=8,p3=8"
         " -device usb-mouse"
