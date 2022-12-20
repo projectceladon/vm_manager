@@ -39,6 +39,7 @@ message(STATUS "Build version: ${build_version_}")
 set(build_type_ ${CMAKE_BUILD_TYPE})
 message(STATUS "BUILD Type: ${build_type_}")
 
+unset(ENV{SOURCE_DATE_EPOCH})
 string(TIMESTAMP time_stamp_ UTC)
 message(STATUS "BUILD TimeStamp: ${time_stamp_}")
 
