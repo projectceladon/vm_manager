@@ -47,6 +47,8 @@ constexpr const char *kIntelGpuSriovNumVfs = "/sys/bus/pci/devices/0000:00:02.0/
 constexpr const char *kVfioPciNewId =    "/sys/bus/pci/drivers/vfio-pci/new_id";
 constexpr const char *kVfioPciRemoveId = "/sys/bus/pci/drivers/vfio-pci/remove_id";
 constexpr const char *kVfioPciUnbind =   "/sys/bus/pci/drivers/vfio-pci/unbind";
+constexpr const char *kVfioModulePath = "/sys/module/vfio/";
+constexpr const char *kVfioPciModulePath = "/sys/module/vfio_pci/";
 
 constexpr const char *kGvtgMdevTypePath = "/sys/bus/pci/devices/0000:00:02.0/mdev_supported_types/";
 constexpr const char *kGvtgMdevV51Path = "/sys/bus/pci/devices/0000:00:02.0/mdev_supported_types/i915-GVTg_V5_1/";
@@ -203,7 +205,22 @@ static bool SetupHugePages(const std::string &mem_size) {
     return true;
 }
 
+static bool LoadKernelModule(const char *path, const std::string &module) {
+    boost::filesystem::path p(path);
+    if (!boost::filesystem::exists(p)) {
+        if (boost::process::system("modprobe " + module))
+            return false;
+    }
+    return true;
+}
+
 static int SetAvailableVf(void) {
+    if (!LoadKernelModule(kVfioModulePath,"vfio"))
+        return -1;
+
+    if (!LoadKernelModule(kVfioPciModulePath,"vfio-pci"))
+        return -1;
+
     int totalvfs = ReadSysFile(kIntelGpuSriovTotalVfs, std::ios_base::dec);
     if (totalvfs <= 0)
         return -1;
@@ -310,10 +327,10 @@ static bool PassthroughOnePciDev(const char *pci_id, PciPassthroughAction action
     if (!pci_id)
         return false;
 
-    if (boost::process::system("modprobe vfio"))
+    if (!LoadKernelModule(kVfioModulePath,"vfio"))
         return false;
 
-    if (boost::process::system("modprobe vfio-pci"))
+    if (!LoadKernelModule(kVfioPciModulePath,"vfio-pci"))
         return false;
 
     boost::filesystem::path p(kPciDevicePath);
