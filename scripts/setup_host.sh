@@ -149,6 +149,10 @@ function ubu_build_ovmf_gvt(){
 }
 
 function install_vm_manager() {
+    if [[ ! -z ${VM_MANAGER_VERSION} ]]; then
+	echo "Skip vm-manager installation. It will use already installed packages."
+        return 0
+    fi
     local SCRIPTS_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
     sudo dpkg -i $SCRIPTS_DIR/vm-manager*.deb
     if [ "$?" -ne 0 ]; then
