@@ -31,6 +31,7 @@ constexpr char kGroupPciPt[]   = "passthrough";
 constexpr char kGroupAudio[]   = "audio";
 constexpr char kGroupMed[]     = "mediation";
 constexpr char kGroupService[] = "guest_control";
+constexpr char kGroupUsb[]     = "usb";
 constexpr char kGroupExtra[]   = "extra";
 
 /* Keys */
@@ -87,6 +88,8 @@ constexpr char kMedCamera[] = "camera_med";
 constexpr char kServTimeKeep[] = "time_keep";
 constexpr char kServPmCtrl[]   = "pm_control";
 constexpr char kServVinput[]   = "vinput";
+
+constexpr char kUsbTablet[] = "usb_tablet";
 
 constexpr char kExtraCmd[]     = "cmd";
 constexpr char kExtraService[] = "service";

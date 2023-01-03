@@ -44,6 +44,7 @@ map<string_view, vector<string_view>> kConfigMap = {
     { kGroupAudio,   { kDisableEmul } },
     { kGroupMed,     { kMedBattery, kMedThermal, kMedCamera } },
     { kGroupService, { kServTimeKeep, kServPmCtrl, kServVinput } },
+    { kGroupUsb,     { kUsbTablet } },
     { kGroupExtra,   { kExtraCmd, kExtraService, kExtraPwrCtrlMultiOS } }
 };
 
