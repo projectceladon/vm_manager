@@ -24,7 +24,9 @@ class CivPowerCtlImpl final : public vm_manager::CivPowerCtl::Service {
 
     ~CivPowerCtlImpl() override = default;
 
-    grpc::Status Shutdown(grpc::ServerContext* ctx, const vm_manager::EmptyMessage* request, vm_manager::EmptyMessage* respond) override {
+    grpc::Status Shutdown(grpc::ServerContext* ctx,
+                          const vm_manager::EmptyMessage* request,
+                          vm_manager::EmptyMessage* respond) override {
         std::cout << "Shutdown Signal from Host!" << std::endl;
         system("/system/bin/reboot -p shutdown");
         return grpc::Status::OK;
@@ -35,7 +37,8 @@ class CivPowerCtlImpl final : public vm_manager::CivPowerCtl::Service {
 
 int main() {
     char listener_address[50] = { 0 };
-    snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u", VMADDR_CID_ANY, vm_manager::kCivPowerCtlListenerPort);
+    snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u", VMADDR_CID_ANY,
+             vm_manager::kCivPowerCtlListenerPort);
     grpc::ServerBuilder builder;
     CivPowerCtlImpl listener;
     std::cout << "Civ Powerctl Listener listen@" << listener_address << std::endl;

@@ -107,6 +107,6 @@ namespace logger {
         }
     }
 
-}
+}  // namespace logger
 
 #endif  // SRC_UTILS_LOG_H_

@@ -128,7 +128,7 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
 
         virtual_disk_ = kVirtualUsbDiskPath;
         return true;
-    } 
+    }
 
     int count = 0;
     for (auto& p : boost::filesystem::directory_iterator(o_dir)) {
@@ -139,7 +139,7 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
         virtual_disk_ = o_dir.string() + "/" + file.stem().string();
         return true;
     }
-    
+
     return false;
 }
 
@@ -172,7 +172,7 @@ bool VmFlasher::FlashWithQemu(void) {
 
     std::string rpmb_bin = cfg_.GetValue(kGroupRpmb, kRpmbBinPath);
     std::string rpmb_data_dir = cfg_.GetValue(kGroupRpmb, kRpmbDataDir);
-   std::string rpmb_data_file = rpmb_data_dir + "/" + std::string(kRpmbData);
+    std::string rpmb_data_file = rpmb_data_dir + "/" + std::string(kRpmbData);
     time_t rawtime;
     struct tm timeinfo;
     char t_buf[80];

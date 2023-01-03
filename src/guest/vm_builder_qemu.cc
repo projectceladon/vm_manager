@@ -215,10 +215,10 @@ static bool LoadKernelModule(const char *path, const std::string &module) {
 }
 
 static int SetAvailableVf(void) {
-    if (!LoadKernelModule(kVfioModulePath,"vfio"))
+    if (!LoadKernelModule(kVfioModulePath, "vfio"))
         return -1;
 
-    if (!LoadKernelModule(kVfioPciModulePath,"vfio-pci"))
+    if (!LoadKernelModule(kVfioPciModulePath, "vfio-pci"))
         return -1;
 
     int totalvfs = ReadSysFile(kIntelGpuSriovTotalVfs, std::ios_base::dec);
@@ -263,7 +263,7 @@ static int SetAvailableVf(void) {
             execQuantumPath.append(std::to_string(i) + kGtExecQuantumMs);
             WriteSysFile(execQuantumPath.c_str(), std::to_string(kExecQuantum));
             return i;
-	}
+        }
     }
 
     LOG(error) << "Failed to find 1 available VF!";
@@ -302,9 +302,9 @@ void VmBuilderQemu::BuildExtraGuestPmCtrlCmd(void) {
     std::string ex_cmd = cfg_.GetValue(kGroupExtra, kExtraPwrCtrlMultiOS);
     if (ex_cmd == "true") {
         static std::string socketPath;
-        for(int avail = 0; avail < MAX_NUM_GUEST; avail++) {
+        for (int avail = 0; avail < MAX_NUM_GUEST; avail++) {
             socketPath = kQmpPowerSocket + std::to_string(avail);
-            if(access(socketPath.c_str(), F_OK) != 0) {
+            if (access(socketPath.c_str(), F_OK) != 0) {
                 std::string qmpCmd = " -qmp unix:" + socketPath + ",server,nowait";
                 emul_cmd_.append(qmpCmd);
                 break;
@@ -314,8 +314,9 @@ void VmBuilderQemu::BuildExtraGuestPmCtrlCmd(void) {
         end_call_.emplace([](){
             boost::filesystem::remove(socketPath);
         });
-    } else
+    } else {
         return;
+    }
 }
 
 enum PciPassthroughAction {
@@ -327,10 +328,10 @@ static bool PassthroughOnePciDev(const char *pci_id, PciPassthroughAction action
     if (!pci_id)
         return false;
 
-    if (!LoadKernelModule(kVfioModulePath,"vfio"))
+    if (!LoadKernelModule(kVfioModulePath, "vfio"))
         return false;
 
-    if (!LoadKernelModule(kVfioPciModulePath,"vfio-pci"))
+    if (!LoadKernelModule(kVfioPciModulePath, "vfio-pci"))
         return false;
 
     boost::filesystem::path p(kPciDevicePath);
@@ -502,7 +503,7 @@ static int GetUid(void) {
 
 void VmBuilderQemu::BuildAudioCmd(void) {
     int uid = GetUid();
-    if (cfg_.GetValue(kGroupAudio, kDisableEmul).compare("true") == 0) 
+    if (cfg_.GetValue(kGroupAudio, kDisableEmul).compare("true") == 0)
         return;
 
     emul_cmd_.append(" -device intel-hda"
@@ -647,7 +648,8 @@ void VmBuilderQemu::BuildRpmbCmd(void) {
         emul_cmd_.append(" -device virtio-serial,addr=1"
                          " -device virtserialport,chardev=rpmb0,name=rpmb0,nr=1"
                           " -chardev socket,id=rpmb0,path=" + rpmb_sock);
-        co_procs_.emplace_back(std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data), std::move(rpmb_sock)));
+        co_procs_.emplace_back(std::make_unique<VmCoProcRpmb>(std::move(rpmb_bin), std::move(rpmb_data),
+                               std::move(rpmb_sock)));
     }
 }
 
@@ -660,10 +662,9 @@ void VmBuilderQemu::BuildVtpmCmd(void) {
                          " -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0");
         co_procs_.emplace_back(std::make_unique<VmCoProcVtpm>(std::move(vtpm_bin), std::move(vtpm_data)));
     }
-
 }
 
-void VmBuilderQemu::InitAafCfg(void){
+void VmBuilderQemu::InitAafCfg(void) {
     std::string aaf_path = cfg_.GetValue(kGroupAaf, kAafPath);
     if (!aaf_path.empty()) {
         aaf_cfg_ = std::make_unique<Aaf>(aaf_path.c_str());
@@ -722,7 +723,8 @@ bool VmBuilderQemu::BuildVgpuCmd(void) {
                 return false;
             }
             emul_cmd_.append(" -vga none -nographic"
-                " -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on -display none");
+                " -device vfio-pci,host=00:02.0,x-igd-gms=2,id=hostdev0,bus=pcie.0,addr=0x2,x-igd-opregion=on"
+                " -display none");
             if (aaf_cfg_)
                 aaf_cfg_->Set(kAafKeyGpuType, "gvtd");
         } else if (vgpu_type.compare(kVgpuVirtio) == 0) {
@@ -765,7 +767,7 @@ void VmBuilderQemu::BuildVinputCmd(void) {
         LOG(warning) << "vinput-manager not found";
         return;
     }
-    
+
     if (vgpu_type.compare(kVgpuGvtD) == 0) {
         vinput.append(" --gvtd");
         emul_cmd_.append(
@@ -839,7 +841,7 @@ bool VmBuilderQemu::BuildVmArgs(void) {
 
     if (!BuildVgpuCmd())
         return false;
-    
+
     BuildVinputCmd();
 
     if (!BuildAafCfg())
@@ -945,7 +947,6 @@ void VmBuilderQemu::SetVmReady(void) {
 }
 
 void VmBuilderQemu::PauseVm(void) {
-
 }
 
 void VmBuilderQemu::WaitVmExit() {

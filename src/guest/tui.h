@@ -15,7 +15,7 @@ int create_tui(void);
 #include <vector>
 #include <fstream>
 
-#include <boost/filesystem.hpp> 
+#include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include "ftxui/component/captured_mouse.hpp"
 #include "ftxui/component/component.hpp"
@@ -45,7 +45,7 @@ class InputField {
      ftxui::Component Get() {
          return wrap_;
      }
-     
+
      std::string GetContent() {
         return content_;
      }

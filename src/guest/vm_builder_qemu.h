@@ -80,7 +80,7 @@ class VmBuilderQemu : public VmBuilder {
     std::unique_ptr<VmProcess> main_proc_;
     std::vector<std::unique_ptr<VmProcess>> co_procs_;
     std::string emul_cmd_;
-    //std::vector<std::string> env_data_;
+    // std::vector<std::string> env_data_;
     std::set<std::string> pci_pt_dev_set_;
     boost::latch vm_ready_latch_;
     std::queue<std::function<void(void)>> end_call_;

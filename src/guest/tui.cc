@@ -20,7 +20,7 @@ namespace vm_manager {
 void CivTui::InitName(const std::string& name) {
     name_ = ftxui::Renderer([name] {
         return ftxui::hbox(ftxui::hbox(ftxui::text("name") | ftxui::size(ftxui::WIDTH, ftxui::EQUAL, 18),
-            ftxui::text(": "), ftxui::text(name))); 
+            ftxui::text(": "), ftxui::text(name)));
     });
 }
 
@@ -189,7 +189,7 @@ void CivTui::InitializeButtons(void) {
         std::string configPath = GetConfigPath();
         std::string filePath = configPath + "/" + filename_ +".ini";
         if (!boost::filesystem::exists(filePath)) {
-            boost::filesystem::ofstream file(filePath) ;
+            boost::filesystem::ofstream file(filePath);
             SetConfToPtree();
             bool writeConfigFile = civ_config_.WriteConfigFile(filePath);
             if (writeConfigFile) {
@@ -238,7 +238,7 @@ void CivTui::InitializeUi(std::string name) {
 
 void CivTui::SetConfToPtree() {
     civ_config_.SetValue(kGroupGlob, kGlobName, filename_);
-    civ_config_.SetValue(kGroupGlob, kGlobFlashfiles, flashfiles_.GetContent()); 
+    civ_config_.SetValue(kGroupGlob, kGlobFlashfiles, flashfiles_.GetContent());
 
     civ_config_.SetValue(kGroupEmul, kEmulPath, emulator_.GetContent());
 
@@ -251,10 +251,10 @@ void CivTui::SetConfToPtree() {
 
     civ_config_.SetValue(kGroupFirm, kFirmType, firmware_type_.at(firmware_type_selected_));
     if (firmware_type_selected_ == 0) {
-        civ_config_.SetValue(kGroupFirm, kFirmPath, firm_unified_.GetContent()); 
+        civ_config_.SetValue(kGroupFirm, kFirmPath, firm_unified_.GetContent());
     } else if (firmware_type_selected_ == 1) {
         civ_config_.SetValue(kGroupFirm, kFirmCode, firm_splited_code_.GetContent());
-        civ_config_.SetValue(kGroupFirm, kFirmVars, firm_splited_data_.GetContent()); 
+        civ_config_.SetValue(kGroupFirm, kFirmVars, firm_splited_data_.GetContent());
     }
 
     civ_config_.SetValue(kGroupVgpu, kVgpuType, vgpu_type_.at(vgpu_selected_));
@@ -272,11 +272,11 @@ void CivTui::SetConfToPtree() {
     civ_config_.SetValue(kGroupRpmb, kVtpmDataDir, rpmb_data_.GetContent());
 
     std::string passthrough;
-    for (std::vector<std::string>::iterator iter = pt_pci_disp_.begin(); iter!=pt_pci_disp_.end(); iter++) {
+    for (std::vector<std::string>::iterator iter = pt_pci_disp_.begin(); iter != pt_pci_disp_.end(); iter++) {
         std::string selectItem = *iter;
         size_t pos = selectItem.find(" ");
         passthrough += selectItem.substr(0, pos);
-        if (iter!=pt_pci_disp_.end()-1) {
+        if (iter != (pt_pci_disp_.end() - 1)) {
             passthrough += ',';
         }
     }
@@ -288,13 +288,13 @@ void CivTui::SetConfToPtree() {
     civ_config_.SetValue(kGroupNet, kNetFastbootPort, fastboot_port_.GetContent());
 
     civ_config_.SetValue(kGroupMed, kMedBattery, batt_med_.GetContent());
-    
+
     civ_config_.SetValue(kGroupMed, kMedThermal, therm_med_.GetContent());
 
     civ_config_.SetValue(kGroupAaf, kAafPath, aaf_.GetContent());
 
     civ_config_.SetValue(kGroupService, kServTimeKeep, tkeep_.GetContent());
-        
+
     civ_config_.SetValue(kGroupService, kServPmCtrl, pmctl_.GetContent());
 
     civ_config_.SetValue(kGroupExtra, kExtraCmd, extra_.GetContent());
