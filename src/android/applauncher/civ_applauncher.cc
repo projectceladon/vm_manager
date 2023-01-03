@@ -19,7 +19,7 @@
 #include "vm_manager.h"
 
 #define  LOG_TAG    "civ_applauncher"
-#define  ALOG(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  ALOG(...)  __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 
 class CivAppLauncherImpl final : public vm_manager::CivAppLauncher::Service {
  public:
@@ -29,9 +29,12 @@ class CivAppLauncherImpl final : public vm_manager::CivAppLauncher::Service {
 
     ~CivAppLauncherImpl() override = default;
 
-    grpc::Status LaunchApp(grpc::ServerContext* ctx, const vm_manager::AppLaunchRequest* request, vm_manager::AppLaunchResponse* respond) override {
+    grpc::Status LaunchApp(grpc::ServerContext* ctx,
+                           const vm_manager::AppLaunchRequest* request,
+                           vm_manager::AppLaunchResponse* respond) override {
         ALOG("Launch APP: %s, Disp id: %u\n", request->app_name().c_str(), request->disp_id());
-        std::string cmd("/system/bin/am start -n " + request->app_name() + " --display " + std::to_string(request->disp_id()));
+        std::string cmd("/system/bin/am start -n " + request->app_name() +
+                        " --display " + std::to_string(request->disp_id()));
         if (system(cmd.c_str())) {
             respond->set_code(-1);
             respond->set_status(vm_manager::AppStatus::FAILED);
@@ -47,7 +50,8 @@ class CivAppLauncherImpl final : public vm_manager::CivAppLauncher::Service {
 
 int main() {
     char listener_address[50] = { 0 };
-    snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u", VMADDR_CID_ANY, vm_manager::kCivAppLauncherListenerPort);
+    snprintf(listener_address, sizeof(listener_address) - 1, "vsock:%u:%u", VMADDR_CID_ANY,
+             vm_manager::kCivAppLauncherListenerPort);
     grpc::ServerBuilder builder;
     CivAppLauncherImpl listener;
     ALOG("Civ Applauncher Listener listen@%s\n", listener_address);
