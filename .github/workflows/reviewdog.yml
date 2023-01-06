@@ -1,0 +1,14 @@
+name: Reviewdog
+on: [pull_request]
+
+jobs:
+  cpplint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: reviewdog/action-cpplint@master
+      with:
+        github_token: ${{ secrets.github_token }}
+        reporter: github-pr-check
+        flags: --linelength=120
+
