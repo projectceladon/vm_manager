@@ -23,14 +23,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      with:
-        path: vm-manager
 
     - run: |
        export CC=/usr/bin/clang
        export CXX=/usr/bin/clang++
-       mkdir vm-manager/build/
-       cd vm-manager/build/
+       mkdir build/
+       cd build/
        cmake -DCMAKE_BUILD_TYPE=Release ..
        cmake --build . --config Release
        cd -
@@ -40,12 +38,36 @@ jobs:
       uses: github/codeql-action/init@v2
       with:
         languages: ${{ matrix.language }}
-        #queries: security-extended,security-and-quality
+        queries: security-extended,security-and-quality
 
     - run: |
-       cd vm-manager/build/
+       cd build/
        find src/CMakeFiles/vm-manager.dir/ -iname *.o |xargs rm
        cmake --build . --config Release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
+      with:
+        upload: False
+        output: sarif-results
+
+    - name: Filter SARIF
+      uses: advanced-security/filter-sarif@v1
+      with:
+        patterns: |
+          -build/**:**
+          -src/services/protos/gens/**:**
+        input: sarif-results/cpp.sarif
+        output: sarif-results/cpp-filtered.sarif
+
+    - name: Upload SARIF
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: sarif-results/cpp-filtered.sarif
+
+    - name: artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: sarif-results
+        path: sarif-results
+
