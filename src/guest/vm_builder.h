@@ -66,6 +66,7 @@ static inline constexpr const char *VmStateToStr(VmBuilder::VmState s) {
         case VmBuilder::kVmPaused:  return "Paused";
         case VmBuilder::kVmUnknown: return "Unknown";
     }
+    return "NaN";
 }
 
 
