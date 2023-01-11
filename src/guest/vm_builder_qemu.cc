@@ -190,8 +190,8 @@ static bool SetupHugePages(const std::string &mem_size) {
     WriteSysFile(kSys2MNrHugePages, std::to_string(required_hp));
 
     /* check nr huge pages */
+    int wait_cnt = 0;
     while (nr_hp != required_hp) {
-        int wait_cnt = 0;
         nr_hp = ReadSysFile(kSys2MNrHugePages, std::ios_base::dec);
         if (wait_cnt < 200) {
             usleep(10000);
