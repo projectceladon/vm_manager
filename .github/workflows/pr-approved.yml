@@ -4,7 +4,8 @@ name: Run VM-MANAGER-PR-MERGE-FLOW
 on:
   pull_request_review:
     types: [submitted]
-    branches: "**"
+    branches: 
+      - dev
     
 env:
     EVENT_CONTEXT: ${{ toJSON(github.event) }}
@@ -13,7 +14,7 @@ env:
 
 jobs:
   if_merged:
-    if: github.event.review.state == 'approved'
+    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'dev'
     runs-on: self-hosted
     steps:
     - run: |
