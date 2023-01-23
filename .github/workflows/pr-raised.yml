@@ -3,10 +3,7 @@ name: Run VM-MANAGER-PR-FLOW
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
-    branches: "**"
-  pull_request_review:
-    types: [submitted]
+    types: [opened, synchronize, reopened, edited]
     branches: "**"
 
 env:
