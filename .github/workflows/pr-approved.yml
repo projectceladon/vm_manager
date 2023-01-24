@@ -6,6 +6,7 @@ on:
     types: [submitted]
     branches: 
       - dev
+      - tmp/ci-testing
     
 env:
     EVENT_CONTEXT: ${{ toJSON(github.event) }}
@@ -14,7 +15,7 @@ env:
 
 jobs:
   if_merged:
-    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'dev'
+    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'dev' | 'tmp/ci-testing'
     runs-on: self-hosted
     steps:
     - run: |
