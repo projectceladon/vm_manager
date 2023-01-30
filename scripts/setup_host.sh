@@ -42,7 +42,7 @@ function ubu_changes_require(){
 function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
-    sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev libseccomp-dev
+    sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python2-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri libdaxctl-dev libseccomp-dev
     sudo apt install -y ninja-build libcap-ng-dev
 
     #Create QEMU_CACHE_DIR if it doesnt exists
@@ -135,6 +135,10 @@ function ubu_build_ovmf_gvt(){
 
     git submodule update --init
 
+    cd $CIV_WORK_DIR/edk2/BaseTools/
+    patch -p1 < $CIV_WORK_DIR/patches/ovmf/0002-Fix-vla-parameter-error.patch
+
+    cd $CIV_WORK_DIR/edk2/
     source ./edksetup.sh
     make -C BaseTools/
     build -b DEBUG -t GCC5 -a X64 -p OvmfPkg/OvmfPkgX64.dsc -D NETWORK_IP4_ENABLE -D NETWORK_ENABLE  -D SECURE_BOOT_ENABLE -D TPM_ENABLE
@@ -145,7 +149,7 @@ function ubu_build_ovmf_gvt(){
         ./BaseTools/Source/C/bin/EfiRom -f 0x8086 -i $gpu_device_id -e $CIV_GOP_DIR/IntelGopDriver.efi -o $CIV_GOP_DIR/GOP.rom
     fi
 
-    cd -
+    cd $CIV_WORK_DIR
 }
 
 function install_vm_manager() {
