@@ -458,36 +458,6 @@ function ubu_update_wifi_fw(){
 }
 
 
-function set_sleep_inhibitor() {
-    sudo apt-get -y install python3-pip
-    sudo pip3 install -U sleep-inhibitor
-    sudo sed -i 's/\/usr\/bin\/%p/\/usr\/local\/bin\/%p/' /usr/local/share/sleep-inhibitor/sleep-inhibitor.service
-    #Download the plugin if not already
-    sudo echo "#! /bin/sh
-if adb get-state 1>/dev/null 2>&1
-then
-        state=\$(adb shell dumpsys power | grep -oE 'WAKE_LOCK')
-	if echo \"\$state\" | grep 'WAKE_LOCK'; then
-                exit 254
-        else
-                exit 0
-        fi
-else
-        exit 0
-fi" > /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
-    sudo chmod a+x /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
-    sudo cp /usr/local/share/sleep-inhibitor/sleep-inhibitor.conf /etc/.
-    sudo echo "plugins:
-    #Inhibit sleep if wakelock is held
-    - path: is-wakelock-active
-      name: Wakelock active
-      what: sleep
-      period: 0.01" > /etc/sleep-inhibitor.conf
-    sudo sed -i 's/#*HandleSuspendKey=\w*/HandleSuspendKey=suspend/' /etc/systemd/logind.conf
-    sudo cp /usr/local/share/sleep-inhibitor/sleep-inhibitor.service /etc/systemd/system/.
-    reboot_required=1
-}
-
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -567,7 +537,6 @@ install_vm_manager
 prepare_required_scripts
 ubu_install_swtpm
 ubu_update_bt_fw
-set_sleep_inhibitor
 
 ask_reboot
 
