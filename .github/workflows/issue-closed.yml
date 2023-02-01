@@ -1,7 +1,5 @@
 ---
 name: Run VM-MANAGER-RELEASE-FLOW
-
-
 on:
   issues:
     types: [closed]
@@ -24,3 +22,4 @@ jobs:
                       --data-raw '{
                         "action": ${{ env.EVENT_CONTEXT }}                      
                         }'
+                            
