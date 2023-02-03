@@ -167,9 +167,9 @@ function install_vm_manager() {
 
 function ubu_enable_host_gvt(){
     if [[ ! `cat /etc/default/grub` =~ "i915.enable_gvt=1 intel_iommu=on i915.force_probe=*" ]]; then
-        read -p "The grub entry in '/etc/default/grub' will be updated for enabling GVT-g and GVT-d, do you want to continue? [Y/n]" res
+        read -p "Do you want to update the grub entry in '/etc/default/grub' for enabling GVT-g and GVT-d? [Y/n]" res
         if [ x$res = xn ]; then
-            exit 0
+            return
         fi
         sed -i "s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"i915.enable_gvt=1 intel_iommu=on i915.force_probe=*/g" /etc/default/grub
         update-grub
@@ -183,9 +183,9 @@ function ubu_enable_host_gvt(){
 
 function ubu_enable_host_sriov(){
    if [[ ! `cat /etc/default/grub` =~ "i915.enable_guc=0x7" ]]; then
-        read -p "The grub entry in '/etc/default/grub' will be updated for enabling SRIOV, do you want to continue?     [Y/n]" res
+        read -p "Do you want to update the grub entry in '/etc/default/grub' for enabling SRIOV? [Y/n]" res
         if [ x$res = xn ]; then
-            exit 0
+            return
         fi
 	sed -i "s/GRUB_CMDLINE_LINUX=\"/GRUB_CMDLINE_LINUX=\"i915.enable_guc=0x7 udmabuf.list_limit=8192  /g" /etc/default/grub
         update-grub
