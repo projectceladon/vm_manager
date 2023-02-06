@@ -4,7 +4,8 @@ name: Run VM-MANAGER-RELEASE-FLOW
 
 on:
   issues:
-    types: [closed]
+    types: 
+     - closed
     branches: "**"
     
 env:
