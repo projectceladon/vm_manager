@@ -1,0 +1,25 @@
+---
+name: Run VM-MANAGER-RELEASE-FLOW
+
+on:
+  issues:
+    types: 
+     - closed
+    branches: "**"
+    
+env:
+    EVENT_CONTEXT: ${{ toJSON(github.event) }}
+    BUILDTOKEN: test_vmmanagermerge
+    JENKINS_URL: https://cbjenkins-ba.devtools.intel.com/teams-satg-aee-android-ci/generic-webhook-trigger/invoke?token=
+
+jobs:
+  If_IssueClosed:
+     runs-on: self-hosted
+     steps:
+      - name: Trigger Jenkins VM Manager Merge job
+        run: |- 
+                curl --location --request POST  ${{ env.JENKINS_URL }}${{ env.BUILDTOKEN }}   \
+                      --header 'Content-Type: application/json' \
+                      --data-raw '{
+                        "action": ${{ env.EVENT_CONTEXT }}                      
+                        }'
