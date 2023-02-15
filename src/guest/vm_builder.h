@@ -36,7 +36,7 @@ class VmBuilder {
     };
 
  public:
-    explicit VmBuilder(std::string name) : name_(name) {}
+    explicit VmBuilder(std::string name) : name_(name), vsock_cid_(0) {}
     virtual ~VmBuilder() = default;
     virtual bool BuildVmArgs(void) = 0;
     virtual void StartVm(void) = 0;

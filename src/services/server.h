@@ -59,7 +59,7 @@ class Server final {
 
     bool stop_server_ = false;
 
-    CivMsgSync *sync_;
+    CivMsgSync *sync_ = nullptr;
 
     std::vector<std::unique_ptr<VmBuilder>> vmis_;
 

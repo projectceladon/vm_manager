@@ -53,9 +53,7 @@ bool CivConfig::SanitizeOpts(void) {
         if (group != kConfigMap.end()) {
             for (auto& subsec : section.second) {
                 auto key = std::find(group->second.begin(), group->second.end(), subsec.first);
-                if (key != group->second.end()) {
-                    continue;
-                } else {
+                if (key == group->second.end()) {
                     LOG(error) << "Invalid key: " << section.first << "." << subsec.first << "\n";
                     return false;
                 }

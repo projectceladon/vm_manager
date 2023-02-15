@@ -31,12 +31,19 @@ void VmProcSimple::ThreadMon(void) {
 
     boost::process::environment env;
     for (std::string s : env_data_) {
+        if (s.length() == 0)
+            continue;
         env.set(s.substr(0, s.find('=')), s.substr(s.find('=') + 1));
     }
 
     LOG(info) << "CMD: " << cmd_;
     size_t exe_pos_begin = cmd_.find_first_not_of(' ');
+    if (exe_pos_begin == std::string::npos)
+        return;
+
     size_t exe_pos_end = cmd_.find_first_of(' ', exe_pos_begin);
+    if (exe_pos_end == std::string::npos)
+        exe_pos_end = cmd_.size();
     std::string exe = cmd_.substr(exe_pos_begin, exe_pos_end - exe_pos_begin);
 
     std::string tid = boost::lexical_cast<std::string>(mon_->get_id());
