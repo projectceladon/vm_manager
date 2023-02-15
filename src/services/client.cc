@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <cassert>
 
 #include <boost/process/environment.hpp>
 
@@ -43,6 +44,9 @@ void Client::PrepareStartGuestClientShm(const char *path) {
                 [env.size()]
                 (client_shm_.get_segment_manager());
 
+    if (!var_env)
+        return;
+
     for (std::string s : env._data) {
         var_env->assign(s.c_str());
         var_env++;
@@ -73,6 +77,7 @@ CivVmInfo Client::GetCivVmInfo(const char *vm_name) {
     CivVmInfo *vm_info = client_shm_.find_or_construct<CivVmInfo>
                 ("VmInfo")
                 (0, VmBuilder::VmState::kVmUnknown);
+    assert(vm_info != nullptr);
     return std::move(*vm_info);
 }
 
@@ -89,8 +94,12 @@ bool Client::Notify(CivMsgType t) {
                 (kCivServerObjData)
                 ();
 
+    if (!data) {
+        return false;
+    }
     data->type = t;
-    strncpy(data->payload, client_shm_name_.c_str(), sizeof(data->payload));
+    strncpy(data->payload, client_shm_name_.c_str(), sizeof(data->payload) - 1);
+    data->payload[sizeof(data->payload) - 1] = '\0';
 
     boost::interprocess::scoped_lock<boost::interprocess::interprocess_mutex> lock_cond(sync.first->mutex_cond);
     sync.first->cond_s.notify_one();

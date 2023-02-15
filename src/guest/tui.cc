@@ -274,7 +274,11 @@ void CivTui::SetConfToPtree() {
     std::string passthrough;
     for (std::vector<std::string>::iterator iter = pt_pci_disp_.begin(); iter != pt_pci_disp_.end(); iter++) {
         std::string selectItem = *iter;
+        if (selectItem.length() < 0)
+            continue;
         size_t pos = selectItem.find(" ");
+        if (pos < 0)
+            continue;
         passthrough += selectItem.substr(0, pos);
         if (iter != (pt_pci_disp_.end() - 1)) {
             passthrough += ',';

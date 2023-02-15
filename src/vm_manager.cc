@@ -51,7 +51,7 @@ static bool ListGuest(void) {
     }
     auto vm_list = c.GetGuestLists();
     std::cout << "=====================" << std::endl;
-    for (auto it : vm_list) {
+    for (auto& it : vm_list) {
         std::cout << it << std::endl;
     }
     return true;
@@ -70,7 +70,7 @@ static int GetGuestState(std::string name) {
         LOG(error) << "List guest: " << " Failed!";
     }
     auto vm_list = c.GetGuestLists();
-    for (auto it : vm_list) {
+    for (auto& it : vm_list) {
         std::vector<std::string> sp;
         boost::split(sp, it, boost::is_any_of(":"));
         if (sp.size() != 2)

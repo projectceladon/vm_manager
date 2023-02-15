@@ -48,13 +48,22 @@ const char *GetConfigPath(void) {
     }
 
     if (sudo_uid) {
-        euid = atoi(sudo_gid);
+        euid = atoi(sudo_uid);
         setresuid(ruid, euid, suid);
     }
 
     civ_config_path = new char[MAX_PATH];
     memset(civ_config_path, 0, MAX_PATH);
-    snprintf(civ_config_path, MAX_PATH, "%s%s", getpwuid(euid)->pw_dir, "/.intel/.civ");
+
+    struct passwd pwd;
+    struct passwd *ppwd = &pwd;
+    struct passwd *presult = NULL;
+    char buffer[4096];
+    ret = getpwuid_r(euid, ppwd, buffer, sizeof(buffer), &presult);
+    if (ret != 0 || presult == NULL)
+        return NULL;
+
+    snprintf(civ_config_path, MAX_PATH, "%s%s", pwd.pw_dir, "/.intel/.civ");
     if (!boost::filesystem::exists(civ_config_path)) {
         if (!boost::filesystem::create_directories(civ_config_path)) {
             delete[] civ_config_path;
@@ -106,8 +115,10 @@ int Daemonize(void) {
     close(STDERR_FILENO);
 
     int fd = open("/dev/null", O_RDWR);
-    if (fd != STDIN_FILENO)
+    if (fd != STDIN_FILENO) {
+        close(fd);
         return -1;
+    }
     if (dup2(STDIN_FILENO, STDOUT_FILENO) != STDOUT_FILENO)
         return -1;
     if (dup2(STDIN_FILENO, STDERR_FILENO) != STDERR_FILENO)

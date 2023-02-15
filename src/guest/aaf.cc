@@ -57,7 +57,8 @@ void Aaf::Flush(void) {
             if (tmp.empty())
                 continue;
             std::string key = tmp.substr(0, tmp.find(":"));
-
+            if (key.length() == 0)
+                continue;
             auto find = data_.find(key);
             if ((find != data_.end()) && !find->second.empty()) {
                 out << key << ":" << find->second << "\n";

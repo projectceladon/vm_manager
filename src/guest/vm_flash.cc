@@ -269,15 +269,14 @@ bool VmFlasher::FlashGuest(std::string path) {
 
     if (!cfg_.ReadConfigFile(p.string())) {
         LOG(error) << "Failed to read config file";
-        return -1;
+        return false;
     }
 
     std::string emul_type = cfg_.GetValue(kGroupEmul, kEmulType);
-    if (emul_type.compare(kEmulTypeQemu) == 0) {
-        return FlashWithQemu();
-    } else {
+    if ((emul_type.compare(kEmulTypeQemu) == 0) || emul_type.empty()) {
         return FlashWithQemu();
     }
+    return false;
 }
 
 }  // namespace vm_manager

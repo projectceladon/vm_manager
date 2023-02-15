@@ -75,12 +75,11 @@ class AppLauncherOptions final {
             return true;
         }
 
-        uint32_t cid = -1;
         if (vm_.count("cid") != 1) {
             PrintHelp();
             return false;
         }
-        cid = vm_["cid"].as<uint32_t>();
+        uint32_t cid = vm_["cid"].as<uint32_t>();
 
         std::string app_name;
         if (vm_.count("name") != 1) {
