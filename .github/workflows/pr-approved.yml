@@ -5,7 +5,7 @@ on:
   pull_request_review:
     types: [submitted]
     branches: 
-      - dev
+      - master
       - tmp/ci-testing
     
 env:
@@ -15,7 +15,7 @@ env:
 
 jobs:
   if_merged:
-    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'dev' || 'tmp/ci-testing'
+    if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'tmp/ci-testing'
     runs-on: self-hosted
     steps:
     - run: |
