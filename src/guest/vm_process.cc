@@ -132,7 +132,7 @@ bool VmProcSimple::Running(void) {
 }
 
 VmProcSimple::~VmProcSimple() {
-    Stop();
+    VmProcSimple::Stop();
 }
 
 
@@ -164,7 +164,7 @@ void VmCoProcRpmb::Stop(void) {
 
 
 VmCoProcRpmb::~VmCoProcRpmb() {
-    Stop();
+    VmCoProcRpmb::Stop();
 }
 
 void VmCoProcVtpm::Run(void) {
@@ -186,7 +186,7 @@ void VmCoProcVtpm::Stop(void) {
 }
 
 VmCoProcVtpm::~VmCoProcVtpm() {
-    Stop();
+    VmCoProcVtpm::Stop();
 }
 
 }  //  namespace vm_manager
