@@ -138,11 +138,27 @@ function ubu_changes_require(){
     sudo apt install -y libglib2.0-dev libncurses-dev libuuid1 uuid-dev libjson-c-dev
 }
 
+function ubu_build_libvirglrenderer(){
+    sudo rm -fr virglrenderer
+    git clone https://gitlab.freedesktop.org/virgl/virglrenderer.git
+    cd virglrenderer
+    git checkout f509cdae76d76794ac85da024f5a6d27bb23c72f
+
+    meson build -D prefix=/usr/
+    cd build
+    meson configure
+    sudo ninja install
+    cd ../..
+    sudo rm -fr virglrenderer
+}
+
 function ubu_install_qemu_gvt(){
     sudo apt purge -y "^qemu"
     sudo apt autoremove -y
-    sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex libvirglrenderer-dev build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
+    sudo apt install -y git libfdt-dev libpixman-1-dev libssl-dev vim socat libsdl2-dev libspice-server-dev autoconf libtool xtightvncviewer tightvncserver x11vnc uuid-runtime uuid uml-utilities bridge-utils python-dev liblzma-dev libc6-dev libegl1-mesa-dev libepoxy-dev libdrm-dev libgbm-dev libaio-dev libusb-1.0-0-dev libgtk-3-dev bison libcap-dev libattr1-dev flex build-essential gettext libegl-mesa0 libegl-dev libglvnd-dev libgl1-mesa-dev libgl1-mesa-dev libgles2-mesa-dev libegl1 gcc g++ pkg-config libpulse-dev libgl1-mesa-dri
     sudo apt install -y ninja-build libcap-ng-dev
+
+    ubu_build_libvirglrenderer
 
     #Create QEMU_CACHE_DIR if it doesnt exists
     mkdir -p $QEMU_CACHE_DIR
