@@ -1,63 +1,63 @@
-From 4398fd93c605216e1f63a07adbaaa07a2fabca59 Mon Sep 17 00:00:00 2001
+From 4f549ba7c67e0ff858005ae28ec3af43b4350352 Mon Sep 17 00:00:00 2001
 From: "Qi, Yadong" <yadong.qi@intel.com>
 Date: Wed, 14 Jul 2021 02:20:36 +0000
-Subject: [PATCH 1/2] support vsock
+Subject: [PATCH] support vsock
 
 Support Virtio-VSOCK
 
 Signed-off-by: Qi, Yadong <yadong.qi@intel.com>
 ---
- BUILD                                         |   2 +
- CMakeLists.txt                                |   2 +
- Makefile                                      |   2 +
- config.m4                                     |   1 +
- gRPC-Core.podspec                             |   2 +
- grpc.gemspec                                  |   2 +
- package.xml                                   |   2 +
- .../ext/filters/client_channel/http_proxy.cc  |   5 +
- .../resolver/sockaddr/README.md               |   2 +-
- .../resolver/sockaddr/sockaddr_resolver.cc    |  24 +++++
- .../transport/chttp2/server/chttp2_server.cc  |   4 +
- src/core/lib/address_utils/parse_address.cc   | 100 ++++++++++++++++++
- src/core/lib/address_utils/parse_address.h    |   8 ++
- src/core/lib/address_utils/sockaddr_utils.cc  |  32 ++++++
- src/core/lib/iomgr/port.h                     |   2 +
- src/core/lib/iomgr/sockaddr_posix.h           |   1 +
- src/core/lib/iomgr/sockaddr_windows.h         |   1 +
- src/core/lib/iomgr/tcp_client_posix.cc        |   3 +-
- .../iomgr/tcp_server_utils_posix_common.cc    |   5 +-
- src/core/lib/iomgr/vsock.cc                   |  74 +++++++++++++
- src/core/lib/iomgr/vsock.h                    |  40 +++++++
- src/python/grpcio/grpc_core_dependencies.py   |   1 +
- 22 files changed, 311 insertions(+), 4 deletions(-)
+ BUILD                                         |  2 +
+ CMakeLists.txt                                |  2 +
+ Makefile                                      |  2 +
+ config.m4                                     |  1 +
+ gRPC-Core.podspec                             |  2 +
+ grpc.gemspec                                  |  2 +
+ package.xml                                   |  2 +
+ .../ext/filters/client_channel/http_proxy.cc  |  5 +
+ .../resolver/sockaddr/README.md               |  2 +-
+ .../resolver/sockaddr/sockaddr_resolver.cc    | 24 +++++
+ .../transport/chttp2/server/chttp2_server.cc  |  4 +
+ src/core/lib/address_utils/parse_address.cc   | 99 +++++++++++++++++++
+ src/core/lib/address_utils/parse_address.h    |  8 ++
+ src/core/lib/address_utils/sockaddr_utils.cc  | 41 ++++++++
+ src/core/lib/iomgr/port.h                     |  2 +
+ src/core/lib/iomgr/sockaddr_posix.h           |  1 +
+ src/core/lib/iomgr/sockaddr_windows.h         |  1 +
+ src/core/lib/iomgr/tcp_client_posix.cc        |  3 +-
+ .../iomgr/tcp_server_utils_posix_common.cc    |  5 +-
+ src/core/lib/iomgr/vsock.cc                   | 73 ++++++++++++++
+ src/core/lib/iomgr/vsock.h                    | 40 ++++++++
+ src/python/grpcio/grpc_core_dependencies.py   |  1 +
+ 22 files changed, 318 insertions(+), 4 deletions(-)
  create mode 100644 src/core/lib/iomgr/vsock.cc
  create mode 100644 src/core/lib/iomgr/vsock.h
 
 diff --git a/BUILD b/BUILD
-index c54777bd9..f3ea6e192 100644
+index c000a1f6a..6e4c3661b 100644
 --- a/BUILD
 +++ b/BUILD
-@@ -1958,6 +1958,7 @@ grpc_cc_library(
-         "src/core/lib/iomgr/timer_manager.cc",
-         "src/core/lib/iomgr/unix_sockets_posix.cc",
-         "src/core/lib/iomgr/unix_sockets_posix_noop.cc",
-+        "src/core/lib/iomgr/vsock.cc",
-         "src/core/lib/iomgr/wakeup_fd_eventfd.cc",
-         "src/core/lib/iomgr/wakeup_fd_nospecial.cc",
-         "src/core/lib/iomgr/wakeup_fd_pipe.cc",
-@@ -2085,6 +2086,7 @@ grpc_cc_library(
-         "src/core/lib/iomgr/timer_heap.h",
-         "src/core/lib/iomgr/timer_manager.h",
-         "src/core/lib/iomgr/unix_sockets_posix.h",
-+        "src/core/lib/iomgr/vsock.h",
-         "src/core/lib/iomgr/wakeup_fd_pipe.h",
-         "src/core/lib/iomgr/wakeup_fd_posix.h",
-         "src/core/lib/iomgr/work_serializer.h",
+@@ -1236,6 +1236,7 @@ grpc_cc_library(
+         "//src/core:lib/iomgr/tcp_windows.cc",
+         "//src/core:lib/iomgr/unix_sockets_posix.cc",
+         "//src/core:lib/iomgr/unix_sockets_posix_noop.cc",
++        "//src/core:lib/iomgr/vsock.cc",
+         "//src/core:lib/iomgr/wakeup_fd_eventfd.cc",
+         "//src/core:lib/iomgr/wakeup_fd_nospecial.cc",
+         "//src/core:lib/iomgr/wakeup_fd_pipe.cc",
+@@ -1329,6 +1330,7 @@ grpc_cc_library(
+         "//src/core:lib/iomgr/tcp_server_utils_posix.h",
+         "//src/core:lib/iomgr/tcp_windows.h",
+         "//src/core:lib/iomgr/unix_sockets_posix.h",
++        "//src/core:lib/iomgr/vsock.h",
+         "//src/core:lib/iomgr/wakeup_fd_pipe.h",
+         "//src/core:lib/iomgr/wakeup_fd_posix.h",
+         "//src/core:lib/resource_quota/api.h",
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 5291379eb..0f8fbeaef 100644
+index b0299050c..f8869ecd3 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -1952,6 +1952,7 @@ add_library(grpc
+@@ -2260,6 +2260,7 @@ add_library(grpc
    src/core/lib/iomgr/timer_manager.cc
    src/core/lib/iomgr/unix_sockets_posix.cc
    src/core/lib/iomgr/unix_sockets_posix_noop.cc
@@ -65,7 +65,7 @@ index 5291379eb..0f8fbeaef 100644
    src/core/lib/iomgr/wakeup_fd_eventfd.cc
    src/core/lib/iomgr/wakeup_fd_nospecial.cc
    src/core/lib/iomgr/wakeup_fd_pipe.cc
-@@ -2597,6 +2598,7 @@ add_library(grpc_unsecure
+@@ -2929,6 +2930,7 @@ add_library(grpc_unsecure
    src/core/lib/iomgr/timer_manager.cc
    src/core/lib/iomgr/unix_sockets_posix.cc
    src/core/lib/iomgr/unix_sockets_posix_noop.cc
@@ -74,10 +74,10 @@ index 5291379eb..0f8fbeaef 100644
    src/core/lib/iomgr/wakeup_fd_nospecial.cc
    src/core/lib/iomgr/wakeup_fd_pipe.cc
 diff --git a/Makefile b/Makefile
-index 72522e048..7d52fad29 100644
+index 9b94bf4e0..fc327ec51 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1534,6 +1534,7 @@ LIBGRPC_SRC = \
+@@ -1528,6 +1528,7 @@ LIBGRPC_SRC = \
      src/core/lib/iomgr/timer_manager.cc \
      src/core/lib/iomgr/unix_sockets_posix.cc \
      src/core/lib/iomgr/unix_sockets_posix_noop.cc \
@@ -85,7 +85,7 @@ index 72522e048..7d52fad29 100644
      src/core/lib/iomgr/wakeup_fd_eventfd.cc \
      src/core/lib/iomgr/wakeup_fd_nospecial.cc \
      src/core/lib/iomgr/wakeup_fd_pipe.cc \
-@@ -2026,6 +2027,7 @@ LIBGRPC_UNSECURE_SRC = \
+@@ -2056,6 +2057,7 @@ LIBGRPC_UNSECURE_SRC = \
      src/core/lib/iomgr/timer_manager.cc \
      src/core/lib/iomgr/unix_sockets_posix.cc \
      src/core/lib/iomgr/unix_sockets_posix_noop.cc \
@@ -94,10 +94,10 @@ index 72522e048..7d52fad29 100644
      src/core/lib/iomgr/wakeup_fd_nospecial.cc \
      src/core/lib/iomgr/wakeup_fd_pipe.cc \
 diff --git a/config.m4 b/config.m4
-index 51c50bfe5..81d65889b 100644
+index 2bf738be1..111827d09 100644
 --- a/config.m4
 +++ b/config.m4
-@@ -594,6 +594,7 @@ if test "$PHP_GRPC" != "no"; then
+@@ -653,6 +653,7 @@ if test "$PHP_GRPC" != "no"; then
      src/core/lib/iomgr/timer_manager.cc \
      src/core/lib/iomgr/unix_sockets_posix.cc \
      src/core/lib/iomgr/unix_sockets_posix_noop.cc \
@@ -106,10 +106,10 @@ index 51c50bfe5..81d65889b 100644
      src/core/lib/iomgr/wakeup_fd_nospecial.cc \
      src/core/lib/iomgr/wakeup_fd_pipe.cc \
 diff --git a/gRPC-Core.podspec b/gRPC-Core.podspec
-index 382a0d79a..c081bec0c 100644
+index cd56e4bb7..1e7c6576d 100644
 --- a/gRPC-Core.podspec
 +++ b/gRPC-Core.podspec
-@@ -1271,6 +1271,7 @@ Pod::Spec.new do |s|
+@@ -1418,6 +1418,7 @@ Pod::Spec.new do |s|
                        'src/core/lib/iomgr/unix_sockets_posix.cc',
                        'src/core/lib/iomgr/unix_sockets_posix.h',
                        'src/core/lib/iomgr/unix_sockets_posix_noop.cc',
@@ -117,19 +117,19 @@ index 382a0d79a..c081bec0c 100644
                        'src/core/lib/iomgr/wakeup_fd_eventfd.cc',
                        'src/core/lib/iomgr/wakeup_fd_nospecial.cc',
                        'src/core/lib/iomgr/wakeup_fd_pipe.cc',
-@@ -2190,6 +2191,7 @@ Pod::Spec.new do |s|
+@@ -2456,6 +2457,7 @@ Pod::Spec.new do |s|
                                'src/core/lib/iomgr/timer_heap.h',
                                'src/core/lib/iomgr/timer_manager.h',
                                'src/core/lib/iomgr/unix_sockets_posix.h',
 +                              'src/core/lib/iomgr/vsock.h',
                                'src/core/lib/iomgr/wakeup_fd_pipe.h',
                                'src/core/lib/iomgr/wakeup_fd_posix.h',
-                               'src/core/lib/iomgr/work_serializer.h',
+                               'src/core/lib/json/json.h',
 diff --git a/grpc.gemspec b/grpc.gemspec
-index 16a06e602..88a6a7330 100644
+index d91c2828b..ddf731d45 100644
 --- a/grpc.gemspec
 +++ b/grpc.gemspec
-@@ -1188,6 +1188,8 @@ Gem::Specification.new do |s|
+@@ -1329,6 +1329,8 @@ Gem::Specification.new do |s|
    s.files += %w( src/core/lib/iomgr/unix_sockets_posix.cc )
    s.files += %w( src/core/lib/iomgr/unix_sockets_posix.h )
    s.files += %w( src/core/lib/iomgr/unix_sockets_posix_noop.cc )
@@ -139,10 +139,10 @@ index 16a06e602..88a6a7330 100644
    s.files += %w( src/core/lib/iomgr/wakeup_fd_nospecial.cc )
    s.files += %w( src/core/lib/iomgr/wakeup_fd_pipe.cc )
 diff --git a/package.xml b/package.xml
-index d044500cf..1b4b1820c 100644
+index ddef258ae..bf56a4ecb 100644
 --- a/package.xml
 +++ b/package.xml
-@@ -1170,6 +1170,8 @@
+@@ -1311,6 +1311,8 @@
      <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.cc" role="src" />
      <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
      <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.cc" role="src" />
@@ -152,21 +152,21 @@ index d044500cf..1b4b1820c 100644
      <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.cc" role="src" />
      <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.cc" role="src" />
 diff --git a/src/core/ext/filters/client_channel/http_proxy.cc b/src/core/ext/filters/client_channel/http_proxy.cc
-index 72acea58a..8b9603cf2 100644
+index 113e5e6ab..aed4fe7aa 100644
 --- a/src/core/ext/filters/client_channel/http_proxy.cc
 +++ b/src/core/ext/filters/client_channel/http_proxy.cc
-@@ -151,6 +151,11 @@ bool HttpProxyMapper::MapName(const char* server_uri,
-             server_uri);
-     return no_use_proxy();
+@@ -149,6 +149,11 @@ absl::optional<std::string> HttpProxyMapper::MapName(
+             std::string(server_uri).c_str());
+     return absl::nullopt;
    }
 +  if (uri->scheme() == "vsock") {
 +    gpr_log(GPR_INFO, "not using proxy for VSock '%s'",
-+            server_uri);
-+    return no_use_proxy();
++            std::string(server_uri).c_str());
++    return absl::nullopt;
 +  }
-   /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
-   auto no_proxy_str = UniquePtr<char>(gpr_getenv("no_grpc_proxy"));
-   if (no_proxy_str == nullptr) {
+   // Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set.
+   auto no_proxy_str = GetEnv("no_grpc_proxy");
+   if (!no_proxy_str.has_value()) {
 diff --git a/src/core/ext/filters/client_channel/resolver/sockaddr/README.md b/src/core/ext/filters/client_channel/resolver/sockaddr/README.md
 index e307ba88f..210ffdf3a 100644
 --- a/src/core/ext/filters/client_channel/resolver/sockaddr/README.md
@@ -175,10 +175,10 @@ index e307ba88f..210ffdf3a 100644
 -Support for resolving ipv4:, ipv6:, unix: schemes
 +Support for resolving ipv4:, ipv6:, unix:, vsock: schemes
 diff --git a/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc b/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-index d893f2d5f..3206f83e8 100644
+index 7dc785930..7d14cafbe 100644
 --- a/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
 +++ b/src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-@@ -178,6 +178,26 @@ class UnixAbstractResolverFactory : public ResolverFactory {
+@@ -172,6 +172,26 @@ class UnixAbstractResolverFactory : public ResolverFactory {
  };
  #endif  // GRPC_HAVE_UNIX_SOCKET
  
@@ -205,9 +205,9 @@ index d893f2d5f..3206f83e8 100644
  }  // namespace
  
  void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
-@@ -191,6 +211,10 @@ void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
+@@ -185,6 +205,10 @@ void RegisterSockaddrResolver(CoreConfiguration::Builder* builder) {
    builder->resolver_registry()->RegisterResolverFactory(
-       absl::make_unique<UnixAbstractResolverFactory>());
+       std::make_unique<UnixAbstractResolverFactory>());
  #endif
 +#ifdef GRPC_HAVE_VSOCK
 +  builder->resolver_registry()->RegisterResolverFactory(
@@ -217,18 +217,18 @@ index d893f2d5f..3206f83e8 100644
  
  }  // namespace grpc_core
 diff --git a/src/core/ext/transport/chttp2/server/chttp2_server.cc b/src/core/ext/transport/chttp2/server/chttp2_server.cc
-index 12173a09c..6a8361fba 100644
+index 714c4150e..4d2ce8368 100644
 --- a/src/core/ext/transport/chttp2/server/chttp2_server.cc
 +++ b/src/core/ext/transport/chttp2/server/chttp2_server.cc
-@@ -51,6 +51,7 @@
- #include "src/core/lib/iomgr/resolve_address.h"
+@@ -70,6 +70,7 @@
  #include "src/core/lib/iomgr/tcp_server.h"
+ #include "src/core/lib/iomgr/timer.h"
  #include "src/core/lib/iomgr/unix_sockets_posix.h"
 +#include "src/core/lib/iomgr/vsock.h"
- #include "src/core/lib/resource_quota/api.h"
  #include "src/core/lib/resource_quota/memory_quota.h"
- #include "src/core/lib/security/context/security_context.h"
-@@ -75,6 +76,7 @@ namespace {
+ #include "src/core/lib/resource_quota/resource_quota.h"
+ #include "src/core/lib/security/credentials/credentials.h"
+@@ -95,6 +96,7 @@ namespace {
  
  const char kUnixUriPrefix[] = "unix:";
  const char kUnixAbstractUriPrefix[] = "unix-abstract:";
@@ -236,33 +236,33 @@ index 12173a09c..6a8361fba 100644
  
  class Chttp2ServerListener : public Server::ListenerInterface {
   public:
-@@ -913,6 +915,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
+@@ -925,6 +927,8 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
                                     kUnixAbstractUriPrefix)) {
        resolved_or =
            grpc_resolve_unix_abstract_domain_address(parsed_addr_unprefixed);
 +    } else if (absl::ConsumePrefix(&parsed_addr_unprefixed, kVSockUriPrefix)) {
 +      resolved_or = grpc_resolve_vsock_address(parsed_addr_unprefixed);
      } else {
-       resolved_or = GetDNSResolver()->ResolveNameBlocking(parsed_addr, "https");
-     }
+       resolved_or =
+           GetDNSResolver()->LookupHostnameBlocking(parsed_addr, "https");
 diff --git a/src/core/lib/address_utils/parse_address.cc b/src/core/lib/address_utils/parse_address.cc
-index 340bab968..a6977d595 100644
+index c72987c5d..1f8404192 100644
 --- a/src/core/lib/address_utils/parse_address.cc
 +++ b/src/core/lib/address_utils/parse_address.cc
-@@ -25,6 +25,10 @@
- #ifdef GRPC_HAVE_UNIX_SOCKET
+@@ -27,6 +27,10 @@
  #include <sys/un.h>
  #endif
+ #include <string>
 +#ifdef GRPC_HAVE_VSOCK
 +#include <sys/socket.h>
 +#include <linux/vm_sockets.h>
 +#endif
- #ifdef GRPC_POSIX_SOCKET
- #include <errno.h>
- #include <net/if.h>
-@@ -146,6 +150,99 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
+ 
+ #include "absl/status/status.h"
+ #include "absl/strings/str_cat.h"
+@@ -144,6 +148,98 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
  }  // namespace grpc_core
- #endif /* GRPC_HAVE_UNIX_SOCKET */
+ #endif  // GRPC_HAVE_UNIX_SOCKET
  
 +#ifdef GRPC_HAVE_VSOCK
 +
@@ -275,9 +275,8 @@ index 340bab968..a6977d595 100644
 +  }
 +  grpc_error_handle error =
 +      grpc_core::VSockaddrPopulate(uri.path(), resolved_addr);
-+  if (error != GRPC_ERROR_NONE) {
-+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
-+    GRPC_ERROR_UNREF(error);
++  if (!error.ok()) {
++    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
 +    return false;
 +  }
 +  return true;
@@ -302,19 +301,19 @@ index 340bab968..a6977d595 100644
 +    cid = std::string(cidport.substr(0, colon));
 +    port = std::string(cidport.substr(colon + 1, cidport.size() - colon - 1));
 +  } else {
-+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
++    return GRPC_ERROR_CREATE(
 +             absl::StrCat("Failed split vsock cid/port: %s ",
 +                    std::string(cidport).c_str()).c_str());
 +  }
 +
 +  // Parse cid
 +  if (cid.empty()) {
-+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
++    return GRPC_ERROR_CREATE(
 +             absl::StrCat("no vsock cid given for vsock scheme").c_str());
 +  }
 +  unsigned int cid_num;
 +  if (sscanf(cid.c_str(), "%u", &cid_num) != 1) {
-+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
++    return GRPC_ERROR_CREATE(
 +             absl::StrCat("invalid vsock cid: '%s'",
 +                    std::string(cid).c_str()).c_str());
 +  }
@@ -322,19 +321,19 @@ index 340bab968..a6977d595 100644
 +
 +  // Parse port
 +  if (port.empty()) {
-+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
++    return GRPC_ERROR_CREATE(
 +             absl::StrCat("no vsock port given for vsock scheme").c_str());
 +  }
 +  unsigned int port_num;
 +  if (sscanf(port.c_str(), "%u", &port_num) != 1) {
-+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
++    return GRPC_ERROR_CREATE(
 +             absl::StrCat("invalid vsock port: '%s'",
 +                    std::string(cid).c_str()).c_str());
 +  }
 +  vm->svm_port = port_num;
 +
 +  resolved_addr->len = static_cast<socklen_t>(sizeof(*vm));
-+  return GRPC_ERROR_NONE;
++  return absl::OkStatus();
 +}
 +
 +}  // namespace grpc_core
@@ -360,7 +359,7 @@ index 340bab968..a6977d595 100644
  bool grpc_parse_ipv4_hostport(absl::string_view hostport,
                                grpc_resolved_address* addr, bool log_errors) {
    bool success = false;
-@@ -301,6 +398,9 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
+@@ -299,6 +395,9 @@ bool grpc_parse_uri(const grpc_core::URI& uri,
    if (uri.scheme() == "unix-abstract") {
      return grpc_parse_unix_abstract(uri, resolved_addr);
    }
@@ -371,22 +370,22 @@ index 340bab968..a6977d595 100644
      return grpc_parse_ipv4(uri, resolved_addr);
    }
 diff --git a/src/core/lib/address_utils/parse_address.h b/src/core/lib/address_utils/parse_address.h
-index 4b18ed6d0..f3362eb0f 100644
+index 6005f5f26..ef55448b4 100644
 --- a/src/core/lib/address_utils/parse_address.h
 +++ b/src/core/lib/address_utils/parse_address.h
-@@ -38,6 +38,11 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
+@@ -40,6 +40,11 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
  bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
                                grpc_resolved_address* resolved_addr);
  
-+/** Populate \a resolved_addr from \a uri, whose path is expected to contain a
-+ * virtio vsock path. Returns true upon success. */
++/// Populate \a resolved_addr from \a uri, whose path is expected to contain a
++/// virtio vsock path. Returns true upon success.
 +bool grpc_parse_vsock(const grpc_core::URI& uri,
-+                     grpc_resolved_address* resolved_addr);
++                      grpc_resolved_address* resolved_addr);
 +
- /** Populate \a resolved_addr from \a uri, whose path is expected to contain an
-  * IPv4 host:port pair. Returns true upon success. */
+ /// Populate \a resolved_addr from \a uri, whose path is expected to contain an
+ /// IPv4 host:port pair. Returns true upon success.
  bool grpc_parse_ipv4(const grpc_core::URI& uri,
-@@ -77,6 +82,9 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
+@@ -81,6 +86,9 @@ grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
  grpc_error_handle UnixAbstractSockaddrPopulate(
      absl::string_view path, grpc_resolved_address* resolved_addr);
  
@@ -395,12 +394,12 @@ index 4b18ed6d0..f3362eb0f 100644
 +                                       grpc_resolved_address* resolved_addr);
  }  // namespace grpc_core
  
- #endif /* GRPC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H */
+ #endif  // GRPC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H
 diff --git a/src/core/lib/address_utils/sockaddr_utils.cc b/src/core/lib/address_utils/sockaddr_utils.cc
-index ac84a1443..922d0f140 100644
+index e45183a89..15b7b2693 100644
 --- a/src/core/lib/address_utils/sockaddr_utils.cc
 +++ b/src/core/lib/address_utils/sockaddr_utils.cc
-@@ -41,6 +41,11 @@
+@@ -44,6 +44,11 @@
  #include <sys/un.h>
  #endif
  
@@ -410,9 +409,9 @@ index ac84a1443..922d0f140 100644
 +#endif
 +
  #ifdef GRPC_HAVE_UNIX_SOCKET
- static std::string grpc_sockaddr_to_uri_unix_if_possible(
+ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
      const grpc_resolved_address* resolved_addr) {
-@@ -66,6 +71,24 @@ static std::string grpc_sockaddr_to_uri_unix_if_possible(
+@@ -76,6 +81,24 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
  }
  #endif
  
@@ -437,17 +436,33 @@ index ac84a1443..922d0f140 100644
  static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                            0, 0, 0, 0, 0xff, 0xff};
  
-@@ -236,6 +259,9 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
+@@ -223,6 +246,14 @@ absl::StatusOr<std::string> grpc_sockaddr_to_string(
+   }
+ #endif
+ 
++#ifdef GRPC_HAVE_VSOCK
++  if (addr->sa_family == GRPC_AF_VSOCK) {
++    const sockaddr_vm* addr_vm = reinterpret_cast<const sockaddr_vm*>(addr);
++    out = std::string(absl::StrCat(addr_vm->svm_cid, ":", addr_vm->svm_port));
++    return out;
++  }
++#endif
++
+   const void* ip = nullptr;
+   int port = 0;
+   uint32_t sin6_scope_id = 0;
+@@ -271,6 +302,10 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
    if (scheme == nullptr || strcmp("unix", scheme) == 0) {
      return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
    }
 +  if (scheme == nullptr || strcmp("vsock", scheme) == 0) {
 +    return grpc_sockaddr_to_uri_vsock_if_possible(resolved_addr);
 +  }
-   std::string path =
-       grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
-   std::string uri_str;
-@@ -256,6 +282,8 @@ const char* grpc_sockaddr_get_uri_scheme(
++
+   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
+   if (!path.ok()) return path;
+   absl::StatusOr<grpc_core::URI> uri =
+@@ -291,6 +326,8 @@ const char* grpc_sockaddr_get_uri_scheme(
        return "ipv6";
      case GRPC_AF_UNIX:
        return "unix";
@@ -456,7 +471,7 @@ index ac84a1443..922d0f140 100644
    }
    return nullptr;
  }
-@@ -279,6 +307,10 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
+@@ -314,6 +351,10 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
  #ifdef GRPC_HAVE_UNIX_SOCKET
      case AF_UNIX:
        return 1;
@@ -468,10 +483,10 @@ index ac84a1443..922d0f140 100644
      default:
        gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
 diff --git a/src/core/lib/iomgr/port.h b/src/core/lib/iomgr/port.h
-index 8762791e7..8ce1c5ee6 100644
+index 743bc1ef5..27f5941e8 100644
 --- a/src/core/lib/iomgr/port.h
 +++ b/src/core/lib/iomgr/port.h
-@@ -36,6 +36,7 @@
+@@ -37,6 +37,7 @@
  #define GRPC_HAVE_IP_PKTINFO 1
  #define GRPC_HAVE_MSG_NOSIGNAL 1
  #define GRPC_HAVE_UNIX_SOCKET 1
@@ -479,19 +494,19 @@ index 8762791e7..8ce1c5ee6 100644
  #define GRPC_LINUX_EVENTFD 1
  #define GRPC_POSIX_SOCKET 1
  #define GRPC_POSIX_SOCKETUTILS 1
-@@ -47,6 +48,7 @@
+@@ -48,6 +49,7 @@
  #define GRPC_HAVE_IP_PKTINFO 1
  #define GRPC_HAVE_MSG_NOSIGNAL 1
  #define GRPC_HAVE_UNIX_SOCKET 1
 +#define GRPC_HAVE_VSOCK 1
- /* Linux has TCP_INQ support since 4.18, but it is safe to set
-    the socket option on older kernels. */
+ // Linux has TCP_INQ support since 4.18, but it is safe to set
+ // the socket option on older kernels.
  #define GRPC_HAVE_TCP_INQ 1
 diff --git a/src/core/lib/iomgr/sockaddr_posix.h b/src/core/lib/iomgr/sockaddr_posix.h
-index 3cedd9082..3b97123cc 100644
+index 075c79322..7dd8fb345 100644
 --- a/src/core/lib/iomgr/sockaddr_posix.h
 +++ b/src/core/lib/iomgr/sockaddr_posix.h
-@@ -45,6 +45,7 @@ typedef struct in6_addr grpc_in6_addr;
+@@ -47,6 +47,7 @@ typedef struct in6_addr grpc_in6_addr;
  
  #define GRPC_AF_UNSPEC AF_UNSPEC
  #define GRPC_AF_UNIX AF_UNIX
@@ -500,10 +515,10 @@ index 3cedd9082..3b97123cc 100644
  #define GRPC_AF_INET6 AF_INET6
  
 diff --git a/src/core/lib/iomgr/sockaddr_windows.h b/src/core/lib/iomgr/sockaddr_windows.h
-index 4d637251a..298c2e80f 100644
+index c367ec12e..d55518f22 100644
 --- a/src/core/lib/iomgr/sockaddr_windows.h
 +++ b/src/core/lib/iomgr/sockaddr_windows.h
-@@ -45,6 +45,7 @@ typedef struct in6_addr grpc_in6_addr;
+@@ -47,6 +47,7 @@ typedef struct in6_addr grpc_in6_addr;
  
  #define GRPC_AF_UNSPEC AF_UNSPEC
  #define GRPC_AF_UNIX AF_UNIX
@@ -512,10 +527,10 @@ index 4d637251a..298c2e80f 100644
  #define GRPC_AF_INET6 AF_INET6
  
 diff --git a/src/core/lib/iomgr/tcp_client_posix.cc b/src/core/lib/iomgr/tcp_client_posix.cc
-index 92e9c70df..d9316d7bc 100644
+index 96ccdf298..ca199723c 100644
 --- a/src/core/lib/iomgr/tcp_client_posix.cc
 +++ b/src/core/lib/iomgr/tcp_client_posix.cc
-@@ -46,6 +46,7 @@
+@@ -47,6 +47,7 @@
  #include "src/core/lib/iomgr/tcp_posix.h"
  #include "src/core/lib/iomgr/timer.h"
  #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -523,20 +538,20 @@ index 92e9c70df..d9316d7bc 100644
  #include "src/core/lib/slice/slice_internal.h"
  
  extern grpc_core::TraceFlag grpc_tcp_trace;
-@@ -75,7 +76,7 @@ static grpc_error_handle prepare_socket(const grpc_resolved_address* addr,
-   if (err != GRPC_ERROR_NONE) goto error;
+@@ -103,7 +104,7 @@ static grpc_error_handle prepare_socket(
+   if (!err.ok()) goto error;
    err = grpc_set_socket_cloexec(fd, 1);
-   if (err != GRPC_ERROR_NONE) goto error;
+   if (!err.ok()) goto error;
 -  if (!grpc_is_unix_socket(addr)) {
 +  if (!grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
      err = grpc_set_socket_low_latency(fd, 1);
-     if (err != GRPC_ERROR_NONE) goto error;
+     if (!err.ok()) goto error;
      err = grpc_set_socket_reuse_addr(fd, 1);
 diff --git a/src/core/lib/iomgr/tcp_server_utils_posix_common.cc b/src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-index d0956db3a..fc23ecf68 100644
+index 574fd02d0..80e6eca36 100644
 --- a/src/core/lib/iomgr/tcp_server_utils_posix_common.cc
 +++ b/src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-@@ -41,6 +41,7 @@
+@@ -42,6 +42,7 @@
  #include "src/core/lib/iomgr/sockaddr.h"
  #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
  #include "src/core/lib/iomgr/unix_sockets_posix.h"
@@ -544,30 +559,30 @@ index d0956db3a..fc23ecf68 100644
  
  #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
  
-@@ -153,7 +154,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
+@@ -190,7 +191,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
  
    GPR_ASSERT(fd >= 0);
  
 -  if (so_reuseport && !grpc_is_unix_socket(addr)) {
 +  if (so_reuseport && !grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
      err = grpc_set_socket_reuse_port(fd, 1);
-     if (err != GRPC_ERROR_NONE) goto error;
+     if (!err.ok()) goto error;
    }
-@@ -170,7 +171,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
-   if (err != GRPC_ERROR_NONE) goto error;
+@@ -206,7 +207,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
+   if (!err.ok()) goto error;
    err = grpc_set_socket_cloexec(fd, 1);
-   if (err != GRPC_ERROR_NONE) goto error;
+   if (!err.ok()) goto error;
 -  if (!grpc_is_unix_socket(addr)) {
 +  if (!grpc_is_unix_socket(addr) && !grpc_is_vsock(addr)) {
      err = grpc_set_socket_low_latency(fd, 1);
-     if (err != GRPC_ERROR_NONE) goto error;
+     if (!err.ok()) goto error;
      err = grpc_set_socket_reuse_addr(fd, 1);
 diff --git a/src/core/lib/iomgr/vsock.cc b/src/core/lib/iomgr/vsock.cc
 new file mode 100644
-index 000000000..511e9a928
+index 000000000..c72356f81
 --- /dev/null
 +++ b/src/core/lib/iomgr/vsock.cc
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,73 @@
 +/*
 + *
 + * Copyright 2021 gRPC authors.
@@ -616,11 +631,10 @@ index 000000000..511e9a928
 +grpc_resolve_vsock_address(absl::string_view name) {
 +  grpc_resolved_address addr;
 +  grpc_error_handle error = grpc_core::VSockaddrPopulate(name, &addr);
-+  if (error == GRPC_ERROR_NONE) {
++  if (error.ok()) {
 +    return std::vector<grpc_resolved_address>({addr});
 +  }
 +  auto result = grpc_error_to_absl_status(error);
-+  GRPC_ERROR_UNREF(error);
 +  return result;
 +}
 +
@@ -689,10 +703,10 @@ index 000000000..e89d4b909
 +
 +#endif /* GRPC_CORE_LIB_IOMGR_VSOCK_H */
 diff --git a/src/python/grpcio/grpc_core_dependencies.py b/src/python/grpcio/grpc_core_dependencies.py
-index 09dffdf73..b543cd166 100644
+index 6e05ae817..88ba93ed5 100644
 --- a/src/python/grpcio/grpc_core_dependencies.py
 +++ b/src/python/grpcio/grpc_core_dependencies.py
-@@ -569,6 +569,7 @@ CORE_SOURCE_FILES = [
+@@ -628,6 +628,7 @@ CORE_SOURCE_FILES = [
      'src/core/lib/iomgr/timer_manager.cc',
      'src/core/lib/iomgr/unix_sockets_posix.cc',
      'src/core/lib/iomgr/unix_sockets_posix_noop.cc',
@@ -701,5 +715,5 @@ index 09dffdf73..b543cd166 100644
      'src/core/lib/iomgr/wakeup_fd_nospecial.cc',
      'src/core/lib/iomgr/wakeup_fd_pipe.cc',
 -- 
-2.34.1
+2.25.1
 
