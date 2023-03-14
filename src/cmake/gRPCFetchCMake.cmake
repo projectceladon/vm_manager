@@ -32,7 +32,7 @@ endmacro()
 FetchContent_Declare(
   grpc
   GIT_REPOSITORY https://github.com/grpc/grpc
-  GIT_TAG        v1.46.2
+  GIT_TAG        v1.52.1
   GIT_SHALLOW 1
 )
 set(FETCHCONTENT_QUIET OFF)
