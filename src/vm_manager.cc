@@ -219,8 +219,13 @@ class CivOptions final {
     CivOptions& operator=(const CivOptions &) = delete;
 
     bool ParseOptions(int argc, char* argv[]) {
-        po::store(po::command_line_parser(argc, argv).options(cmdline_options_).run(), vm_);
-        po::notify(vm_);
+        try {
+            po::store(po::command_line_parser(argc, argv).options(cmdline_options_).run(), vm_);
+            po::notify(vm_);
+        } catch (std::exception& e) {
+            std::cout << e.what() << "\n";
+            return false;
+        }
 
         if (vm_.empty()) {
             PrintHelp();
