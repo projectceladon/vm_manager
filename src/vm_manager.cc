@@ -218,9 +218,9 @@ class CivOptions final {
     CivOptions(CivOptions &) = delete;
     CivOptions& operator=(const CivOptions &) = delete;
 
-    bool ParseOptions(int argc, char* argv[]) {
+    bool ParseOptions(const std::vector<std::string> args) {
         try {
-            po::store(po::command_line_parser(argc, argv).options(cmdline_options_).run(), vm_);
+            po::store(po::command_line_parser(args).options(cmdline_options_).run(), vm_);
             po::notify(vm_);
         } catch (std::exception& e) {
             std::cout << e.what() << "\n";
@@ -251,9 +251,9 @@ class CivOptions final {
             return StartServer(daemon);
         } else {
             if (!IsServerRunning()) {
-                boost::filesystem::path cmd(argv[0]);
+                boost::filesystem::path cmd(args[0]);
                 if (!boost::filesystem::exists(cmd)) {
-                    cmd.assign(boost::process::search_path(argv[0]));
+                    cmd.assign(boost::process::search_path(args[0]));
                 }
                 if (boost::process::system(cmd, "--start-server", "--daemon")) {
                     LOG(error) << "Failed to start server of vm-manager!";
@@ -346,8 +346,19 @@ int main(int argc, char *argv[]) {
 
     vm_manager::CivOptions co;
 
-    if (co.ParseOptions(argc, argv))
+    std::vector<std::string> args(argv, argv + argc);
+    if ((args.size() > 1) && (args[1].compare("--afl-fuzz") == 0)) {
+        // Take input from stdio when fuzzing.
+        std::string str;
+        getline(std::cin, str);
+        args.clear();
+        boost::split(args, str, boost::is_any_of(" "));
+        args.insert(args.begin(), argv[0]);
+    }
+
+    if (co.ParseOptions(args)) {
         return 0;
+    }
 
     return -1;
 }
