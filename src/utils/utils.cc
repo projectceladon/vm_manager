@@ -115,6 +115,9 @@ int Daemonize(void) {
     close(STDERR_FILENO);
 
     int fd = open("/dev/null", O_RDWR);
+    if (fd < 0)
+        return -1;
+
     if (fd != STDIN_FILENO) {
         close(fd);
         return -1;
