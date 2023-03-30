@@ -912,6 +912,11 @@ void VmBuilderQemu::SetProcLogDir(void) {
 void VmBuilderQemu::StartVm() {
     LOG(info) << "Emulator command:" << emul_cmd_;
 
+    if (!main_proc_) {
+        LOG(error) << "VM's main proc is not build up!";
+        return;
+    }
+
     SetProcLogDir();
 
     for (size_t i = 0; i < co_procs_.size(); ++i) {
@@ -919,11 +924,9 @@ void VmBuilderQemu::StartVm() {
             co_procs_[i]->Run();
     }
 
-    if (main_proc_) {
-        main_proc_->Run();
-        LOG(info) << "Main Proc is started";
-        state_ = VmBuilder::VmState::kVmBooting;
-    }
+    main_proc_->Run();
+    LOG(info) << "Main Proc is started";
+    state_ = VmBuilder::VmState::kVmBooting;
 }
 
 bool VmBuilderQemu::WaitVmReady(void) {
