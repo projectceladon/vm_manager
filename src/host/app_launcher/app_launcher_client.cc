@@ -123,10 +123,14 @@ class AppLauncherOptions final {
 };
 
 int main(int argc, char *argv[]) {
-    AppLauncherOptions o;
+    int ret = -1;
+    try {
+        AppLauncherOptions o;
 
-    if (o.ParseOptions(argc, argv))
-        return 0;
-
-    return -1;
+        if (o.ParseOptions(argc, argv))
+            ret = 0;
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+    }
+    return ret;
 }
