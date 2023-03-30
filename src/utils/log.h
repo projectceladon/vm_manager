@@ -24,14 +24,14 @@
 
 #ifdef DEBUG
 #define LOG_ADD_FILE boost::log::attribute_cast<boost::log::attributes::mutable_constant<std::string>>( \
-                     ::boost::log::trivial::logger::get().get_attributes()["File"]).set( \
+                     logger::gLogger.get_attributes()["File"]).set( \
                          logger::path_to_filename(__FILE__))
 
 #define LOG_ADD_LINE boost::log::attribute_cast<boost::log::attributes::mutable_constant<int>>( \
-                     ::boost::log::trivial::logger::get().get_attributes()["Line"]).set(__LINE__)
+                     logger::gLogger.get_attributes()["Line"]).set(__LINE__)
 
 #define LOG_ADD_FUNC boost::log::attribute_cast<boost::log::attributes::mutable_constant<std::string>>( \
-                     ::boost::log::trivial::logger::get().get_attributes()["Func"]).set(__FUNCTION__)
+                     logger::gLogger.get_attributes()["Func"]).set(__FUNCTION__)
 
 #define DEBUG_OUTPUT LOG_ADD_FILE; \
                      LOG_ADD_LINE; \
@@ -42,7 +42,7 @@
 
 #define LOG(sev) \
     DEBUG_OUTPUT \
-    BOOST_LOG_STREAM_WITH_PARAMS(::boost::log::trivial::logger::get(), \
+    BOOST_LOG_STREAM_WITH_PARAMS(logger::gLogger, \
                                 (::boost::log::keywords::severity = ::boost::log::trivial::sev))
 
 namespace logger {
@@ -51,10 +51,13 @@ namespace logger {
     namespace expr = boost::log::expressions;
     namespace src = boost::log::sources;
     namespace keywords = boost::log::keywords;
+
+    inline boost::log::trivial::logger::logger_type &gLogger = boost::log::trivial::logger::get();
+
     template<typename ValueType>
     ValueType set_get_attrib(const char* name, ValueType value) {
         auto attr = logging::attribute_cast<attrs::mutable_constant<ValueType>>
-                        (logging::trivial::logger::get().get_attributes()[name]);
+                        (gLogger.get_attributes()[name]);
         attr.set(value);
         return attr.get();
     }
@@ -65,11 +68,11 @@ namespace logger {
 
     inline void init(void) {
 #ifdef DEBUG
-        logging::trivial::logger::get().add_attribute("File", attrs::mutable_constant<std::string>(""));
-        logging::trivial::logger::get().add_attribute("Line", attrs::mutable_constant<int>(0));
-        logging::trivial::logger::get().add_attribute("Func", attrs::mutable_constant<std::string>(""));
+        gLogger.add_attribute("File", attrs::mutable_constant<std::string>(""));
+        gLogger.add_attribute("Line", attrs::mutable_constant<int>(0));
+        gLogger.add_attribute("Func", attrs::mutable_constant<std::string>(""));
 #endif
-        logging::trivial::logger::get().add_attribute("ProcName", attrs::current_process_name());
+        gLogger.add_attribute("ProcName", attrs::current_process_name());
 
         logging::add_console_log(std::cout,
             keywords::format = (
