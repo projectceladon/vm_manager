@@ -117,19 +117,23 @@ void VmProcSimple::SetLogDir(const char *path) {
 }
 
 void VmProcSimple::Stop(void) {
-    if (!mon_ || !c_)
-        return;
+    try {
+        if (!mon_ || !c_)
+            return;
 
-    if (!mon_.get())
-        return;
+        if (!mon_.get())
+            return;
 
-    if (!c_->running())
-        return;
+        if (!c_->running())
+            return;
 
-    LOG(info) << "Terminate CoProc: " << c_->id();
-    kill(c_->id(), SIGTERM);
-    mon_->try_join_for(boost::chrono::seconds(10));
-    mon_.reset(nullptr);
+        LOG(info) << "Terminate CoProc: " << c_->id();
+        kill(c_->id(), SIGTERM);
+        mon_->try_join_for(boost::chrono::seconds(10));
+        mon_.reset(nullptr);
+    } catch (std::exception& e) {
+        LOG(error) << "Exception: " << e.what();
+    }
 }
 
 bool VmProcSimple::Running(void) {

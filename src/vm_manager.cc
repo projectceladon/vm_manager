@@ -334,33 +334,35 @@ class CivOptions final {
 }  // namespace vm_manager
 
 int main(int argc, char *argv[]) {
-    int c;
-    int ret = 0;
+    int ret = -1;
 
-    logger::init();
+    try {
+        logger::init();
 
-    if (!GetConfigPath())
-        return -1;
+        if (!GetConfigPath())
+            return ret;
 
-    // set_cleanup();
+        vm_manager::CivOptions co;
 
-    vm_manager::CivOptions co;
-
-    std::vector<std::string> args(argv, argv + argc);
-    if (args.size() == 2) {
-        if (args[1].compare("--afl-fuzz") == 0) {
-            // Take input from stdio when fuzzing.
-            std::string str;
-            std::getline(std::cin, str);
-            args.clear();
-            boost::split(args, str, boost::is_any_of(" "));
-            args.insert(args.begin(), argv[0]);
+        std::vector<std::string> args(argv, argv + argc);
+        if (args.size() == 2) {
+            if (args[1].compare("--afl-fuzz") == 0) {
+                // Take input from stdio when fuzzing.
+                std::string str;
+                std::getline(std::cin, str);
+                args.clear();
+                boost::split(args, str, boost::is_any_of(" "));
+                args.insert(args.begin(), argv[0]);
+            }
         }
+
+        if (co.ParseOptions(args)) {
+            ret = 0;
+        }
+    } catch (std::exception& e) {
+        std::cout << "Exception: " << e.what() << std::endl;
+        ret = -1;
     }
 
-    if (co.ParseOptions(args)) {
-        return 0;
-    }
-
-    return -1;
+    return ret;
 }
