@@ -20,6 +20,7 @@
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/exception_handler.hpp>
 #include <boost/log/attributes/current_process_name.hpp>
 
 #ifdef DEBUG
@@ -88,6 +89,8 @@ namespace logger {
                 << expr::smessage));
 
         logging::add_common_attributes();
+
+        logging::core::get()->set_exception_handler(logging::make_exception_suppressor());
     }
 
     inline void log2file(const char *file) {
