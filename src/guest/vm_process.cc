@@ -105,15 +105,16 @@ void VmProcSimple::SetLogDir(const char *path) {
         return;
 
     boost::filesystem::path p(path);
-    if (boost::filesystem::exists(p)) {
-        if (!boost::filesystem::is_directory(p))
+    boost::system::error_code ec;
+    if (boost::filesystem::exists(p, ec)) {
+        if (!boost::filesystem::is_directory(p, ec))
             return;
     } else {
-        if (!boost::filesystem::create_directories(p))
+        if (!boost::filesystem::create_directories(p, ec))
             return;
     }
 
-    log_dir_.assign(boost::filesystem::absolute(p).c_str()).append("/");
+    log_dir_.assign(boost::filesystem::absolute(p, ec).c_str()).append("/");
 }
 
 void VmProcSimple::Stop(void) {
@@ -149,7 +150,8 @@ VmProcSimple::~VmProcSimple() {
 
 void VmCoProcRpmb::Run(void) {
     LOG(info) << bin_ << " " << data_dir_;
-    if (!boost::filesystem::exists(data_dir_ + "/" + kRpmbData)) {
+    boost::system::error_code bec;
+    if (!boost::filesystem::exists(data_dir_ + "/" + kRpmbData), bec) {
         std::error_code ec;
         boost::process::child init_data(bin_ + " --dev " + data_dir_ + "/" + kRpmbData + " --init --size 2048");
         init_data.wait(ec);
@@ -167,7 +169,8 @@ void VmCoProcRpmb::Stop(void) {
              when exit, so here check and remove the sock file after the rpmb_dev process
              exited. Need to remove this block of code once the rpmb_dev fixed the issue.
      */
-    if (boost::filesystem::exists(sock_file_)) {
+    boost::system::error_code bec;
+    if (boost::filesystem::exists(sock_file_, bec)) {
         LOG(info) << "Cleanup Rpmb CoProc stuff ...";
         boost::filesystem::remove(sock_file_);
     }
@@ -181,7 +184,8 @@ VmCoProcRpmb::~VmCoProcRpmb() {
 void VmCoProcVtpm::Run(void) {
     LOG(info) << bin_ << " " << data_dir_;
 
-    if (!boost::filesystem::exists(data_dir_)) {
+    boost::system::error_code bec;
+    if (!boost::filesystem::exists(data_dir_, bec)) {
         LOG(warning) << "Data path for Vtpm not exists!";
         return;
     }

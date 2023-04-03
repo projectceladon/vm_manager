@@ -188,7 +188,8 @@ void CivTui::InitializeButtons(void) {
     SaveOn = [&]() {
         std::string configPath = GetConfigPath();
         std::string filePath = configPath + "/" + filename_ +".ini";
-        if (!boost::filesystem::exists(filePath)) {
+        boost::system::error_code ec;
+        if (!boost::filesystem::exists(filePath, ec)) {
             boost::filesystem::ofstream file(filePath);
             SetConfToPtree();
             bool writeConfigFile = civ_config_.WriteConfigFile(filePath);

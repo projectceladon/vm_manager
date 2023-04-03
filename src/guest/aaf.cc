@@ -45,7 +45,7 @@ void Aaf::Flush(void) {
     std::string target_file(path_ + "/" + "mixins.spec");
     std::ofstream out;
 
-    if (boost::filesystem::exists(target_file)) {
+    if (boost::filesystem::exists(target_file, ec)) {
         std::string hidden_file(path_ + "/" + ".mixins.spec~");
         boost::filesystem::rename(target_file, hidden_file, ec);
         std::ifstream in(hidden_file, std::ios::in);
@@ -68,7 +68,7 @@ void Aaf::Flush(void) {
             }
         }
         in.close();
-        boost::filesystem::remove(hidden_file);
+        boost::filesystem::remove(hidden_file, ec);
     }
 
     if (!out.is_open()) {

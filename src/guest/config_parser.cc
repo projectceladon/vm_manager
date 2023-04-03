@@ -67,12 +67,13 @@ bool CivConfig::SanitizeOpts(void) {
 }
 
 bool CivConfig::ReadConfigFile(std::string path) {
-    if (!boost::filesystem::exists(path)) {
+    boost::system::error_code ec;
+    if (!boost::filesystem::exists(path, ec)) {
         LOG(error) << "File not exists: " << path << std::endl;
         return false;
     }
 
-    if (!boost::filesystem::is_regular_file(path)) {
+    if (!boost::filesystem::is_regular_file(path, ec)) {
         LOG(error) << "File is not a regular file: " << path << std::endl;
         return false;
     }
@@ -88,12 +89,13 @@ bool CivConfig::ReadConfigFile(std::string path) {
 }
 
 bool CivConfig::WriteConfigFile(std::string path) {
-    if (!boost::filesystem::exists(path)) {
+    boost::system::error_code ec;
+    if (!boost::filesystem::exists(path, ec)) {
         LOG(error) << "File not exists: " << path << std::endl;
         return false;
     }
 
-    if (!boost::filesystem::is_regular_file(path)) {
+    if (!boost::filesystem::is_regular_file(path, ec)) {
         LOG(error) << "File is not a regular file: " << path << std::endl;
         return false;
     }

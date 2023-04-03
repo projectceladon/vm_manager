@@ -46,7 +46,7 @@ bool VmFlasher::CheckImages(boost::filesystem::path o_dir) {
                     LOG(error) << "Failed to split: " << ditr->path().string();
                     return false;
                 }
-                boost::filesystem::remove(ditr->path().string());
+                boost::filesystem::remove(ditr->path().string(), bec);
             }
         }
     }
@@ -74,7 +74,7 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
     boost::filesystem::path o_dir("/tmp/" + file.stem().string());
     std::error_code ec;
     std::string cmd;
-    if (boost::filesystem::exists(o_dir)) {
+    if (boost::filesystem::exists(o_dir, bec)) {
         cmd.assign("rm -rf " + o_dir.string());
         LOG(info) << cmd;
         if (boost::process::system(cmd))
@@ -89,7 +89,7 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
     }
 
     boost::filesystem::path boot_file(o_dir.string() + "/boot.img");
-    if (boost::filesystem::exists(boot_file)) {
+    if (boost::filesystem::exists(boot_file, bec)) {
         if (!CheckImages(o_dir))
             return false;
 
@@ -110,7 +110,7 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
         }
 
         boost::filesystem::directory_iterator end_itr;
-        for (boost::filesystem::directory_iterator ditr(o_dir); ditr != end_itr; ++ditr) {
+        for (boost::filesystem::directory_iterator ditr(o_dir, bec); ditr != end_itr; ++ditr) {
             if (boost::filesystem::is_regular_file(ditr->path(), bec)) {
                 cmd.assign("mcopy -o -n -i " + std::string(kVirtualUsbDiskPath) + " " + ditr->path().string() + " ::");
                 LOG(info) << cmd;
@@ -131,7 +131,7 @@ bool VmFlasher::QemuCreateVirtUsbDisk(void) {
     }
 
     int count = 0;
-    for (auto& p : boost::filesystem::directory_iterator(o_dir)) {
+    for (auto& p : boost::filesystem::directory_iterator(o_dir, bec)) {
         if (++count >1)
             return false;
     }
@@ -184,7 +184,7 @@ bool VmFlasher::FlashWithQemu(void) {
     std::unique_ptr<VmCoProcRpmb> rpmb_proc;
     boost::system::error_code ec;
     if (!rpmb_bin.empty() && !rpmb_data_dir.empty()) {
-        if (boost::filesystem::exists(rpmb_data_file)) {
+        if (boost::filesystem::exists(rpmb_data_file, ec)) {
             if (!boost::filesystem::remove(rpmb_data_file, ec)) {
                 LOG(error) << "Failed to remove " << rpmb_data_file;
                 LOG(error) << "Please manully remove " << rpmb_data_file << ", and try again!";
