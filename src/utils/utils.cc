@@ -63,9 +63,10 @@ const char *GetConfigPath(void) {
     if (ret != 0 || presult == NULL)
         return NULL;
 
+    boost::system::error_code ec;
     snprintf(civ_config_path, MAX_PATH, "%s%s", pwd.pw_dir, "/.intel/.civ");
-    if (!boost::filesystem::exists(civ_config_path)) {
-        if (!boost::filesystem::create_directories(civ_config_path)) {
+    if (!boost::filesystem::exists(civ_config_path, ec)) {
+        if (!boost::filesystem::create_directories(civ_config_path, ec)) {
             delete[] civ_config_path;
             civ_config_path = NULL;
         }

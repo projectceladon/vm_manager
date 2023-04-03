@@ -111,8 +111,9 @@ void VmBuilderQemu::SoundCardHook(void) {
 static bool IsVfioDriver(const char *path) {
     try {
         boost::filesystem::path p(path);
-        if (boost::filesystem::is_symlink(p)) {
-            boost::filesystem::path s(boost::filesystem::read_symlink(p));
+        boost::system::error_code ec;
+        if (boost::filesystem::is_symlink(p, ec)) {
+            boost::filesystem::path s(boost::filesystem::read_symlink(p, ec));
             return (s.filename().compare("vfio-pci") == 0);
         }
         return false;
@@ -206,8 +207,9 @@ static bool SetupHugePages(const std::string &mem_size) {
 }
 
 static bool LoadKernelModule(const char *path, const std::string &module) {
+    boost::system::error_code ec;
     boost::filesystem::path p(path);
-    if (!boost::filesystem::exists(p)) {
+    if (!boost::filesystem::exists(p, ec)) {
         if (boost::process::system("modprobe " + module))
             return false;
     }
@@ -312,7 +314,8 @@ void VmBuilderQemu::BuildExtraGuestPmCtrlCmd(void) {
         }
 
         end_call_.emplace([](){
-            boost::filesystem::remove(socketPath);
+            boost::system::error_code ec;
+            boost::filesystem::remove(socketPath, ec);
         });
     } else {
         return;
@@ -337,7 +340,8 @@ static bool PassthroughOnePciDev(const char *pci_id, PciPassthroughAction action
     boost::filesystem::path p(kPciDevicePath);
     p.append(pci_id).append("/iommu_group/devices");
 
-    if (!boost::filesystem::exists(p) || !boost::filesystem::is_directory(p)) {
+    boost::system::error_code ec;
+    if (!boost::filesystem::exists(p, ec) || !boost::filesystem::is_directory(p, ec)) {
         return false;
     }
 
@@ -364,7 +368,8 @@ static bool PassthroughOnePciDev(const char *pci_id, PciPassthroughAction action
             continue;
         }
 
-        if (boost::filesystem::exists(driver)) {
+        boost::system::error_code ec;
+        if (boost::filesystem::exists(driver, ec)) {
             if (IsVfioDriver(driver.c_str())) {
                 WriteSysFile(kVfioPciRemoveId, ven_dev);
             }
@@ -376,7 +381,7 @@ static bool PassthroughOnePciDev(const char *pci_id, PciPassthroughAction action
             constexpr const int kCheckUnbindRepeatCount = 2000;
             int cnt = 0;
             while (cnt < kCheckUnbindRepeatCount) {
-                if (!boost::filesystem::exists(driver))
+                if (!boost::filesystem::exists(driver, ec))
                     break;
                 boost::this_thread::sleep_for(boost::chrono::milliseconds(1));
                 cnt++;
@@ -539,8 +544,9 @@ void VmBuilderQemu::SetExtraServices(void) {
 bool VmBuilderQemu::BuildEmulPath(void) {
     std::string str_emul_path = cfg_.GetValue(kGroupEmul, kEmulPath);
     boost::filesystem::path emul_path;
-    if (boost::filesystem::exists(str_emul_path)) {
-        emul_path = boost::filesystem::absolute(str_emul_path);
+    boost::system::error_code ec;
+    if (boost::filesystem::exists(str_emul_path, ec)) {
+        emul_path = boost::filesystem::absolute(str_emul_path, ec);
     } else {
         if (str_emul_path.empty()) {
             str_emul_path = "qemu-system-x86_64";

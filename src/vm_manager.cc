@@ -252,7 +252,8 @@ class CivOptions final {
         } else {
             if (!IsServerRunning()) {
                 boost::filesystem::path cmd(args[0]);
-                if (!boost::filesystem::exists(cmd)) {
+                boost::system::error_code ec;
+                if (!boost::filesystem::exists(cmd, ec)) {
                     cmd.assign(boost::process::search_path(args[0]));
                 }
                 if (boost::process::system(cmd, "--start-server", "--daemon")) {
