@@ -6,7 +6,7 @@
 #
 #
 
-set(main_revision_ "1.2.2")
+set(main_revision_ "1.2.3")
 
 set(rel_version_ "unknown")
 
