@@ -151,7 +151,7 @@ VmProcSimple::~VmProcSimple() {
 void VmCoProcRpmb::Run(void) {
     LOG(info) << bin_ << " " << data_dir_;
     boost::system::error_code bec;
-    if (!boost::filesystem::exists(data_dir_ + "/" + kRpmbData), bec) {
+    if (!boost::filesystem::exists(data_dir_ + "/" + kRpmbData, bec)) {
         std::error_code ec;
         boost::process::child init_data(bin_ + " --dev " + data_dir_ + "/" + kRpmbData + " --init --size 2048");
         init_data.wait(ec);
