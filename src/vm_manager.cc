@@ -202,11 +202,11 @@ class CivOptions final {
         cmdline_options_.add_options()
             ("help,h",    "Show this help message")
             ("create,c",  po::value<std::string>(), "Create a CiV guest")
-            ("delete,d",  po::value<std::string>(), "Delete a CiV guest")
+            // ("delete,d",  po::value<std::string>(), "Delete a CiV guest")
             ("start,b",   po::value<std::string>(), "Start a CiV guest")
             ("stop,q",    po::value<std::string>(), "Stop a CiV guest")
             ("flash,f",   po::value<std::string>(), "Flash a CiV guest")
-            ("update,u",  po::value<std::string>(), "Update an existing CiV guest")
+            // ("update,u",  po::value<std::string>(), "Update an existing CiV guest")
             ("get-cid", po::value<std::string>(), "Get cid of a guest")
             ("list,l",    "List existing CiV guest")
             ("version,v", "Show CiV vm-manager version")
@@ -313,7 +313,7 @@ class CivOptions final {
     void PrintHelp(void) {
         std::cout << "Usage:\n";
         std::cout << "  vm-manager"
-                  << " [-c] [-d vm_name] [-b vm_name] [-q vm_name] [-f vm_name] [-u vm_name] [--get-cid vm_name]"
+                  << " [-c vm_name] [-b vm_name] [-q vm_name] [-f vm_name] [--get-cid vm_name]"
                   << " [-l] [-v] [-h]\n";
         std::cout << "Options:\n";
 
