@@ -8,27 +8,9 @@ on:
       - master
       - tmp/ci-testing
     
-env:
-    EVENT_CONTEXT: ${{ toJSON(github.event) }}
-    BUILDTOKEN: test_issue
-    JENKINS_URL: https://cbjenkins-ba.devtools.intel.com/teams-satg-aee-android-ci/generic-webhook-trigger/invoke?token=
-
 jobs:
-  if_merged:
+  if_approved:
     if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'tmp/ci-testing'
-    runs-on: self-hosted
-    steps:
-    - run: |
-        echo The PR was merged
-    - name: converting object to json
-      env:
-          EVENT_CONTEXT: ${{ toJSON(github.event) }}
-      run: |
-          echo "$EVENT_CONTEXT"
-    - name: Triggering Jenkins job
-      run: |-
-                curl --location --request POST  ${{ env.JENKINS_URL }}${{ env.BUILDTOKEN }}   \
-                      --header 'Content-Type: application/json' \
-                      --data-raw '{
-                        "action": ${{ env.EVENT_CONTEXT }}                      
-                        }'
+    uses: projectceladon/celadonworkflows/.github/workflows/trigger_ci.yml@v1.0
+    with:
+      EVENT: ${{ toJSON(github.event) }}
