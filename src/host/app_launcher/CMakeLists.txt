@@ -33,6 +33,7 @@ target_link_libraries(${APPLAUNCHER_PROJ}
   PRIVATE ${_GRPC_GRPCPP}
   PRIVATE ${_PROTOBUF_LIBPROTOBUF}
   -lrt
+  -static
 )
 set_target_properties(${APPLAUNCHER_PROJ} PROPERTIES LINK_FLAGS_RELEASE -s)
 
