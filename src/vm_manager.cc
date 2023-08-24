@@ -266,7 +266,7 @@ class CivOptions final {
                         LOG(error) << "Cannot start server!";
                         return false;
                     }
-                    boost::this_thread::sleep_for(boost::chrono::microseconds(100));
+                    boost::this_thread::sleep_for(boost::chrono::microseconds(1000));
                 }
             }
         }
