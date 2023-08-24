@@ -61,7 +61,6 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE ${_GRPC_GRPCPP}
   PRIVATE ${_PROTOBUF_LIBPROTOBUF}
   -lrt
-  -static
 )
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE -s)
 
