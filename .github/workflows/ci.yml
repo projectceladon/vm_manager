@@ -1,7 +1,7 @@
 name: VM Manager CI
 
 on: [push, pull_request]
-
+permissions: read-all
 jobs:
   build_ubuntu_gcc:
 
