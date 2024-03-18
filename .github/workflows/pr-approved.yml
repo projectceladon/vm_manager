@@ -7,7 +7,7 @@ on:
     branches: 
       - master
       - tmp/ci-testing
-    
+permissions: read-all    
 jobs:
   if_approved:
     if: github.event.review.state == 'approved' && github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'tmp/ci-testing'
