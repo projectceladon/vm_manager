@@ -250,6 +250,8 @@ function prepare_required_scripts(){
     chmod +x $CIV_WORK_DIR/scripts/findall.py
     chmod +x $CIV_WORK_DIR/scripts/thermsys
     chmod +x $CIV_WORK_DIR/scripts/batsys
+    sudo chown root $CIV_WORK_DIR/scripts/guest_rtc_monitor
+    sudo chmod u+s $CIV_WORK_DIR/scripts/guest_rtc_monitor
 }
 
 function install_auto_start_service(){

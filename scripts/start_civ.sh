@@ -16,6 +16,7 @@ EMULATOR_PATH=$(which qemu-system-x86_64)
 GUEST_MEM="-m 2G"
 GUEST_CPU_NUM="-smp 1"
 GUEST_DISK="-drive file=$WORK_DIR/android.qcow2,if=none,id=disk1,discard=unmap,detect-zeroes=unmap"
+GUEST_EXTERNAL_WAKEUP=
 GUEST_FIRMWARE="-drive file=$WORK_DIR/OVMF.fd,format=raw,if=pflash"
 GUEST_DISP_TYPE="-display gtk,gl=on"
 GUEST_KIRQ_CHIP="-machine kernel_irqchip=on"
@@ -584,9 +585,10 @@ function set_guest_pm() {
 
 function set_guest_time_keep() {
     local guest_time_keep_daemon=$SCRIPTS_DIR/guest_time_keeping.sh
-    if [ -f $guest_keep_daemon ]; then
+    local guest_time_keep_rtc_daemon=$SCRIPTS_DIR/guest_rtc_monitor
+    if [ -f $guest_keep_daemon ] && [ -f $guest_time_keep_rtc_daemon ]; then
         local guest_time_keep_pipe=$WORK_DIR/qmp-time-keep-pipe
-        $guest_time_keep_daemon "$guest_time_keep_pipe" &
+        $guest_time_keep_daemon "$guest_time_keep_pipe" "$guest_time_keep_rtc_daemon" &
         GUEST_TIME_KEEP="-qmp pipe:$guest_time_keep_pipe"
     fi
 }
@@ -615,6 +617,10 @@ function set_guest_pwr_vol_button() {
         GUEST_POWER_BUTTON='-device virtio-input-host-pci,evdev=/dev/input/by-id/Power-Button-vm0 -device virtio-input-host-pci,evdev=/dev/input/by-id/Volume-Button-vm0'
     fi
     cd -
+}
+
+function enable_external_wakeup_mode() {
+    GUEST_EXTERNAL_WAKEUP='-global mc146818rtc.external_wakeup=on'
 }
 
 function cleanup() {
@@ -662,6 +668,7 @@ function launch_guest() {
               $GUEST_WIFI_PT_DEV \
               $GUEST_PM_CTRL \
               $GUEST_TIME_KEEP \
+              $GUEST_EXTERNAL_WAKEUP \
               $GUEST_QMP_PIPE \
               $GUEST_POWER_BUTTON \
               $GUSET_VTPM \
@@ -704,7 +711,7 @@ function show_help() {
     printf "\t--thermal-mediation enable thermal mediation.\n"
     printf "\t--battery-mediation enable battery mediation.\n"
     printf "\t--guest-pm-control allow guest control host PM.\n"
-    printf "\t--guest-time-keep reflect guest time setting on Host OS.\n"
+    printf "\t--guest-time-keep reflect guest RTC settings on Host OS.\n"
     printf "\t--qmp-pipe specify the name of the pipe used for qmp communication.\n"
     printf "\t--allow-suspend option allow guest enter S3 state, by default guest cannot enter S3 state.\n"
     printf "\t--disable-kernel-irqchip set kernel_irqchip=off.\n"
@@ -809,6 +816,10 @@ function parse_arg() {
 
             --guest-time-keep)
                 set_guest_time_keep
+                ;;
+
+            --external-wakeup-mode)
+                enable_external_wakeup_mode
                 ;;
 
             --allow-suspend)
