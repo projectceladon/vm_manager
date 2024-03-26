@@ -441,6 +441,11 @@ fi" > /usr/local/share/sleep-inhibitor/plugins/is-wakelock-active
     reboot_required=1
 }
 
+function ubu_install_cfc_host_agent_deps() {
+    printf "Installing cfc_host_agent dependecies - libnotify-bin\n"
+    sudo apt-get -y install libnotify-bin
+}
+
 function show_help() {
     printf "$(basename "$0") [-q] [-u] [--auto-start]\n"
     printf "Options:\n"
@@ -506,6 +511,7 @@ ubu_enable_host_sriov
 
 install_vm_manager
 
+ubu_install_cfc_host_agent_deps
 prepare_required_scripts
 setup_sof
 ubu_install_swtpm
