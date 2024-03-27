@@ -26,7 +26,7 @@ add_subdirectory(services/protos)
 
 set(PROJECT_NAME "vm-manager")
 project(${PROJECT_NAME})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-result -Wno-unused-variable -Wno-narrowing -O2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-result -Wno-unused-variable -Wno-narrowing -Wno-ignored-optimization-argument -O2" CACHE STRING "CXX Flags" FORCE)
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -g1 -O3 -fstack-protector-strong -Wdate-time -D_FORTIFY_SOURCE=2" CACHE STRING "CXX Release Flags" FORCE)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2 -g3")
 
