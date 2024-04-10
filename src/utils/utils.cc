@@ -21,7 +21,79 @@
 #include "utils/utils.h"
 #include "utils/log.h"
 
+// Global string variables for each component
+const std::string INTEL_VID = "8087:";
+const std::string INTEL_PID_8265 = "0a2b";
+const std::string INTEL_PID_3168 = "0aa7";
+const std::string INTEL_PID_9260 = "0025";
+const std::string INTEL_PID_9560 = "0aaa";
+const std::string INTEL_PID_AX201 = "0026";
+const std::string INTEL_PID_AX211 = "0033";
+const std::string INTEL_PID_AX210 = "0032";
+
 static char *civ_config_path = NULL;
+std::string runCommand(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+
+    return result;
+}
+
+bool extractBusDevice(const std::string& input, std::string& bus, std::string& device) {
+    std::istringstream iss(input);
+    std::string token;
+    if (iss >> token >> bus >> token >> device >> token) {
+        size_t colonPos = device.find(':');
+        if (colonPos != std::string::npos) {
+            device.erase(colonPos);
+        }
+        return true;
+    }
+
+    return false;
+}
+
+std::string getBluetoothAddress(std::string output) {
+    std::string bus, device;
+    if (extractBusDevice(output, bus, device)) {
+
+        std::string udevCommand = "udevadm info -a -p $(udevadm info -q path -n /dev/bus/usb/"
+        + bus + "/" + device + ") | ""grep \"/devices/pci0000:\" | "
+                                   "sed -n \"s|.*'/devices/pci0000:\\(.*\\)/usb\\(.*\\)|\\1|p\"";
+        // Run the constructed command and get its output
+        std::string udevOutput = runCommand(udevCommand.c_str());
+        LOG(warning) << "udevadm command output:\n" << udevOutput.substr(3,12) << std::endl;
+        return (udevOutput.substr(3,12));
+    } else {
+        LOG(warning) << "Could not extract bus and device numbers from the output." << std::endl;
+        return "";
+    }
+}
+std::string checkIntelDeviceId() {
+    std::string command = "lsusb | grep -E '" + INTEL_VID +
+                          "(" + INTEL_PID_8265 + "|" + INTEL_PID_3168 + "|" +
+                          INTEL_PID_9260 + "|" + INTEL_PID_9560 + "|" +
+                          INTEL_PID_AX201 + "|" + INTEL_PID_AX211 + "|" +
+                          INTEL_PID_AX210 + ")'";
+    // Get the command output//
+    std::string output = runCommand(command.c_str());
+    if (!output.empty()) {
+        LOG(warning) << "Intel BT-Controller found!" << std::endl;
+        return (getBluetoothAddress(output));
+    }
+    else {
+        LOG(warning) << "Intel BT-Controller not found!" << std::endl;
+    }
+    return "";
+}
 
 const char *GetConfigPath(void) {
     if (civ_config_path) {

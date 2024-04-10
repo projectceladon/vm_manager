@@ -34,7 +34,6 @@ namespace vm_manager {
 constexpr const char *kPciDevicePath = "/sys/bus/pci/devices/";
 constexpr const char *kPciDriverPath = "/sys/bus/pci/drivers/";
 constexpr const char *kPciDriverProbe = "/sys/bus/pci/drivers_probe";
-
 constexpr const char *kIntelGpuBdf = "0000:00:02.0";
 constexpr const char *kIntelGpuDevPath = "/sys/bus/pci/devices/0000:00:02.0/";
 constexpr const char *kIntelGpuDevice = "/sys/bus/pci/devices/0000:00:02.0/device";
@@ -412,9 +411,17 @@ void VmBuilderQemu::BuildPtPciDevicesCmd(void) {
 
     std::vector<std::string> vec;
     boost::split(vec, pt_pci, boost::is_any_of(","), boost::token_compress_on);
-
+    std::string kIntelBtPciAddress = checkIntelDeviceId();
     for (auto it=vec.begin(); it != vec.end(); ++it) {
         boost::trim(*it);
+        LOG(warning) << *it << std::endl;
+        if (*it == kIntelBtPciAddress) {
+            LOG(warning) << "Running command to bring hci0 down.";
+            int result = boost::process::system("sudo hciconfig hci0 down");
+            if (result != 0) {
+                LOG(warning) << "Failed to execute command: sudo hciconfig hci0 down";
+            } 
+        }
         if (PassthroughOnePciDev(it->c_str(), kPciPassthrough)) {
             pci_pt_dev_set_.insert(*it);
             emul_cmd_.append(" -device vfio-pci,host=" + *it + ",x-no-kvm-intx=on");

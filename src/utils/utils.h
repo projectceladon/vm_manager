@@ -15,6 +15,11 @@
 #define CIV_GUEST_QMP_SUFFIX     ".qmp.unix.socket"
 
 const char *GetConfigPath(void);
+std::string runCommand(const char* cmd);
+bool extractBusDevice(const std::string& input, std::string& bus, std::string& device);
+std::string getBluetoothAddress(std::string output);
+std::string checkIntelDeviceId();
+
 int Daemonize(void);
 
 constexpr std::size_t operator""_KB(unsigned long long v) {
