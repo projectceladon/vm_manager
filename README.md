@@ -19,6 +19,8 @@ You can find the latest vm-manager release here: https://github.com/projectcelad
 
 ## Pre-requisites
 
+UBUNTU OS Version: 20.04 or 22.04
+
 Install required tools on Linux. 
 
 ```sh
