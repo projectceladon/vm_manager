@@ -169,3 +169,6 @@ Requirements
 - cmd: Set extra command.
 - service: Set extra services, use `:` split different services.
 - pwr_ctrl_multios: If set to "true", will create qmp socket in /tmp/ folder for suspend/hibernate feature. Setting to "false" will not create the sockeet.
+
+### [bluetooth]
+- hci_down: If set to 'true', will bring down Bluetooth Hci Interface. Make sure BT USB Pci address is added in `[passthrough]`.

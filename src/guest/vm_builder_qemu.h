@@ -57,6 +57,7 @@ class VmBuilderQemu : public VmBuilder {
     void BuildVcpuCmd(void);
     bool BuildFirmwareCmd(void);
     void BuildVdiskCmd(void);
+    void BringDownBtHciIntf(void);
     void BuildPtPciDevicesCmd(void);
     void BuildGuestTimeKeepCmd(void);
     void BuildGuestPmCtrlCmd(void);
