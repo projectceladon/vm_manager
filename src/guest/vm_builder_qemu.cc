@@ -300,6 +300,18 @@ bool VmBuilderQemu::SetupSriov(void) {
     return true;
 }
 
+void VmBuilderQemu::BringDownBtHciIntf(void) {
+    std::string hci_status = cfg_.GetValue(kGroupbluetooth, kHciDown);
+    boost::trim(hci_status);
+    if (hci_status == "true") {
+        LOG(info) << "Shutting down Hci Interface!!!\n";
+        int result = boost::process::system("sudo hciconfig hci0 down");
+        if (result != 0) {
+            LOG(warning) << "Failed to execute command: sudo hciconfig hci0 down";
+        }
+    }
+}
+
 void VmBuilderQemu::BuildExtraGuestPmCtrlCmd(void) {
     std::string ex_cmd = cfg_.GetValue(kGroupExtra, kExtraPwrCtrlMultiOS);
     if (ex_cmd == "true") {
@@ -413,6 +425,7 @@ void VmBuilderQemu::BuildPtPciDevicesCmd(void) {
     std::vector<std::string> vec;
     boost::split(vec, pt_pci, boost::is_any_of(","), boost::token_compress_on);
 
+    BringDownBtHciIntf();  // Bring down blutooth hci interface before passthrough
     for (auto it=vec.begin(); it != vec.end(); ++it) {
         boost::trim(*it);
         if (PassthroughOnePciDev(it->c_str(), kPciPassthrough)) {
