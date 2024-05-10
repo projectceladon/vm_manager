@@ -14,7 +14,7 @@ jobs:
         os: [ubuntu-20.04, ubuntu-22.04]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: vm-manager
           fetch-depth: 0
@@ -40,7 +40,7 @@ jobs:
           debuild --preserve-env -b -uc -us --lintian-opts --profile debian
 
       - name: artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vm-manager.${{ matrix.os }}.${{ github.run_id }}.${{ github.sha }}
           path: |
