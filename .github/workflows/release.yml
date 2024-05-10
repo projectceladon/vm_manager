@@ -3,7 +3,7 @@ name: VM Manager Release
 on:
   release:
     types: [published, edited]
-permissions: read-all
+permissions: write-all
 jobs:
   build_ubuntu_gcc:
 
