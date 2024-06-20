@@ -63,6 +63,7 @@ class VmBuilderQemu : public VmBuilder {
     void BuildGuestPmCtrlCmd(void);
     void BuildExtraGuestPmCtrlCmd(void);
     void BuildAudioCmd(void);
+    void BuildUsbCmd(void);
     void BuildExtraCmd(void);
 
     void SoundCardHook(void);
