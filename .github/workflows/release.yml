@@ -3,10 +3,11 @@ name: VM Manager Release
 on:
   release:
     types: [published, edited]
-permissions: write-all
+permissions: read-all
 jobs:
   build_ubuntu_gcc:
-
+    permissions:
+      contents: write
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
