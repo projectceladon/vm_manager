@@ -1,0 +1,28 @@
+name: Store_Review_Event
+
+on:
+  pull_request_review:
+    types: [submitted]
+    branches: 
+      - master
+      - tmp/ci-testing
+permissions: read-all
+
+jobs:
+  Store_Review_Event:
+    runs-on: ubuntu-latest
+    name: Store Review Event
+    steps:
+      - name: Check if review is approved and branch is correct
+        if: github.event.review.state != 'approved' || (github.event.pull_request.base.ref != 'master' && github.event.pull_request.base.ref != 'tmp/ci-testing')
+        run: |
+          echo "Skipping workflow as the review is not approved or the base branch is not master or tmp/ci-testing."
+          exit 1
+
+      - name: Upload event JSON as artifact
+        if: github.event.review.state == 'approved' && (github.event.pull_request.base.ref == 'master' || github.event.pull_request.base.ref == 'tmp/ci-testing')
+        uses: actions/upload-artifact@v4
+        with:
+          name: eventjson
+          path: "${{ github.event_path }}"
+          retention-days: 7
