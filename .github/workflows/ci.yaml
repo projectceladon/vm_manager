@@ -1,42 +1,16 @@
-name: Publish Review Event
+name: CI Workflow
 
 on:
-  workflow_run:
-    workflows: ["Store_Review_Event"]
-    types:
-      - completed
+  pull_request_target:
+    types: "*"
+    branches: "**"
 permissions: read-all
 
 jobs:
-  fetch_and_process:
+  Trigger_Workflows:
     runs-on: ubuntu-latest
+    name: CI Workflow
     steps:
-      - name: 'Download artifact'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               run_id: context.payload.workflow_run.id,
-            });
-            let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "eventjson"
-            })[0];
-            let download = await github.rest.actions.downloadArtifact({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               artifact_id: matchArtifact.id,
-               archive_format: 'zip',
-            });
-            let fs = require('fs');
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/eventjson.zip`, Buffer.from(download.data));
-
-      - name: 'Unzip artifact'
-        run: |
-          ls
-          unzip eventjson.zip
-
       - name: Get Token
         run: |
           retries=3
@@ -72,16 +46,14 @@ jobs:
         env:
           TOKEN: ${{ env.TOKEN }}
         run: |
-          
-          EVENT_DATA=$(cat event.json)
-
+          EVENT_DATA='${{ toJSON(github.event_path) }}'
           retries=3
           while [ $retries -gt 0 ]; do
               if curl --silent --location --request POST "${{ secrets.CLIENT_PUBLISH_URL }}" \
                   --header 'Content-Type: application/json' \
                   --header 'x-github-event: github' \
                   --header "Authorization: Bearer $TOKEN" \
-                  --data "$EVENT_DATA"; then
+                  --data "@${{ github.event_path }}"; then
                   break
               else
                   echo "Error: Failed to trigger build"
