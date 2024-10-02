@@ -165,6 +165,9 @@ Requirements
 
 - disable_emulation: Disable sound card emulation, set this option to true if the sound card is passthrough in `[passthrough]`
 
+### [usb]
+- usb_tablet: set `true` to enable usb tablet, by default usb tablet is disabled.
+
 ### [extra]
 - cmd: Set extra command.
 - service: Set extra services, use `:` split different services.

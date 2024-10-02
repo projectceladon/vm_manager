@@ -531,6 +531,15 @@ void VmBuilderQemu::BuildAudioCmd(void) {
                      "/pulse/native");
 }
 
+void VmBuilderQemu::BuildUsbCmd(void) {
+    emul_cmd_.append(" -device qemu-xhci,id=xhci,p2=8,p3=8 -device usb-kbd");
+    if (cfg_.GetValue(kGroupUsb, kUsbTablet).compare("true") != 0) {
+        emul_cmd_.append(" -device usb-mouse");
+    } else {
+        emul_cmd_.append(" -device usb-tablet");
+    }
+}
+
 void VmBuilderQemu::BuildExtraCmd(void) {
     std::string ex_cmd = cfg_.GetValue(kGroupExtra, kExtraCmd);
     if (ex_cmd.empty())
@@ -581,10 +590,7 @@ void VmBuilderQemu::BuildFixedCmd(void) {
         " -machine kernel_irqchip=on"
         " -k en-us"
         " -cpu host,-waitpkg,pmu=off"
-        " -enable-kvm"
-        " -device qemu-xhci,id=xhci,p2=8,p3=8"
-        " -device usb-mouse"
-        " -device usb-kbd");
+        " -enable-kvm");
     emul_cmd_.append(
         /* Make sure this device be the last argument */
         " -device intel-iommu,device-iotlb=on,caching-mode=on"
@@ -894,6 +900,8 @@ bool VmBuilderQemu::BuildVmArgs(void) {
     BuildExtraGuestPmCtrlCmd();
 
     BuildAudioCmd();
+
+    BuildUsbCmd();
 
     BuildExtraCmd();
 
